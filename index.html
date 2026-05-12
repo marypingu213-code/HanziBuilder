@@ -143,14 +143,35 @@
                                 ⚠️ 正式列印時包含輔助框線<br>(對準後請取消勾選，避免黑線印到貼紙上)
                             </label>
                         </div>
+
+                        <!-- ✅ 修法新增：邊距快速存取 -->
+                        <div class="pt-2 border-t border-gray-200">
+                            <p class="font-bold text-gray-700 mb-2">💾 儲存目前邊距設定</p>
+                            <div class="flex gap-2">
+                                <button type="button" onclick="saveMarginPreset()" class="flex-1 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 px-2 py-1.5 rounded font-bold border border-indigo-300 text-xs">
+                                    💾 儲存邊距到瀏覽器
+                                </button>
+                                <button type="button" onclick="loadMarginPreset()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-1.5 rounded font-bold border border-gray-300 text-xs">
+                                    📂 還原上次儲存的邊距
+                                </button>
+                            </div>
+                            <p class="text-[10px] text-gray-400 mt-1">提示：調好邊距後先儲存，之後換範本時就不用重調。</p>
+                        </div>
                     </div>
                 </details>
             </div>
         </div>
 
-        <!-- 全新：列印與下載輸出區 -->
+        <!-- 列印與下載輸出區 -->
         <div class="p-3 bg-slate-100 border-t border-slate-300 z-20 shadow-[0_-4px_10px_-1px_rgba(0,0,0,0.1)]">
             <h3 class="text-sm font-bold text-slate-800 mb-2 px-1">輸出操作區 (強烈建議使用直接列印)</h3>
+            
+            <!-- ✅ 修法新增：列印提示橫幅 -->
+            <div class="mb-2 bg-yellow-50 border border-yellow-300 rounded-lg px-3 py-2 text-[11px] text-yellow-800 font-bold flex items-start gap-2">
+                <span class="text-base leading-none mt-0.5">⚠️</span>
+                <span>列印時請確認對話框中的縮放比例為 <span class="text-red-600">100%（實際大小）</span>，否則透明貼紙位置會跑掉！</span>
+            </div>
+
             <div class="space-y-2">
                 
                 <!-- 貼紙 A 輸出 -->
@@ -260,6 +281,33 @@
         };
 
         let customTemplates = JSON.parse(localStorage.getItem('myCustomStickers')) || {};
+
+        // ✅ 修法四：邊距快速儲存/還原
+        window.saveMarginPreset = function() {
+            const preset = {
+                mL_A: getSafeValue('mL_A', 0),
+                mT_A: getSafeValue('mT_A', 0),
+                gX_A: getSafeValue('gX_A', 0),
+                gY_A: getSafeValue('gY_A', 0),
+                mL_B: getSafeValue('mL_B', 6),
+                mT_B: getSafeValue('mT_B', 11),
+                gX_B: getSafeValue('gX_B', 0),
+                gY_B: getSafeValue('gY_B', 0),
+            };
+            localStorage.setItem('myMarginPreset', JSON.stringify(preset));
+            alert('✅ 邊距設定已儲存！下次按「還原上次儲存的邊距」即可快速套用。');
+        };
+
+        window.loadMarginPreset = function() {
+            const saved = localStorage.getItem('myMarginPreset');
+            if (!saved) { alert('尚未儲存過邊距設定。'); return; }
+            const preset = JSON.parse(saved);
+            Object.keys(preset).forEach(k => {
+                const el = document.getElementById(k);
+                if (el) el.value = preset[k];
+            });
+            alert('✅ 已還原上次儲存的邊距設定！');
+        };
 
         function updateTemplateDropdown(selectedKey = null) {
             const select = document.getElementById('templateSelect');
@@ -491,6 +539,7 @@
             }
         };
 
+        // ✅ 修法四：儲存範本時一併記錄當前邊距
         document.getElementById('btnSaveTemplate').addEventListener('click', () => {
             const activeComps = getActiveComponents();
             if (activeComps.length === 0) return alert('畫面目前是空的，沒有東西可以儲存喔！');
@@ -507,11 +556,23 @@
                 return copy;
             });
 
-            customTemplates[name.trim()] = compsToSave;
+            // 同時儲存當時的邊距設定
+            const marginData = {
+                mL_A: getSafeValue('mL_A', 0),
+                mT_A: getSafeValue('mT_A', 0),
+                gX_A: getSafeValue('gX_A', 0),
+                gY_A: getSafeValue('gY_A', 0),
+                mL_B: getSafeValue('mL_B', 6),
+                mT_B: getSafeValue('mT_B', 11),
+                gX_B: getSafeValue('gX_B', 0),
+                gY_B: getSafeValue('gY_B', 0),
+            };
+
+            customTemplates[name.trim()] = { comps: compsToSave, margins: marginData };
             localStorage.setItem('myCustomStickers', JSON.stringify(customTemplates));
             
             updateTemplateDropdown(`custom_${name.trim()}`);
-            alert(`✅ 成功！「${name.trim()}」已經永遠儲存到您的選單中了。`);
+            alert(`✅ 成功！「${name.trim()}」已經永遠儲存到您的選單中了。\n（邊距設定也一起儲存了）`);
         });
 
         document.getElementById('btnDelTemplate').addEventListener('click', () => {
@@ -527,11 +588,21 @@
             }
         });
 
+        // ✅ 修法四：載入範本時若有儲存的邊距也一起還原
         function loadTemplate(val) {
             let data;
+            let margins = null;
+
             if (val.startsWith('custom_')) {
                 const key = val.replace('custom_', '');
-                data = customTemplates[key];
+                const stored = customTemplates[key];
+                // 相容舊格式（只有 array）和新格式（含 margins）
+                if (Array.isArray(stored)) {
+                    data = stored;
+                } else if (stored && stored.comps) {
+                    data = stored.comps;
+                    margins = stored.margins;
+                }
             } else {
                 const key = val.replace('default_', '');
                 data = defaultTemplates[key];
@@ -544,6 +615,14 @@
             data.forEach(compData => {
                 createComponentPanel(compData);
             });
+
+            // 還原邊距（若有記錄）
+            if (margins) {
+                Object.keys(margins).forEach(k => {
+                    const el = document.getElementById(k);
+                    if (el) el.value = margins[k];
+                });
+            }
         }
 
         function updateUI() {
@@ -766,7 +845,6 @@
                 });
                 listEl.innerHTML = htmlStr;
 
-                // 綁定拖曳事件
                 const listItems = listEl.querySelectorAll('li[draggable="true"]');
                 listItems.forEach(item => {
                     item.addEventListener('dragstart', handleDragStart);
@@ -791,7 +869,6 @@
             const overLimit = usedA > 70 || usedB > 153;
             if(warningEl) warningEl.style.display = overLimit ? 'block' : 'none';
             
-            // 停用所有輸出按鈕
             ['btnPrintA', 'btnDownloadA', 'btnPrintB', 'btnDownloadB', 'btnPrintC', 'btnDownloadC'].forEach(id => {
                 const btn = document.getElementById(id);
                 if(btn) btn.disabled = overLimit;
@@ -831,7 +908,7 @@
             } else if (type === 'B') {
                 cols = B_COLS; rows = B_ROWS;
                 cellW = B_W; cellH = B_H;
-                marginL = getSafeValue('mL_B', 6) * PX_PER_MM; // 已經幫您還原預設左 6 
+                marginL = getSafeValue('mL_B', 6) * PX_PER_MM;
                 marginT = getSafeValue('mT_B', 11) * PX_PER_MM;
                 gapX = getSafeValue('gX_B', 0) * PX_PER_MM;
                 gapY = getSafeValue('gY_B', 0) * PX_PER_MM;
@@ -846,14 +923,12 @@
                 gapX = getSafeValue(isA ? 'gX_A' : 'gX_B', 0) * PX_PER_MM;
                 gapY = getSafeValue(isA ? 'gY_A' : 'gY_B', 0) * PX_PER_MM;
                 
-                // 畫校正專用圖
                 oCtx.fillStyle = '#334155';
                 oCtx.font = `bold 60px ${FONT_FAMILY}`;
                 oCtx.fillText(`[印表機校正紙] 適用紙張: ${isA ? '大格底紙' : '小格透明紙'}`, 100, 100);
                 oCtx.font = `40px ${FONT_FAMILY}`;
                 oCtx.fillText(`※ 請用一般A4紙列印後，疊在貼紙上對光檢查格線是否吻合。`, 100, 160);
 
-                // 畫紅線比例尺
                 oCtx.fillStyle = '#ef4444'; 
                 oCtx.fillRect(100, 250, 100 * PX_PER_MM, 8); 
                 for(let i=0; i<=10; i++) {
@@ -892,7 +967,7 @@
                         validComps.forEach(comp => drawList.push(comp));
                     }
                 });
-                if (drawList.length === 0) return null; // 清單裡沒這個紙的東西
+                if (drawList.length === 0) return null;
             } else {
                 const activeComps = getActiveComponents().filter(c => c.target === type);
                 if (activeComps.length === 0) return null;
@@ -1064,16 +1139,98 @@
         }
 
         // ==========================================
+        // ✅ 修法一 + 修法二：強化版列印函式
+        // ==========================================
+        function buildPrintIframe(dataUrl, nameLabel) {
+            let iframe = document.getElementById('printIframe');
+            if (!iframe) {
+                iframe = document.createElement('iframe');
+                iframe.id = 'printIframe';
+                iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:0;height:0;border:none;visibility:hidden;';
+                document.body.appendChild(iframe);
+            }
+
+            const doc = iframe.contentWindow.document;
+            doc.open();
+            doc.write(`<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>列印 ${nameLabel}</title>
+    <style>
+        /* ✅ 修法一：鎖死 A4 實體尺寸，徹底防止印表機縮放 */
+        @page {
+            size: 210mm 297mm;
+            margin: 0mm;
+        }
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 210mm;
+            height: 297mm;
+            overflow: hidden;
+            background: #ffffff;
+        }
+        img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 210mm;
+            height: 297mm;
+            display: block;
+            /* 強制印表機不要偷偷壓縮圖片顏色 */
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+            color-adjust: exact;
+        }
+        /* 列印前提示條（螢幕看得到、列印看不到） */
+        .print-hint {
+            display: block;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #fef3c7;
+            border-top: 2px solid #f59e0b;
+            padding: 10px 16px;
+            font-size: 13px;
+            font-family: sans-serif;
+            font-weight: bold;
+            color: #92400e;
+            text-align: center;
+            z-index: 9999;
+        }
+        @media print {
+            .print-hint { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+    <img src="${dataUrl}" />
+    <div class="print-hint">
+        ⚠️ 請確認列印對話框：縮放比例 = <span style="color:#b91c1c">100%（實際大小）</span>　｜　紙張 = A4　｜　邊距 = 無
+    </div>
+    <script>
+        window.addEventListener('load', function() {
+            setTimeout(function() { window.print(); }, 600);
+        });
+    <\/script>
+</body>
+</html>`);
+            doc.close();
+        }
+
+        // ==========================================
         // 執行輸出：直接列印 (Print) 或 下載圖檔 (Download)
         // ==========================================
         window.executeOutput = function(type, action) {
-            const canvas = generateCanvas(type);
-            if (!canvas) {
+            const offCanvas = generateCanvas(type);
+            if (!offCanvas) {
                 alert(`請確認目前畫面或清單中，有屬於【${type==='A'?'大格底字':(type==='B'?'小格透明':'學習單')}】的內容！`);
                 return;
             }
 
-            const dataUrl = canvas.toDataURL('image/png');
+            const dataUrl = offCanvas.toDataURL('image/png');
             let nameLabel = '輸出';
             if(type==='A') nameLabel='底字'; else if(type==='B') nameLabel='透明'; else nameLabel='學習單';
 
@@ -1082,59 +1239,34 @@
                 link.download = `標籤列印_${nameLabel}_${Date.now()}.png`;
                 link.href = dataUrl;
                 link.click();
-            } else if (action === 'print') {
-                // 利用隱藏的 iframe 呼叫瀏覽器原生列印 (100% 零誤差)
-                let iframe = document.getElementById('printIframe');
-                if (!iframe) {
-                    iframe = document.createElement('iframe');
-                    iframe.id = 'printIframe';
-                    iframe.style.display = 'none';
-                    document.body.appendChild(iframe);
-                }
-                
-                const doc = iframe.contentWindow.document;
-                doc.open();
-                doc.write(`
-                    <!DOCTYPE html>
-                    <html>
-                    <head>
-                        <title>列印 ${nameLabel}</title>
-                        <style>
-                            @page { size: A4; margin: 0; }
-                            body { margin: 0; padding: 0; background: white; }
-                            /* 強制圖片等於 A4 實體尺寸，杜絕印表機軟體亂縮放 */
-                            img { width: 210mm; height: 297mm; display: block; margin: 0; padding: 0; }
-                        </style>
-                    </head>
-                    <body>
-                        <img src="${dataUrl}" onload="setTimeout(() => { window.print(); }, 300);" />
-                    </body>
-                    </html>
-                `);
-                doc.close();
-            }
-        }
 
-        window.printCalibration = function(type) {
-            const canvas = generateCanvas(`Calib_${type}`);
-            const dataUrl = canvas.toDataURL('image/png');
-            let iframe = document.getElementById('printIframe');
-            if (!iframe) {
-                iframe = document.createElement('iframe');
-                iframe.id = 'printIframe';
-                iframe.style.display = 'none';
-                document.body.appendChild(iframe);
+            } else if (action === 'print') {
+                // ✅ 修法二：列印前確認對話框，提醒縮放比例
+                const typeLabel = type === 'A' ? '🌸 底字大格貼紙' : (type === 'B' ? '💦 透明小格貼紙' : '📝 學習單');
+                const confirmed = confirm(
+                    `即將列印：${typeLabel}\n\n` +
+                    `────────────────────────\n` +
+                    `⚠️  列印前請務必確認：\n\n` +
+                    `  ✅  縮放比例 = 100%（或「實際大小」）\n` +
+                    `  ✅  紙張大小 = A4\n` +
+                    `  ✅  邊距 = 無（或全部設為 0）\n\n` +
+                    `────────────────────────\n` +
+                    `若縮放不是 100%，透明貼紙的位置一定會跑掉！\n\n` +
+                    `確認後按「確定」開啟列印對話框。`
+                );
+                if (!confirmed) return;
+
+                buildPrintIframe(dataUrl, nameLabel);
             }
-            const doc = iframe.contentWindow.document;
-            doc.open();
-            doc.write(`
-                <html>
-                <head><style>@page{size:A4; margin:0;} body{margin:0;} img{width:210mm;height:297mm;display:block;}</style></head>
-                <body><img src="${dataUrl}" onload="setTimeout(() => { window.print(); }, 300);" /></body>
-                </html>
-            `);
-            doc.close();
-        }
+        };
+
+        // ✅ 修法一：校正紙列印也套用強化版 CSS
+        window.printCalibration = function(type) {
+            const offCanvas = generateCanvas(`Calib_${type}`);
+            const dataUrl = offCanvas.toDataURL('image/png');
+            const nameLabel = type === 'A' ? '底字校正' : '透明校正';
+            buildPrintIframe(dataUrl, nameLabel);
+        };
 
         // 初始執行
         updateTemplateDropdown('default_老');
