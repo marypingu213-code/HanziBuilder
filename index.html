@@ -77,6 +77,23 @@
                     <li class="text-gray-400 italic text-center py-2 text-xs">目前清單是空的。<br>若直接執行列印，將印出目前畫面上的字形。</li>
                 </ul>
 
+                <!-- 🧑‍🎓 學生人數倍增器 -->
+                <div class="bg-violet-50 border border-violet-200 rounded-lg px-3 py-2 mb-2">
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm font-bold text-violet-800 whitespace-nowrap">🧑‍🎓 學生人數</span>
+                        <button type="button" onclick="changeStudents(-1)" class="w-7 h-7 rounded-full bg-violet-200 hover:bg-violet-300 text-violet-900 font-bold text-base flex items-center justify-center leading-none">−</button>
+                        <input type="number" id="studentCount" value="1" min="1" max="20"
+                            class="w-12 border border-violet-300 rounded text-center font-bold text-violet-900 bg-white focus:ring-violet-400"
+                            oninput="renderQueueUI()">
+                        <button type="button" onclick="changeStudents(1)" class="w-7 h-7 rounded-full bg-violet-200 hover:bg-violet-300 text-violet-900 font-bold text-base flex items-center justify-center leading-none">＋</button>
+                        <span class="text-xs text-violet-600 font-bold">位</span>
+                        <span class="text-[10px] text-violet-500 ml-auto">列印時自動乘以此倍數</span>
+                    </div>
+                    <p id="studentHint" class="text-[10px] text-violet-600 mt-1 hidden">
+                        ✅ 目前清單數量會自動 ×<span id="studentHintNum">1</span>，用量已換算如下。
+                    </p>
+                </div>
+
                 <div class="space-y-2 pt-2 border-t border-indigo-200">
                     <div>
                         <div class="flex justify-between text-xs font-bold mb-1">
@@ -164,7 +181,10 @@
 
         <!-- 列印與下載輸出區 -->
         <div class="p-3 bg-slate-100 border-t border-slate-300 z-20 shadow-[0_-4px_10px_-1px_rgba(0,0,0,0.1)]">
-            <h3 class="text-sm font-bold text-slate-800 mb-2 px-1">輸出操作區 (強烈建議使用直接列印)</h3>
+            <div class="flex items-center justify-between mb-2 px-1">
+                <h3 class="text-sm font-bold text-slate-800">輸出操作區 (強烈建議使用直接列印)</h3>
+                <span id="outputStudentBadge" class="text-xs bg-violet-100 text-violet-800 font-bold px-2 py-0.5 rounded-full border border-violet-200">👤 1 位學生</span>
+            </div>
             
             <!-- ✅ 修法新增：列印提示橫幅 -->
             <div class="mb-2 bg-yellow-50 border border-yellow-300 rounded-lg px-3 py-2 text-[11px] text-yellow-800 font-bold flex items-start gap-2">
@@ -815,30 +835,67 @@
             renderQueueUI();
         });
 
+        // ✅ 學生人數加減按鈕
+        window.changeStudents = function(delta) {
+            const el = document.getElementById('studentCount');
+            const val = Math.min(20, Math.max(1, (parseInt(el.value) || 1) + delta));
+            el.value = val;
+            renderQueueUI();
+        };
+
+        function getStudentCount() {
+            return Math.max(1, parseInt(document.getElementById('studentCount').value) || 1);
+        }
+
         function renderQueueUI() {
             let usedA = 0;
             let usedB = 0;
+            const students = getStudentCount();
             const listEl = document.getElementById('queueList');
             const warningEl = document.getElementById('queueWarning');
-            
+            const hintEl = document.getElementById('studentHint');
+            const hintNum = document.getElementById('studentHintNum');
+            const badge = document.getElementById('outputStudentBadge');
+
+            // 更新學生徽章
+            if (badge) badge.textContent = `👤 ${students} 位學生`;
+
             if (printQueue.length === 0) {
                 listEl.innerHTML = '<li class="text-gray-400 italic text-center py-2 text-xs">目前清單是空的。<br>若直接執行列印，將印出目前畫面上的字形。</li>';
+                if (hintEl) hintEl.classList.add('hidden');
             } else {
+                // 顯示學生倍數提示
+                if (hintEl) {
+                    if (students > 1) {
+                        hintEl.classList.remove('hidden');
+                        if (hintNum) hintNum.textContent = students;
+                    } else {
+                        hintEl.classList.add('hidden');
+                    }
+                }
+
                 let htmlStr = '';
                 printQueue.forEach(item => {
-                    const aCount = item.comps.filter(c => c.target === 'A').length * item.qty;
-                    const bCount = item.comps.filter(c => c.target === 'B').length * item.qty;
-                    usedA += aCount;
-                    usedB += bCount;
+                    // 清單項目顯示「單份」數量，用量欄顯示「乘以學生數」後的結果
+                    const aBase = item.comps.filter(c => c.target === 'A').length * item.qty;
+                    const bBase = item.comps.filter(c => c.target === 'B').length * item.qty;
+                    const aTotal = aBase * students;
+                    const bTotal = bBase * students;
+                    usedA += aTotal;
+                    usedB += bTotal;
+
+                    const studentSuffix = students > 1
+                        ? `<span class="text-violet-500 font-bold ml-1">×${students}=${item.qty * students}份</span>`
+                        : '';
                     
                     htmlStr += `
                     <li draggable="true" data-id="${item.id}" class="flex justify-between items-center bg-white p-2 rounded shadow-sm border border-indigo-100 cursor-move hover:shadow-md hover:border-indigo-300 transition-all">
-                        <div class="flex items-center gap-2">
-                            <span class="text-gray-300 hover:text-gray-500" title="拖曳以排序">☰</span>
-                            <span class="font-bold text-gray-700">${item.name} <span class="text-indigo-600 font-normal">x ${item.qty}</span></span>
+                        <div class="flex items-center gap-2 min-w-0">
+                            <span class="text-gray-300 hover:text-gray-500 flex-shrink-0" title="拖曳以排序">☰</span>
+                            <span class="font-bold text-gray-700 truncate">${item.name} <span class="text-indigo-600 font-normal">x ${item.qty}</span>${studentSuffix}</span>
                         </div>
-                        <div class="flex items-center gap-2">
-                            <span class="text-[10px] text-gray-400">底${aCount}/透${bCount}</span>
+                        <div class="flex items-center gap-2 flex-shrink-0">
+                            <span class="text-[10px] text-gray-400">底${aTotal}/透${bTotal}</span>
                             <button type="button" onclick="removeQueue('${item.id}')" class="text-red-400 hover:text-red-600 font-bold bg-red-50 rounded px-2 py-0.5 pointer-events-auto cursor-pointer">刪除</button>
                         </div>
                     </li>`;
@@ -958,12 +1015,15 @@
 
             // 一般貼紙列印排版
             const totalCells = cols * rows;
+            const students = getStudentCount();
             let drawList = [];
 
             if (printQueue.length > 0) {
                 printQueue.forEach(item => {
                     const validComps = item.comps.filter(c => c.target === type);
-                    for (let i = 0; i < item.qty; i++) {
+                    // ✅ 每個項目的數量乘以學生人數
+                    const effectiveQty = item.qty * students;
+                    for (let i = 0; i < effectiveQty; i++) {
                         validComps.forEach(comp => drawList.push(comp));
                     }
                 });
@@ -1243,9 +1303,12 @@
             } else if (action === 'print') {
                 // ✅ 修法二：列印前確認對話框，提醒縮放比例
                 const typeLabel = type === 'A' ? '🌸 底字大格貼紙' : (type === 'B' ? '💦 透明小格貼紙' : '📝 學習單');
+                const students = getStudentCount();
+                const studentLine = students > 1 ? `  👥  學生人數 = ${students} 位（數量已自動 ×${students}）\n\n` : '';
                 const confirmed = confirm(
                     `即將列印：${typeLabel}\n\n` +
                     `────────────────────────\n` +
+                    studentLine +
                     `⚠️  列印前請務必確認：\n\n` +
                     `  ✅  縮放比例 = 100%（或「實際大小」）\n` +
                     `  ✅  紙張大小 = A4\n` +
