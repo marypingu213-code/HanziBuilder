@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>漢字部件標籤產生器 - 網頁直印精準版</title>
+    <title>國字部件標籤產生器 - 網頁直印精準版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap');
@@ -22,7 +22,7 @@
     <div class="w-full md:w-[45%] lg:w-[35%] bg-white shadow-xl flex flex-col h-full z-10">
         <div class="p-4 bg-indigo-700 text-white shadow-md z-20 flex justify-between items-center">
             <div>
-                <h1 class="text-xl font-bold tracking-wider">漢字部件標籤產生器</h1>
+                <h1 class="text-xl font-bold tracking-wider">國字部件標籤產生器</h1>
                 <p class="text-xs text-indigo-200 mt-1">內建網頁直印引擎 (100% 零縮放)</p>
             </div>
         </div>
@@ -222,7 +222,25 @@
 
                 <!-- 學習單 C 輸出 -->
                 <div class="bg-emerald-50 p-2 rounded-lg border border-emerald-200">
-                    <div class="text-emerald-800 font-bold text-[13px] mb-1.5 px-1">📝 學習單練習紙 (A4)</div>
+                    <div class="text-emerald-800 font-bold text-[13px] mb-2 px-1">📝 學習單練習紙 (A4)</div>
+
+                    <!-- 分組切換 -->
+                    <div class="flex bg-white rounded-lg border border-emerald-200 overflow-hidden mb-2 shadow-inner">
+                        <button type="button" id="btnModeC_low"
+                            onclick="setWorksheetMode('low')"
+                            class="flex-1 py-1.5 text-[12px] font-bold transition-colors bg-emerald-600 text-white">
+                            🌱 低組（有視覺提示）
+                        </button>
+                        <button type="button" id="btnModeC_high"
+                            onclick="setWorksheetMode('high')"
+                            class="flex-1 py-1.5 text-[12px] font-bold transition-colors bg-white text-emerald-700">
+                            🌟 高組（無提示＋造詞）
+                        </button>
+                    </div>
+                    <p id="worksheetModeHint" class="text-[10px] text-emerald-600 mb-2 px-1">
+                        🌱 低組：顯示部件示意圖 → 貼一貼 → 寫一寫
+                    </p>
+
                     <div class="flex gap-2">
                         <button type="button" onclick="executeOutput('C', 'print')" id="btnPrintC" class="flex-[2] bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-400 text-white font-bold py-2 px-2 rounded shadow transition-colors text-sm">
                             🖨️ 網頁直接列印
@@ -1071,25 +1089,108 @@
             return offCanvas;
         }
 
-        // 學習單渲染引擎
+        // ✅ 學習單模式切換
+        let worksheetMode = 'low'; // 'low' 低組 | 'high' 高組
+
+        window.setWorksheetMode = function(mode) {
+            worksheetMode = mode;
+            const btnLow  = document.getElementById('btnModeC_low');
+            const btnHigh = document.getElementById('btnModeC_high');
+            const hint    = document.getElementById('worksheetModeHint');
+            if (mode === 'low') {
+                btnLow.className  = 'flex-1 py-1.5 text-[12px] font-bold transition-colors bg-emerald-600 text-white';
+                btnHigh.className = 'flex-1 py-1.5 text-[12px] font-bold transition-colors bg-white text-emerald-700';
+                hint.textContent  = '🌱 低組：顯示部件示意圖 → 貼一貼 → 寫一寫';
+            } else {
+                btnLow.className  = 'flex-1 py-1.5 text-[12px] font-bold transition-colors bg-white text-emerald-700';
+                btnHigh.className = 'flex-1 py-1.5 text-[12px] font-bold transition-colors bg-emerald-600 text-white';
+                hint.textContent  = '🌟 高組：貼一貼 → 寫兩次 → 自行造詞（兩格）';
+            }
+        };
+
+        // 共用：畫貼一貼方框
+        function drawPasteBox(oCtx, x, y, size) {
+            oCtx.strokeStyle = '#cbd5e1';
+            oCtx.lineWidth = 6;
+            oCtx.strokeRect(x, y, size, size);
+            oCtx.beginPath(); oCtx.setLineDash([15, 15]); oCtx.lineWidth = 3;
+            oCtx.moveTo(x + size/2, y);    oCtx.lineTo(x + size/2, y + size);
+            oCtx.moveTo(x, y + size/2);    oCtx.lineTo(x + size, y + size/2);
+            oCtx.stroke(); oCtx.setLineDash([]);
+        }
+
+        // 共用：畫寫字格（含淡字）
+        function drawWriteBox(oCtx, x, y, size, ghostChar, label) {
+            oCtx.strokeStyle = '#cbd5e1';
+            oCtx.lineWidth = 6;
+            oCtx.strokeRect(x, y, size, size);
+            oCtx.beginPath(); oCtx.setLineDash([15, 15]); oCtx.lineWidth = 3;
+            oCtx.moveTo(x + size/2, y);    oCtx.lineTo(x + size/2, y + size);
+            oCtx.moveTo(x, y + size/2);    oCtx.lineTo(x + size, y + size/2);
+            oCtx.stroke(); oCtx.setLineDash([]);
+            if (ghostChar) {
+                oCtx.fillStyle = 'rgba(200,200,200,0.22)';
+                oCtx.font = `${size * 0.8}px ${FONT_FAMILY}`;
+                oCtx.textAlign = 'center';
+                oCtx.fillText(ghostChar, x + size/2, y + size/2 + 20);
+            }
+            if (label) {
+                oCtx.fillStyle = '#94a3b8';
+                oCtx.font = `35px ${FONT_FAMILY}`;
+                oCtx.textAlign = 'center';
+                oCtx.fillText(label, x + size/2, y - 30);
+            }
+        }
+
+        // 共用：畫造詞格（含中間分隔線，分成左右兩字格）
+        function drawWordBox(oCtx, x, y, w, h, label) {
+            // 外框
+            oCtx.strokeStyle = '#a5b4fc';
+            oCtx.lineWidth = 5;
+            oCtx.strokeRect(x, y, w, h);
+            // 中間垂直分隔線
+            oCtx.beginPath();
+            oCtx.strokeStyle = '#c7d2fe';
+            oCtx.lineWidth = 3;
+            oCtx.setLineDash([10, 8]);
+            oCtx.moveTo(x + w/2, y);
+            oCtx.lineTo(x + w/2, y + h);
+            oCtx.stroke();
+            oCtx.setLineDash([]);
+            if (label) {
+                oCtx.fillStyle = '#818cf8';
+                oCtx.font = `bold 35px ${FONT_FAMILY}`;
+                oCtx.textAlign = 'center';
+                oCtx.fillText(label, x + w/2, y - 30);
+            }
+        }
+
+        // 學習單渲染引擎（低組 / 高組 共用入口）
         function renderWorksheet(oCtx, offCanvas) {
+            const isHigh = worksheetMode === 'high';
+
+            // ---- 標題 ----
             oCtx.fillStyle = '#334155';
-            oCtx.font = `bold 120px ${FONT_FAMILY}`;
+            oCtx.font = `bold 110px ${FONT_FAMILY}`;
             oCtx.textAlign = 'center';
             oCtx.textBaseline = 'top';
-            oCtx.fillText('漢字部件拼貼學習單', 1240, 150);
+            oCtx.fillText('國字部件拼貼學習單', 1240, 100);
 
-            oCtx.font = `45px ${FONT_FAMILY}`;
+            oCtx.font = `42px ${FONT_FAMILY}`;
             oCtx.fillStyle = '#64748b';
-            oCtx.fillText('請找出對應的底貼與透明貼，疊合在「貼一貼」框內，並在「寫一寫」練習筆順。', 1240, 320);
+            if (isHigh) {
+                oCtx.fillText('請將部件貼紙疊合完成國字，再寫兩次，最後自行造詞填入空格。', 1240, 265);
+            } else {
+                oCtx.fillText('請找出對應的底貼與透明貼，疊合在「貼一貼」框內，並在「寫一寫」練習筆順。', 1240, 265);
+            }
 
+            // ---- 取得列印清單 ----
             let itemsToPrint = [];
             if (printQueue.length > 0) {
-                itemsToPrint = printQueue; 
+                itemsToPrint = printQueue;
             } else {
                 const activeComps = getActiveComponents();
                 if (activeComps.length === 0) return null;
-                
                 const selectEl = document.getElementById('templateSelect');
                 let name = selectEl.options[selectEl.selectedIndex].text.replace(/🔹 |⭐ |✨ | \(.*\)/g, '');
                 if (selectEl.value.includes('自訂') || selectEl.value.includes('default_自訂')) {
@@ -1098,102 +1199,121 @@
                 itemsToPrint = [{ name: name, comps: activeComps }];
             }
 
-            let currentY = 550;
-            const rowHeight = 420;
+            // ---- 版面參數 ----
+            const pasteSize = 380;
+            const writeSize = 380;
+            const wordW = 380, wordH = 270; // 造詞格（高組）
+            const rowHeight = isHigh ? 520 : 430;
+            let currentY = 440;
 
             itemsToPrint.forEach((item) => {
-                if (currentY > 3200) return; 
+                if (currentY + rowHeight > 3450) return;
 
                 const name = item.name;
                 const compsA = item.comps.filter(c => c.target === 'A');
                 const compsB = item.comps.filter(c => c.target === 'B');
+                const midY   = currentY + rowHeight / 2;
 
+                // 字名稱標籤
                 oCtx.fillStyle = '#1e293b';
-                oCtx.font = `bold 100px ${FONT_FAMILY}`;
-                oCtx.textAlign = 'left';
+                oCtx.font = `bold 95px ${FONT_FAMILY}`;
+                oCtx.textAlign = 'center';
                 oCtx.textBaseline = 'middle';
-                oCtx.fillText(name.length > 5 ? name.substring(0,4)+'..' : name, 150, currentY + rowHeight/2);
+                oCtx.fillText(name.length > 3 ? name.substring(0,2)+'..' : name, 130, midY);
 
-                const aX = 450;
-                const aY = currentY + (rowHeight - A_H)/2;
-                oCtx.strokeStyle = '#fbcfe8'; 
-                oCtx.lineWidth = 6;
-                oCtx.strokeRect(aX, aY, A_W, A_H);
-                
-                compsA.forEach(comp => {
-                    if (comp.center) {
-                        drawComponent(oCtx, comp, aX + A_W/2, aY + A_H/2);
-                    } else {
-                        drawComponent(oCtx, comp, aX + A_W/2 + comp.x, aY + A_H/2 + comp.y);
-                    }
-                });
+                let curX = 240;
 
-                const plusX = aX + A_W + 70;
-                oCtx.fillStyle = '#94a3b8';
-                oCtx.font = `bold 80px sans-serif`;
-                oCtx.textAlign = 'center';
-                oCtx.fillText('+', plusX, currentY + rowHeight/2);
+                if (!isHigh) {
+                    // ==== 低組：[底貼示意] + [透明貼示意] = [貼一貼] [寫一寫] ====
+                    const aY = currentY + (rowHeight - A_H) / 2;
+                    oCtx.strokeStyle = '#fbcfe8';
+                    oCtx.lineWidth = 6;
+                    oCtx.strokeRect(curX, aY, A_W, A_H);
+                    compsA.forEach(comp => {
+                        const cx = curX + A_W/2 + (comp.center ? 0 : comp.x);
+                        const cy = aY  + A_H/2 + (comp.center ? 0 : comp.y);
+                        drawComponent(oCtx, comp, cx, cy);
+                    });
+                    oCtx.fillStyle = '#64748b';
+                    oCtx.font = `35px ${FONT_FAMILY}`;
+                    oCtx.textAlign = 'center';
+                    oCtx.fillText('底貼', curX + A_W/2, aY - 30);
+                    curX += A_W + 40;
 
-                const bX = plusX + 70;
-                const bY = currentY + (rowHeight - B_H)/2;
-                oCtx.strokeStyle = '#bae6fd'; 
-                oCtx.lineWidth = 6;
-                oCtx.strokeRect(bX, bY, B_W, B_H);
+                    oCtx.fillStyle = '#94a3b8';
+                    oCtx.font = `bold 70px sans-serif`;
+                    oCtx.fillText('+', curX + 30, midY);
+                    curX += 80;
 
-                compsB.forEach(comp => {
-                    if (comp.center) {
-                        drawComponent(oCtx, comp, bX + B_W/2, bY + B_H/2);
-                    } else {
-                        drawComponent(oCtx, comp, bX + B_W/2 + comp.x, bY + B_H/2 + comp.y);
-                    }
-                });
+                    const bY = currentY + (rowHeight - B_H) / 2;
+                    oCtx.strokeStyle = '#bae6fd';
+                    oCtx.lineWidth = 6;
+                    oCtx.strokeRect(curX, bY, B_W, B_H);
+                    compsB.forEach(comp => {
+                        const cx = curX + B_W/2 + (comp.center ? 0 : comp.x);
+                        const cy = bY  + B_H/2 + (comp.center ? 0 : comp.y);
+                        drawComponent(oCtx, comp, cx, cy);
+                    });
+                    oCtx.fillStyle = '#64748b';
+                    oCtx.font = `35px ${FONT_FAMILY}`;
+                    oCtx.fillText('透明貼', curX + B_W/2, bY - 30);
+                    curX += B_W + 40;
 
-                const eqX = bX + B_W + 70;
-                oCtx.fillStyle = '#94a3b8';
-                oCtx.font = `bold 80px sans-serif`;
-                oCtx.textAlign = 'center';
-                oCtx.fillText('=', eqX, currentY + rowHeight/2);
+                    oCtx.fillStyle = '#94a3b8';
+                    oCtx.font = `bold 70px sans-serif`;
+                    oCtx.fillText('=', curX + 30, midY);
+                    curX += 80;
 
-                const pasteSize = 400; 
-                const pasteX = eqX + 70;
-                const pasteY = currentY + (rowHeight - pasteSize)/2;
+                    // 貼一貼
+                    const pasteY = currentY + (rowHeight - pasteSize) / 2;
+                    drawPasteBox(oCtx, curX, pasteY, pasteSize);
+                    oCtx.fillStyle = '#64748b';
+                    oCtx.font = `35px ${FONT_FAMILY}`;
+                    oCtx.textAlign = 'center';
+                    oCtx.fillText('貼一貼', curX + pasteSize/2, pasteY - 30);
+                    curX += pasteSize + 50;
 
-                oCtx.strokeStyle = '#cbd5e1'; 
-                oCtx.lineWidth = 6;
-                oCtx.strokeRect(pasteX, pasteY, pasteSize, pasteSize);
-                
-                oCtx.beginPath(); oCtx.setLineDash([15, 15]); oCtx.lineWidth = 3;
-                oCtx.moveTo(pasteX + pasteSize/2, pasteY); oCtx.lineTo(pasteX + pasteSize/2, pasteY + pasteSize);
-                oCtx.moveTo(pasteX, pasteY + pasteSize/2); oCtx.lineTo(pasteX + pasteSize, pasteY + pasteSize/2);
-                oCtx.stroke(); oCtx.setLineDash([]);
+                    // 寫一寫（含淡字）
+                    const writeY = currentY + (rowHeight - writeSize) / 2;
+                    const ghost = (name && name.length === 1 && !name.includes('+')) ? name : null;
+                    drawWriteBox(oCtx, curX, writeY, writeSize, ghost, '寫一寫');
 
-                oCtx.fillStyle = '#64748b';
-                oCtx.font = `35px ${FONT_FAMILY}`;
-                oCtx.fillText('貼一貼', pasteX + pasteSize/2, pasteY - 30);
+                } else {
+                    // ==== 高組：[貼一貼] [寫①] [寫②] [造詞格1] [造詞格2] ====
+                    const pasteY = currentY + (rowHeight - pasteSize) / 2;
+                    drawPasteBox(oCtx, curX, pasteY, pasteSize);
+                    oCtx.fillStyle = '#64748b';
+                    oCtx.font = `35px ${FONT_FAMILY}`;
+                    oCtx.textAlign = 'center';
+                    oCtx.fillText('貼一貼', curX + pasteSize/2, pasteY - 30);
+                    curX += pasteSize + 50;
 
-                const writeX = pasteX + pasteSize + 80;
-                const writeSize = 400;
-                const writeY = currentY + (rowHeight - writeSize)/2;
+                    // 寫一（含淡字）
+                    const writeY = currentY + (rowHeight - writeSize) / 2;
+                    const ghost = (name && name.length === 1 && !name.includes('+')) ? name : null;
+                    drawWriteBox(oCtx, curX, writeY, writeSize, ghost, '寫一寫①');
+                    curX += writeSize + 35;
 
-                oCtx.strokeStyle = '#cbd5e1';
-                oCtx.lineWidth = 6;
-                oCtx.strokeRect(writeX, writeY, writeSize, writeSize);
-                
-                oCtx.beginPath(); oCtx.setLineDash([15, 15]); oCtx.lineWidth = 3;
-                oCtx.moveTo(writeX + writeSize/2, writeY); oCtx.lineTo(writeX + writeSize/2, writeY + writeSize);
-                oCtx.moveTo(writeX, writeY + writeSize/2); oCtx.lineTo(writeX + writeSize, writeY + writeSize/2);
-                oCtx.stroke(); oCtx.setLineDash([]);
+                    // 寫二（不含淡字提示）
+                    drawWriteBox(oCtx, curX, writeY, writeSize, null, '寫一寫②');
+                    curX += writeSize + 55;
 
-                oCtx.fillStyle = '#64748b';
-                oCtx.fillText('寫一寫', writeX + writeSize/2, writeY - 30);
+                    // 造詞格：橫式長方格，寬 = writeSize×2，高 = writeSize
+                    const wordBoxW = writeSize * 2;
+                    const wordBoxH = writeSize;
+                    const wordBoxY = currentY + (rowHeight - wordBoxH) / 2;
 
-                if (name && name.length === 1 && !name.includes('+')) {
-                    oCtx.fillStyle = 'rgba(200, 200, 200, 0.25)';
-                    oCtx.font = `${writeSize * 0.8}px ${FONT_FAMILY}`;
-                    oCtx.fillText(name, writeX + writeSize/2, writeY + writeSize/2 + 20); 
+                    // 標題
+                    oCtx.fillStyle = '#818cf8';
+                    oCtx.font = `bold 38px ${FONT_FAMILY}`;
+                    oCtx.textAlign = 'center';
+                    oCtx.fillText('✏️ 我會造詞', curX + wordBoxW/2, wordBoxY - 45);
+
+                    // 單一橫式造詞格
+                    drawWordBox(oCtx, curX, wordBoxY, wordBoxW, wordBoxH, null);
                 }
 
-                currentY += rowHeight + 100; 
+                currentY += rowHeight + 60;
             });
             return offCanvas;
         }
