@@ -48,6 +48,31 @@
 
             <hr class="border-gray-200">
 
+            <!-- 📦 批次上傳部件 -->
+            <div class="bg-cyan-50 p-3 rounded-lg border border-cyan-200 shadow-sm">
+                <label class="block text-sm font-bold text-cyan-900 mb-2">📦 一次上傳一個生字的所有部件</label>
+                <input type="text" id="batchCharName"
+                    class="w-full p-2 mb-2 border border-cyan-300 rounded-md bg-white text-sm font-bold focus:ring-cyan-500"
+                    placeholder="先輸入生字名稱，例如：海">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2 text-xs">
+                    <label class="flex items-center gap-1.5 bg-white px-2 py-1.5 rounded border border-cyan-200 cursor-pointer">
+                        <input type="checkbox" id="batchClearExisting" checked class="accent-cyan-600">
+                        上傳前清空目前部件
+                    </label>
+                    <label class="flex items-center gap-1.5 bg-white px-2 py-1.5 rounded border border-cyan-200 cursor-pointer">
+                        <input type="checkbox" id="batchFirstAsBase" checked class="accent-cyan-600">
+                        第一張設為底紙，其餘透明紙
+                    </label>
+                </div>
+                <label class="block w-full bg-cyan-600 hover:bg-cyan-700 text-white text-center font-bold py-2.5 rounded-lg shadow cursor-pointer transition-colors">
+                    🖼️ 選擇多張部件圖片
+                    <input type="file" id="batchFiles" accept="image/*" multiple class="hidden">
+                </label>
+                <p id="batchUploadStatus" class="text-[10px] text-cyan-700 mt-2 leading-relaxed">
+                    可一次選取多張圖片。系統會依檔名排序，建議命名為 01_底.png、02_部件.png、03_部件.png；圖片以透明背景 PNG 效果最佳。
+                </p>
+            </div>
+
             <!-- 部件控制區 -->
             <div id="componentsContainer" class="space-y-3">
                 <!-- 動態部件會插入這裡 -->
@@ -106,14 +131,14 @@
                     </div>
                     <div>
                         <div class="flex justify-between text-xs font-bold mb-1">
-                            <span class="text-blue-700">透明紙用量 (153格)</span>
-                            <span id="statusB" class="text-blue-700">0 / 153</span>
+                            <span class="text-blue-700">透明紙用量 (A4自由排版)</span>
+                            <span id="statusB" class="text-blue-700">0 張</span>
                         </div>
                         <div class="w-full bg-gray-200 rounded-full h-1.5">
                             <div id="barB" class="bg-blue-500 h-1.5 rounded-full transition-all" style="width: 0%"></div>
                         </div>
                     </div>
-                    <p id="queueWarning" class="text-xs text-red-600 font-bold hidden mt-1">⚠️ 警告：超過紙張格數限制，請刪除部分項目。</p>
+                    <p id="queueWarning" class="text-xs text-red-600 font-bold hidden mt-1">⚠️ 警告：白色底貼超過單張 70 格；透明紙會自動換頁。</p>
                 </div>
             </div>
 
@@ -143,12 +168,12 @@
                         <!-- B紙張設定 -->
                         <div class="space-y-2 pb-2">
                             <div class="flex justify-between items-center mb-1">
-                                <p class="font-bold text-blue-700">💦 透明紙張 (153格)</p>
+                                <p class="font-bold text-blue-700">💦 透明紙張 (A4未切割)</p>
                                 <button type="button" onclick="printCalibration('B')" class="bg-blue-100 hover:bg-blue-200 text-blue-700 px-2 py-1 rounded font-bold border border-blue-300">🖨️ 印製校正網格</button>
                             </div>
                             <div class="grid grid-cols-2 gap-2">
-                                <div><label class="text-gray-500 block font-bold text-blue-600">左邊距 (已還原6mm)</label> <input type="number" id="mL_B" value="6" step="0.5" class="w-full border p-1 rounded bg-blue-50"></div>
-                                <div><label class="text-gray-500 block">上邊距 (mm)</label> <input type="number" id="mT_B" value="11" step="0.5" class="w-full border p-1 rounded bg-gray-50"></div>
+                                <div><label class="text-gray-500 block font-bold text-blue-600">左邊距 (mm)</label> <input type="number" id="mL_B" value="0" step="0.5" class="w-full border p-1 rounded bg-blue-50"></div>
+                                <div><label class="text-gray-500 block">上邊距 (mm)</label> <input type="number" id="mT_B" value="0" step="0.5" class="w-full border p-1 rounded bg-gray-50"></div>
                                 <div><label class="text-gray-500 block">水平間距 (Gap X)</label> <input type="number" id="gX_B" value="0" step="0.1" class="w-full border p-1 rounded bg-gray-50"></div>
                                 <div><label class="text-gray-500 block">垂直間距 (Gap Y)</label> <input type="number" id="gY_B" value="0" step="0.1" class="w-full border p-1 rounded bg-gray-50"></div>
                             </div>
@@ -189,7 +214,7 @@
             <!-- ✅ 修法新增：列印提示橫幅 -->
             <div class="mb-2 bg-yellow-50 border border-yellow-300 rounded-lg px-3 py-2 text-[11px] text-yellow-800 font-bold flex items-start gap-2">
                 <span class="text-base leading-none mt-0.5">⚠️</span>
-                <span>列印時請確認對話框中的縮放比例為 <span class="text-red-600">100%（實際大小）</span>，否則透明貼紙位置會跑掉！</span>
+                <span>列印時請確認縮放比例為 <span class="text-red-600">100%（實際大小）</span>。透明紙改為整張 A4 未切割，列印後依四角裁切記號裁切即可。</span>
             </div>
 
             <div class="space-y-2">
@@ -209,7 +234,7 @@
 
                 <!-- 貼紙 B 輸出 -->
                 <div class="bg-blue-50 p-2 rounded-lg border border-blue-200">
-                    <div class="text-blue-800 font-bold text-[13px] mb-1.5 px-1">💦 透明小格貼紙 (153格)</div>
+                    <div class="text-blue-800 font-bold text-[13px] mb-1.5 px-1">💦 透明貼紙 (A4未切割)</div><div class="text-[10px] text-blue-600 px-1 mb-1">每格 30 × 29.7 mm，自動換頁，列印後依淡色四角裁切記號裁切。</div>
                     <div class="flex gap-2">
                         <button type="button" onclick="executeOutput('B', 'print')" id="btnPrintB" class="flex-[2] bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-bold py-2 px-2 rounded shadow transition-colors text-sm">
                             🖨️ 網頁直接列印
@@ -275,14 +300,15 @@
         // 紙張基礎規格
         const A_COLS = 7, A_ROWS = 10;
         const A_W = 30 * PX_PER_MM, A_H = 29.7 * PX_PER_MM;
-        const B_COLS = 9, B_ROWS = 17;
-        const B_W = 22 * PX_PER_MM, B_H = 16 * PX_PER_MM;
+        const B_COLS = 7, B_ROWS = 10;
+        const B_W = 30 * PX_PER_MM, B_H = 29.7 * PX_PER_MM;
         
         const FONT_FAMILY = '"BiauKai", "DFKai-SB", "TW-Kai", "KaiTi", sans-serif';
 
         let printQueue = [];
         let compIdCounter = 0;
-        let loadedImages = {}; 
+        let loadedImages = {};
+        let currentDesignName = ''; // 目前正在編輯的生字名稱（批次上傳／範本共用）
 
         const defaultTemplates = {
             '老': [
@@ -327,8 +353,8 @@
                 mT_A: getSafeValue('mT_A', 0),
                 gX_A: getSafeValue('gX_A', 0),
                 gY_A: getSafeValue('gY_A', 0),
-                mL_B: getSafeValue('mL_B', 6),
-                mT_B: getSafeValue('mT_B', 11),
+                mL_B: getSafeValue('mL_B', 0),
+                mT_B: getSafeValue('mT_B', 0),
                 gX_B: getSafeValue('gX_B', 0),
                 gY_B: getSafeValue('gY_B', 0),
             };
@@ -357,7 +383,7 @@
             Object.keys(defaultTemplates).forEach(k => {
                 const opt = document.createElement('option');
                 opt.value = `default_${k}`;
-                opt.text = k === '自訂' ? '✨ 清空畫面 (我要自己設定 / 上傳圖)' : `🔹 ${k}`;
+                opt.text = k === '自訂' ? '✨ 自訂字形（手動／批次上傳）' : `🔹 ${k}`;
                 group1.appendChild(opt);
             });
             select.appendChild(group1);
@@ -408,11 +434,23 @@
             return tempCanvas.toDataURL('image/png', 0.8);
         }
 
+        function escapeHtml(value = '') {
+            return String(value).replace(/[&<>'"]/g, ch => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+            })[ch]);
+        }
+
         function createComponentPanel(compData) {
             compIdCounter++;
             const id = compIdCounter;
             
-            const data = compData || { type: 'text', char: '', color: '#4AAEEA', size: 160, x: 0, y: 0, target: 'B', center: true, active: true };
+            // 舊版自訂範本或圖片部件可能缺少 color／active 等欄位，先補齊安全預設值。
+            const data = {
+                type: 'text', char: '', color: '#4AAEEA', size: 160,
+                x: 0, y: 0, target: 'B', center: true, active: true,
+                ...(compData || {})
+            };
+            const safeFileName = escapeHtml(data.fileName || '');
             const isA = data.target === 'A';
             const panelClass = isA ? 'bg-pink-50 border-pink-300' : 'bg-blue-50 border-blue-300';
             const selectClass = isA ? 'text-pink-700 border-pink-300' : 'text-blue-700 border-blue-300';
@@ -421,15 +459,19 @@
             div.className = `comp-panel p-3 rounded-lg border shadow-sm transition-all ${panelClass}`;
             div.id = `panel${id}`;
             div.dataset.id = id;
+            div.dataset.fileName = data.fileName || '';
 
             div.innerHTML = `
                 <div class="flex flex-col gap-2 mb-2 border-b pb-2">
-                    <div class="flex items-center justify-between">
-                        <label class="flex items-center font-bold text-gray-700 cursor-pointer">
-                            <input type="checkbox" id="active${id}" class="mr-2 w-4 h-4 accent-indigo-600" ${data.active ? 'checked' : ''}>
-                            部件 ${id}
-                        </label>
-                        <div class="flex items-center gap-2">
+                    <div class="flex items-center justify-between gap-2">
+                        <div class="min-w-0 flex-1">
+                            <label class="flex items-center font-bold text-gray-700 cursor-pointer">
+                                <input type="checkbox" id="active${id}" class="mr-2 w-4 h-4 accent-indigo-600" ${data.active ? 'checked' : ''}>
+                                部件 ${id}
+                            </label>
+                            <p id="fileName${id}" class="${safeFileName ? '' : 'hidden'} text-[10px] text-slate-500 truncate mt-0.5" title="${safeFileName}">${safeFileName}</p>
+                        </div>
+                        <div class="flex items-center gap-2 flex-shrink-0">
                             <div class="flex bg-gray-100 rounded p-0.5 shadow-inner border border-gray-200">
                                 <label class="cursor-pointer px-1.5 py-0.5 rounded text-[11px] font-bold transition-colors ${data.type === 'text' ? 'bg-white shadow text-indigo-600' : 'text-gray-500'}">
                                     <input type="radio" name="type${id}" value="text" class="hidden" ${data.type === 'text' ? 'checked' : ''}> 📝文字
@@ -459,7 +501,7 @@
                     <div class="flex gap-2">
                         <select id="target${id}" class="flex-1 border rounded p-1.5 font-bold transition-colors ${selectClass}">
                             <option value="A" class="text-pink-700" ${data.target === 'A' ? 'selected' : ''}>🖨️ 底紙 (A大格)</option>
-                            <option value="B" class="text-blue-700" ${data.target === 'B' ? 'selected' : ''}>🖨️ 透明 (B小格)</option>
+                            <option value="B" class="text-blue-700" ${data.target === 'B' ? 'selected' : ''}>🖨️ 透明 (A4自由排版)</option>
                         </select>
                         <label class="flex items-center bg-gray-100 px-2 rounded border whitespace-nowrap cursor-pointer hover:bg-gray-200">
                             <input type="checkbox" id="center${id}" class="mr-1 w-3 h-3" ${data.center ? 'checked' : ''}> 置中印
@@ -532,7 +574,15 @@
                     reader.onload = function(event) {
                         const img = new Image();
                         img.onload = function() {
-                            loadedImages[id] = img; 
+                            loadedImages[id] = img;
+                            const panel = document.getElementById(`panel${id}`);
+                            if (panel) panel.dataset.fileName = file.name;
+                            const fileNameEl = document.getElementById(`fileName${id}`);
+                            if (fileNameEl) {
+                                fileNameEl.textContent = file.name;
+                                fileNameEl.title = file.name;
+                                fileNameEl.classList.remove('hidden');
+                            }
                             const preview = document.getElementById(`previewImg${id}`);
                             preview.src = event.target.result;
                             preview.classList.remove('hidden');
@@ -552,6 +602,85 @@
                 }
             });
         }
+
+        function fileToDataUrl(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = event => resolve(event.target.result);
+                reader.onerror = () => reject(new Error(`無法讀取圖片：${file.name}`));
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function importBatchComponents(fileList) {
+            const statusEl = document.getElementById('batchUploadStatus');
+            const inputEl = document.getElementById('batchFiles');
+            const files = Array.from(fileList || [])
+                .filter(file => file.type.startsWith('image/'))
+                .sort((a, b) => a.name.localeCompare(b.name, 'zh-Hant', { numeric: true, sensitivity: 'base' }));
+
+            if (files.length === 0) {
+                statusEl.textContent = '⚠️ 沒有找到可用的圖片檔。';
+                return;
+            }
+
+            statusEl.textContent = `正在載入 ${files.length} 張部件圖片……`;
+
+            try {
+                const imageDataList = await Promise.all(files.map(file => fileToDataUrl(file)));
+                const clearExisting = document.getElementById('batchClearExisting').checked;
+                const firstAsBase = document.getElementById('batchFirstAsBase').checked;
+
+                if (clearExisting) {
+                    document.getElementById('componentsContainer').innerHTML = '';
+                    loadedImages = {};
+                }
+
+                files.forEach((file, index) => {
+                    const isBase = firstAsBase && index === 0;
+                    createComponentPanel({
+                        type: 'image',
+                        char: '',
+                        fileName: file.name,
+                        imgBase64: imageDataList[index],
+                        color: '#4AAEEA',
+                        size: isBase ? 300 : 160,
+                        x: 0,
+                        y: 0,
+                        target: isBase ? 'A' : 'B',
+                        // 批次上傳預設不鎖定置中，讓 X／Y 微調在正式列印時也會生效。
+                        center: false,
+                        active: true
+                    });
+                });
+
+                currentDesignName = document.getElementById('batchCharName').value.trim();
+                const select = document.getElementById('templateSelect');
+                if (select.querySelector('option[value="default_自訂"]')) {
+                    select.value = 'default_自訂';
+                    toggleDeleteBtn();
+                }
+
+                const baseHint = firstAsBase
+                    ? `第一張「${files[0].name}」已設為底紙，其餘設為透明紙。`
+                    : '全部圖片已設為透明紙。';
+                statusEl.textContent = `✅ 已加入 ${files.length} 個部件。${baseHint} 現在可逐一微調大小與位置。`;
+            } catch (error) {
+                console.error(error);
+                statusEl.textContent = `❌ 批次上傳失敗：${error.message}`;
+            } finally {
+                // 允許再次選取相同的一組檔案。
+                inputEl.value = '';
+            }
+        }
+
+        document.getElementById('batchFiles').addEventListener('change', event => {
+            importBatchComponents(event.target.files);
+        });
+
+        document.getElementById('batchCharName').addEventListener('input', event => {
+            currentDesignName = event.target.value.trim();
+        });
 
         const updateAndDraw = () => { updateUI(); drawPreview(); };
         
@@ -600,8 +729,8 @@
                 mT_A: getSafeValue('mT_A', 0),
                 gX_A: getSafeValue('gX_A', 0),
                 gY_A: getSafeValue('gY_A', 0),
-                mL_B: getSafeValue('mL_B', 6),
-                mT_B: getSafeValue('mT_B', 11),
+                mL_B: getSafeValue('mL_B', 0),
+                mT_B: getSafeValue('mT_B', 0),
                 gX_B: getSafeValue('gX_B', 0),
                 gY_B: getSafeValue('gY_B', 0),
             };
@@ -609,6 +738,9 @@
             customTemplates[name.trim()] = { comps: compsToSave, margins: marginData };
             localStorage.setItem('myCustomStickers', JSON.stringify(customTemplates));
             
+            currentDesignName = name.trim();
+            const batchNameEl = document.getElementById('batchCharName');
+            if (batchNameEl) batchNameEl.value = currentDesignName;
             updateTemplateDropdown(`custom_${name.trim()}`);
             alert(`✅ 成功！「${name.trim()}」已經永遠儲存到您的選單中了。\n（邊距設定也一起儲存了）`);
         });
@@ -630,9 +762,11 @@
         function loadTemplate(val) {
             let data;
             let margins = null;
+            let designName = '';
 
             if (val.startsWith('custom_')) {
                 const key = val.replace('custom_', '');
+                designName = key;
                 const stored = customTemplates[key];
                 // 相容舊格式（只有 array）和新格式（含 margins）
                 if (Array.isArray(stored)) {
@@ -644,8 +778,13 @@
             } else {
                 const key = val.replace('default_', '');
                 data = defaultTemplates[key];
+                designName = key === '自訂' ? '' : key;
             }
             if (!data) return;
+
+            currentDesignName = designName;
+            const batchNameEl = document.getElementById('batchCharName');
+            if (batchNameEl) batchNameEl.value = designName;
             
             document.getElementById('componentsContainer').innerHTML = '';
             loadedImages = {};
@@ -720,7 +859,8 @@
                     } else if (type === 'image' && loadedImages[id]) {
                         comps.push({
                             type: 'image',
-                            char: '🖼️圖', 
+                            char: '🖼️圖',
+                            fileName: panel.dataset.fileName || '',
                             imgObj: loadedImages[id],
                             size, x, y, target, center
                         });
@@ -840,10 +980,10 @@
             const qty = parseInt(document.getElementById('queueQty').value) || 1;
             
             const selectEl = document.getElementById('templateSelect');
-            let name = selectEl.options[selectEl.selectedIndex].text.replace(/🔹 |⭐ |✨ | \(.*\)/g, '');
-            
-            if (selectEl.value.includes('自訂') || selectEl.value.includes('default_自訂')) {
-                name = comps.map(c => c.char).join('+');
+            let name = currentDesignName || selectEl.options[selectEl.selectedIndex].text.replace(/🔹 |⭐ |✨ | \(.*\)/g, '');
+
+            if (!currentDesignName && (selectEl.value.includes('自訂') || selectEl.value.includes('default_自訂'))) {
+                name = comps.map(c => c.type === 'text' ? c.char : (c.fileName || '圖')).join('+');
             }
 
             const uniqueId = Date.now().toString() + Math.floor(Math.random() * 1000);
@@ -936,12 +1076,13 @@
             document.getElementById('barA').className = `h-1.5 rounded-full transition-all ${usedA > 70 ? 'bg-red-500' : 'bg-pink-500'}`;
             document.getElementById('statusA').className = usedA > 70 ? 'text-red-600' : 'text-pink-700';
 
-            document.getElementById('statusB').innerText = `${usedB} / 153`;
-            document.getElementById('barB').style.width = `${Math.min((usedB/153)*100, 100)}%`;
-            document.getElementById('barB').className = `h-1.5 rounded-full transition-all ${usedB > 153 ? 'bg-red-500' : 'bg-blue-500'}`;
-            document.getElementById('statusB').className = usedB > 153 ? 'text-red-600' : 'text-blue-700';
+            const bPages = Math.max(1, Math.ceil(usedB / 70));
+            document.getElementById('statusB').innerText = usedB > 0 ? `${usedB} 張 / ${bPages} 頁A4` : '0 張';
+            document.getElementById('barB').style.width = `${usedB > 0 ? ((usedB % 70 || 70) / 70) * 100 : 0}%`;
+            document.getElementById('barB').className = 'bg-blue-500 h-1.5 rounded-full transition-all';
+            document.getElementById('statusB').className = 'text-blue-700';
 
-            const overLimit = usedA > 70 || usedB > 153;
+            const overLimit = usedA > 70;
             if(warningEl) warningEl.style.display = overLimit ? 'block' : 'none';
             
             ['btnPrintA', 'btnDownloadA', 'btnPrintB', 'btnDownloadB', 'btnPrintC', 'btnDownloadC'].forEach(id => {
@@ -983,8 +1124,8 @@
             } else if (type === 'B') {
                 cols = B_COLS; rows = B_ROWS;
                 cellW = B_W; cellH = B_H;
-                marginL = getSafeValue('mL_B', 6) * PX_PER_MM;
-                marginT = getSafeValue('mT_B', 11) * PX_PER_MM;
+                marginL = getSafeValue('mL_B', 0) * PX_PER_MM;
+                marginT = getSafeValue('mT_B', 0) * PX_PER_MM;
                 gapX = getSafeValue('gX_B', 0) * PX_PER_MM;
                 gapY = getSafeValue('gY_B', 0) * PX_PER_MM;
             } else if (type === 'Calib_A' || type === 'Calib_B') {
@@ -993,14 +1134,14 @@
                 rows = isA ? A_ROWS : B_ROWS;
                 cellW = isA ? A_W : B_W;
                 cellH = isA ? A_H : B_H;
-                marginL = getSafeValue(isA ? 'mL_A' : 'mL_B', isA ? 0 : 6) * PX_PER_MM;
-                marginT = getSafeValue(isA ? 'mT_A' : 'mT_B', isA ? 0 : 11) * PX_PER_MM;
+                marginL = getSafeValue(isA ? 'mL_A' : 'mL_B', 0) * PX_PER_MM;
+                marginT = getSafeValue(isA ? 'mT_A' : 'mT_B', 0) * PX_PER_MM;
                 gapX = getSafeValue(isA ? 'gX_A' : 'gX_B', 0) * PX_PER_MM;
                 gapY = getSafeValue(isA ? 'gY_A' : 'gY_B', 0) * PX_PER_MM;
                 
                 oCtx.fillStyle = '#334155';
                 oCtx.font = `bold 60px ${FONT_FAMILY}`;
-                oCtx.fillText(`[印表機校正紙] 適用紙張: ${isA ? '大格底紙' : '小格透明紙'}`, 100, 100);
+                oCtx.fillText(`[印表機校正紙] 適用紙張: ${isA ? '大格底紙' : 'A4透明紙裁切區'}`, 100, 100);
                 oCtx.font = `40px ${FONT_FAMILY}`;
                 oCtx.fillText(`※ 請用一般A4紙列印後，疊在貼紙上對光檢查格線是否吻合。`, 100, 160);
 
@@ -1087,6 +1228,58 @@
                 }
             }
             return offCanvas;
+        }
+
+
+        function generateTransparentCanvases() {
+            const cols = B_COLS, rows = B_ROWS;
+            const cellW = B_W, cellH = B_H;
+            const marginL = getSafeValue('mL_B', 0) * PX_PER_MM;
+            const marginT = getSafeValue('mT_B', 0) * PX_PER_MM;
+            const gapX = getSafeValue('gX_B', 0) * PX_PER_MM;
+            const gapY = getSafeValue('gY_B', 0) * PX_PER_MM;
+            const totalCells = cols * rows;
+            const students = getStudentCount();
+            let drawList = [];
+
+            if (printQueue.length > 0) {
+                printQueue.forEach(item => {
+                    const validComps = item.comps.filter(c => c.target === 'B');
+                    const effectiveQty = item.qty * students;
+                    for (let i = 0; i < effectiveQty; i++) validComps.forEach(comp => drawList.push(comp));
+                });
+            } else {
+                const activeComps = getActiveComponents().filter(c => c.target === 'B');
+                if (activeComps.length === 0) return [];
+                activeComps.forEach(c => drawList.push(c));
+            }
+            if (drawList.length === 0) return [];
+
+            const pages = [];
+            const pageCount = Math.ceil(drawList.length / totalCells);
+            for (let p = 0; p < pageCount; p++) {
+                const c = document.createElement('canvas');
+                c.width = 2480; c.height = 3508;
+                const xctx = c.getContext('2d');
+                xctx.fillStyle = '#FFFFFF'; xctx.fillRect(0,0,c.width,c.height);
+                const slice = drawList.slice(p*totalCells, (p+1)*totalCells);
+                slice.forEach((comp, i) => {
+                    const row = Math.floor(i / cols), col = i % cols;
+                    const x = marginL + col * (cellW + gapX);
+                    const y = marginT + row * (cellH + gapY);
+                    const cx = x + cellW/2, cy = y + cellH/2;
+                    drawComponent(xctx, comp, comp.center ? cx : cx + comp.x, comp.center ? cy : cy + comp.y);
+                    // 淡裁切記號：只畫四角，避免整框太明顯
+                    xctx.strokeStyle = '#d1d5db';
+                    xctx.lineWidth = 2;
+                    const m = 18, len = 26;
+                    [[x+m,y+m,1,1],[x+cellW-m,y+m,-1,1],[x+m,y+cellH-m,1,-1],[x+cellW-m,y+cellH-m,-1,-1]].forEach(([px,py,sx,sy])=>{
+                        xctx.beginPath(); xctx.moveTo(px,py); xctx.lineTo(px+sx*len,py); xctx.moveTo(px,py); xctx.lineTo(px,py+sy*len); xctx.stroke();
+                    });
+                });
+                pages.push(c);
+            }
+            return pages;
         }
 
         // ✅ 學習單模式切換
@@ -1192,9 +1385,9 @@
                 const activeComps = getActiveComponents();
                 if (activeComps.length === 0) return null;
                 const selectEl = document.getElementById('templateSelect');
-                let name = selectEl.options[selectEl.selectedIndex].text.replace(/🔹 |⭐ |✨ | \(.*\)/g, '');
-                if (selectEl.value.includes('自訂') || selectEl.value.includes('default_自訂')) {
-                    name = activeComps.map(c => c.type === 'text' ? c.char : '圖').join('+');
+                let name = currentDesignName || selectEl.options[selectEl.selectedIndex].text.replace(/🔹 |⭐ |✨ | \(.*\)/g, '');
+                if (!currentDesignName && (selectEl.value.includes('自訂') || selectEl.value.includes('default_自訂'))) {
+                    name = activeComps.map(c => c.type === 'text' ? c.char : (c.fileName || '圖')).join('+');
                 }
                 itemsToPrint = [{ name: name, comps: activeComps }];
             }
@@ -1400,13 +1593,44 @@
             doc.close();
         }
 
+
+        function buildMultiPagePrintIframe(dataUrls, nameLabel) {
+            let iframe = document.getElementById('printIframe');
+            if (!iframe) {
+                iframe = document.createElement('iframe');
+                iframe.id = 'printIframe';
+                iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:0;height:0;border:none;visibility:hidden;';
+                document.body.appendChild(iframe);
+            }
+            const doc = iframe.contentWindow.document;
+            doc.open();
+            doc.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>列印 ${nameLabel}</title><style>
+                @page{size:210mm 297mm;margin:0} html,body{margin:0;padding:0;background:#fff}
+                .page{width:210mm;height:297mm;page-break-after:always;position:relative;overflow:hidden}
+                .page:last-child{page-break-after:auto}.page img{position:absolute;inset:0;width:210mm;height:297mm;display:block;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+            </style></head><body>${dataUrls.map(u=>`<div class="page"><img src="${u}"></div>`).join('')}<script>window.addEventListener('load',()=>setTimeout(()=>window.print(),600));<\/script></body></html>`);
+            doc.close();
+        }
+
         // ==========================================
         // 執行輸出：直接列印 (Print) 或 下載圖檔 (Download)
         // ==========================================
         window.executeOutput = function(type, action) {
+            if (type === 'B') {
+                const pages = generateTransparentCanvases();
+                if (!pages.length) { alert('請確認目前畫面或清單中有透明部件內容！'); return; }
+                const urls = pages.map(c => c.toDataURL('image/png'));
+                if (action === 'download') {
+                    urls.forEach((u, i) => { const link=document.createElement('a'); link.download=`透明貼紙_A4_第${i+1}頁_${Date.now()}.png`; link.href=u; link.click(); });
+                } else {
+                    if (!confirm(`即將列印：A4未切割透明貼紙\n\n共 ${urls.length} 頁。\n每個部件裁切區為 30 × 29.7 mm，四角有淡裁切記號。\n\n請確認：紙張 A4、縮放 100%（實際大小）、邊距 0。`)) return;
+                    buildMultiPagePrintIframe(urls, 'A4透明貼紙');
+                }
+                return;
+            }
             const offCanvas = generateCanvas(type);
             if (!offCanvas) {
-                alert(`請確認目前畫面或清單中，有屬於【${type==='A'?'大格底字':(type==='B'?'小格透明':'學習單')}】的內容！`);
+                alert(`請確認目前畫面或清單中，有屬於【${type==='A'?'大格底字':'學習單'}】的內容！`);
                 return;
             }
 
@@ -1422,7 +1646,7 @@
 
             } else if (action === 'print') {
                 // ✅ 修法二：列印前確認對話框，提醒縮放比例
-                const typeLabel = type === 'A' ? '🌸 底字大格貼紙' : (type === 'B' ? '💦 透明小格貼紙' : '📝 學習單');
+                const typeLabel = type === 'A' ? '🌸 底字大格貼紙' : (type === 'B' ? '💦 A4透明貼紙' : '📝 學習單');
                 const students = getStudentCount();
                 const studentLine = students > 1 ? `  👥  學生人數 = ${students} 位（數量已自動 ×${students}）\n\n` : '';
                 const confirmed = confirm(
