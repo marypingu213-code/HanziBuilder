@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>國字部件標籤產生器 - 網頁直印精準版</title>
+    <title>國字部件標籤產生器 - LD-8119 白底紙優化版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap');
@@ -154,7 +154,7 @@
                         <!-- A紙張設定 -->
                         <div class="space-y-2 pb-3 border-b border-gray-100">
                             <div class="flex justify-between items-center mb-1">
-                                <p class="font-bold text-pink-700">🌸 底字紙張 (70格)</p>
+                                <div><p class="font-bold text-pink-700">🌸 底字紙張：LD-8119（70格／30×29.7mm／無邊）</p><p class="text-[10px] text-pink-500 mt-0.5">網格固定貼齊 A4 邊緣；用「內容安全位移」避開印表機不可列印區。</p></div>
                                 <button type="button" onclick="printCalibration('A')" class="bg-pink-100 hover:bg-pink-200 text-pink-700 px-2 py-1 rounded font-bold border border-pink-300">🖨️ 印製校正網格</button>
                             </div>
                             <div class="grid grid-cols-2 gap-2">
@@ -162,7 +162,10 @@
                                 <div><label class="text-gray-500 block">上邊距 (mm)</label> <input type="number" id="mT_A" value="0" step="0.5" class="w-full border p-1 rounded bg-gray-50"></div>
                                 <div><label class="text-gray-500 block">水平間距 (Gap X)</label> <input type="number" id="gX_A" value="0" step="0.1" class="w-full border p-1 rounded bg-gray-50"></div>
                                 <div><label class="text-gray-500 block">垂直間距 (Gap Y)</label> <input type="number" id="gY_A" value="0" step="0.1" class="w-full border p-1 rounded bg-gray-50"></div>
+                                <div><label class="text-pink-700 font-bold block">內容向右位移 (mm)</label> <input type="number" id="contentX_A" value="2" step="0.5" class="w-full border border-pink-300 p-1 rounded bg-pink-50"></div>
+                                <div><label class="text-pink-700 font-bold block">內容向下位移 (mm)</label> <input type="number" id="contentY_A" value="2" step="0.5" class="w-full border border-pink-300 p-1 rounded bg-pink-50"></div>
                             </div>
+                            <p class="text-[10px] text-pink-600 leading-relaxed">LD-8119 建議先用右移 2mm、下移 2mm 測試。這只移動字／圖片，不改變 70 格實際切線位置，因此不會讓右下角標籤整體跑出版面。</p>
                         </div>
 
                         <!-- B紙張設定 -->
@@ -353,6 +356,8 @@
                 mT_A: getSafeValue('mT_A', 0),
                 gX_A: getSafeValue('gX_A', 0),
                 gY_A: getSafeValue('gY_A', 0),
+                contentX_A: getSafeValue('contentX_A', 2),
+                contentY_A: getSafeValue('contentY_A', 2),
                 mL_B: getSafeValue('mL_B', 0),
                 mT_B: getSafeValue('mT_B', 0),
                 gX_B: getSafeValue('gX_B', 0),
@@ -729,6 +734,8 @@
                 mT_A: getSafeValue('mT_A', 0),
                 gX_A: getSafeValue('gX_A', 0),
                 gY_A: getSafeValue('gY_A', 0),
+                contentX_A: getSafeValue('contentX_A', 2),
+                contentY_A: getSafeValue('contentY_A', 2),
                 mL_B: getSafeValue('mL_B', 0),
                 mT_B: getSafeValue('mT_B', 0),
                 gX_B: getSafeValue('gX_B', 0),
@@ -1215,8 +1222,10 @@
 
                     if (index < drawList.length) {
                         const comp = drawList[index];
-                        const cx = x + cellW / 2;
-                        const cy = y + cellH / 2;
+                        const contentOffsetX = type === 'A' ? getSafeValue('contentX_A', 2) * PX_PER_MM : 0;
+                        const contentOffsetY = type === 'A' ? getSafeValue('contentY_A', 2) * PX_PER_MM : 0;
+                        const cx = x + cellW / 2 + contentOffsetX;
+                        const cy = y + cellH / 2 + contentOffsetY;
 
                         if (comp.center) {
                             drawComponent(oCtx, comp, cx, cy);
