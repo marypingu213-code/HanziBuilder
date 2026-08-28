@@ -46,6 +46,30 @@
                 </div>
             </div>
 
+            <!-- 📚 課次生字收藏庫 -->
+            <div class="bg-violet-50 p-3 rounded-lg border border-violet-200 shadow-sm">
+                <div class="flex items-center justify-between gap-2 mb-2">
+                    <label class="block text-sm font-bold text-violet-900">📚 課次生字收藏庫</label>
+                    <span class="text-[10px] text-violet-500">會永久儲存在此瀏覽器</span>
+                </div>
+                <div class="flex gap-2 mb-2">
+                    <input type="text" id="lessonNameInput" class="flex-1 min-w-0 p-2 border border-violet-300 rounded bg-white text-sm font-bold" placeholder="例如：第1課">
+                    <button type="button" id="btnCreateLesson" class="bg-violet-600 hover:bg-violet-700 text-white px-3 rounded font-bold text-xs whitespace-nowrap">＋ 建立課次</button>
+                </div>
+                <div class="flex gap-2 mb-2">
+                    <select id="lessonSelect" class="flex-1 min-w-0 p-2 border border-violet-300 rounded bg-white text-sm font-bold"></select>
+                    <button type="button" id="btnAddCurrentToLesson" class="bg-amber-500 hover:bg-amber-600 text-white px-3 rounded font-bold text-xs whitespace-nowrap">⭐ 收藏目前生字</button>
+                </div>
+                <div id="lessonWordList" class="grid grid-cols-4 sm:grid-cols-5 gap-1.5 max-h-32 overflow-y-auto bg-white border border-violet-200 rounded p-2 mb-2"></div>
+                <div class="grid grid-cols-3 gap-2">
+                    <button type="button" id="btnSelectAllLesson" class="bg-white hover:bg-violet-100 text-violet-700 border border-violet-300 py-1.5 rounded font-bold text-xs">☑ 全選本課</button>
+                    <button type="button" id="btnClearLessonChecks" class="bg-white hover:bg-gray-100 text-gray-600 border border-gray-300 py-1.5 rounded font-bold text-xs">□ 取消勾選</button>
+                    <button type="button" id="btnDeleteLesson" class="bg-white hover:bg-red-50 text-red-600 border border-red-200 py-1.5 rounded font-bold text-xs">🗑 刪除課次</button>
+                </div>
+                <button type="button" id="btnAddSelectedLessonWords" class="w-full mt-2 bg-violet-600 hover:bg-violet-700 text-white py-2 rounded font-bold text-sm shadow">➕ 將勾選生字一次加入列印／學習單清單</button>
+                <p class="text-[10px] text-violet-600 mt-2 leading-relaxed">提示：點生字名稱可立即載入修改；勾選多個字後可一次加入清單。既有範本會自動放進「未分類」。</p>
+            </div>
+
             <hr class="border-gray-200">
 
             <!-- 📦 批次上傳部件 -->
@@ -348,6 +372,25 @@
         };
 
         let customTemplates = JSON.parse(localStorage.getItem('myCustomStickers')) || {};
+        let lessonCollections = JSON.parse(localStorage.getItem('myLessonCollections')) || {};
+        let currentLessonName = localStorage.getItem('myCurrentLesson') || '';
+
+        function saveLessonCollections() {
+            localStorage.setItem('myLessonCollections', JSON.stringify(lessonCollections));
+        }
+
+        function ensureUncategorizedTemplates() {
+            const assigned = new Set(Object.values(lessonCollections).flat());
+            const unassigned = Object.keys(customTemplates).filter(k => !assigned.has(k));
+            if (unassigned.length) {
+                lessonCollections['未分類'] = Array.from(new Set([...(lessonCollections['未分類'] || []), ...unassigned]));
+                saveLessonCollections();
+            }
+            if (!currentLessonName || !lessonCollections[currentLessonName]) {
+                currentLessonName = Object.keys(lessonCollections)[0] || '';
+            }
+        }
+
 
         // ✅ 修法四：邊距快速儲存/還原
         window.saveMarginPreset = function() {
@@ -393,17 +436,19 @@
             });
             select.appendChild(group1);
 
-            const customKeys = Object.keys(customTemplates);
-            if (customKeys.length > 0) {
-                const group2 = document.createElement('optgroup');
-                group2.label = "⭐ 我的自訂範本";
-                customKeys.forEach(k => {
+            // 自訂生字改由「課次生字收藏庫」管理，避免下拉選單愈來愈長。
+            // 若目前正在編輯某個自訂字，只暫時顯示該字，方便維持既有流程。
+            if (currentVal && currentVal.startsWith('custom_')) {
+                const key = currentVal.replace('custom_', '');
+                if (customTemplates[key]) {
+                    const group2 = document.createElement('optgroup');
+                    group2.label = "⭐ 目前載入的收藏字";
                     const opt = document.createElement('option');
-                    opt.value = `custom_${k}`;
-                    opt.text = `⭐ ${k}`;
+                    opt.value = currentVal;
+                    opt.text = `⭐ ${key}`;
                     group2.appendChild(opt);
-                });
-                select.appendChild(group2);
+                    select.appendChild(group2);
+                }
             }
 
             if (select.querySelector(`option[value="${currentVal}"]`)) {
@@ -687,6 +732,150 @@
             currentDesignName = event.target.value.trim();
         });
 
+        function renderLessonLibrary() {
+            ensureUncategorizedTemplates();
+            const select = document.getElementById('lessonSelect');
+            const list = document.getElementById('lessonWordList');
+            if (!select || !list) return;
+
+            const lessons = Object.keys(lessonCollections);
+            select.innerHTML = '';
+            if (lessons.length === 0) {
+                const opt = document.createElement('option');
+                opt.value = ''; opt.textContent = '尚未建立課次';
+                select.appendChild(opt);
+                list.innerHTML = '<div class="col-span-full text-center text-xs text-gray-400 py-2">先建立「第1課」之類的課次，再收藏生字。</div>';
+                currentLessonName = '';
+                return;
+            }
+
+            lessons.forEach(name => {
+                const opt = document.createElement('option');
+                opt.value = name;
+                opt.textContent = `${name}（${(lessonCollections[name] || []).length}字）`;
+                select.appendChild(opt);
+            });
+            if (!lessonCollections[currentLessonName]) currentLessonName = lessons[0];
+            select.value = currentLessonName;
+            localStorage.setItem('myCurrentLesson', currentLessonName);
+
+            const words = (lessonCollections[currentLessonName] || []).filter(name => customTemplates[name]);
+            lessonCollections[currentLessonName] = words;
+            saveLessonCollections();
+            if (words.length === 0) {
+                list.innerHTML = '<div class="col-span-full text-center text-xs text-gray-400 py-2">這一課還沒有收藏生字。</div>';
+                return;
+            }
+            list.innerHTML = words.map(name => `
+                <div class="flex items-center gap-1 bg-violet-50 border border-violet-100 rounded px-1.5 py-1 min-w-0">
+                    <input type="checkbox" class="lesson-word-check accent-violet-600 flex-shrink-0" value="${escapeHtml(name)}">
+                    <button type="button" class="lesson-word-load flex-1 min-w-0 text-left font-bold text-violet-800 hover:text-violet-950 truncate" data-name="${escapeHtml(name)}" title="點一下載入 ${escapeHtml(name)}">${escapeHtml(name)}</button>
+                </div>`).join('');
+
+            list.querySelectorAll('.lesson-word-load').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const name = btn.dataset.name;
+                    updateTemplateDropdown(`custom_${name}`);
+                    document.getElementById('templateSelect').value = `custom_${name}`;
+                    loadTemplate(`custom_${name}`);
+                    toggleDeleteBtn();
+                });
+            });
+        }
+
+        function addTemplateToLesson(templateName, lessonName) {
+            if (!templateName || !customTemplates[templateName]) return false;
+            lessonName = (lessonName || '').trim();
+            if (!lessonName) return false;
+            if (!lessonCollections[lessonName]) lessonCollections[lessonName] = [];
+            if (!lessonCollections[lessonName].includes(templateName)) lessonCollections[lessonName].push(templateName);
+            // 同一生字只歸在一個課次；從其他課次移除，避免重複。
+            Object.keys(lessonCollections).forEach(k => {
+                if (k !== lessonName) lessonCollections[k] = lessonCollections[k].filter(x => x !== templateName);
+            });
+            currentLessonName = lessonName;
+            saveLessonCollections();
+            localStorage.setItem('myCurrentLesson', currentLessonName);
+            renderLessonLibrary();
+            return true;
+        }
+
+        function hydrateStoredComponents(templateName) {
+            return new Promise(async (resolve) => {
+                const stored = customTemplates[templateName];
+                const source = Array.isArray(stored) ? stored : (stored?.comps || []);
+                const comps = [];
+                for (const c of source) {
+                    const copy = {...c};
+                    if (copy.type === 'image' && copy.imgBase64) {
+                        const img = new Image();
+                        await new Promise(r => { img.onload = r; img.onerror = r; img.src = copy.imgBase64; });
+                        if (img.complete && img.naturalWidth) copy.imgObj = img;
+                    }
+                    comps.push(copy);
+                }
+                resolve(comps);
+            });
+        }
+
+        document.getElementById('btnCreateLesson').addEventListener('click', () => {
+            const input = document.getElementById('lessonNameInput');
+            const name = input.value.trim();
+            if (!name) return alert('請先輸入課次名稱，例如「第1課」。');
+            if (!lessonCollections[name]) lessonCollections[name] = [];
+            currentLessonName = name;
+            saveLessonCollections();
+            input.value = '';
+            renderLessonLibrary();
+        });
+
+        document.getElementById('lessonSelect').addEventListener('change', (e) => {
+            currentLessonName = e.target.value;
+            localStorage.setItem('myCurrentLesson', currentLessonName);
+            renderLessonLibrary();
+        });
+
+        document.getElementById('btnAddCurrentToLesson').addEventListener('click', () => {
+            let name = currentDesignName.trim();
+            if (!name || !customTemplates[name]) return alert('請先載入或儲存一個「我的範本」生字，再收藏到課次。');
+            if (!currentLessonName) return alert('請先建立一個課次。');
+            addTemplateToLesson(name, currentLessonName);
+        });
+
+        document.getElementById('btnSelectAllLesson').addEventListener('click', () => {
+            document.querySelectorAll('.lesson-word-check').forEach(cb => cb.checked = true);
+        });
+        document.getElementById('btnClearLessonChecks').addEventListener('click', () => {
+            document.querySelectorAll('.lesson-word-check').forEach(cb => cb.checked = false);
+        });
+        document.getElementById('btnDeleteLesson').addEventListener('click', () => {
+            if (!currentLessonName) return;
+            if (!confirm(`確定刪除課次「${currentLessonName}」嗎？\n生字範本本身不會刪除，會回到「未分類」。`)) return;
+            delete lessonCollections[currentLessonName];
+            currentLessonName = '';
+            saveLessonCollections();
+            ensureUncategorizedTemplates();
+            renderLessonLibrary();
+        });
+
+        document.getElementById('btnAddSelectedLessonWords').addEventListener('click', async () => {
+            const names = Array.from(document.querySelectorAll('.lesson-word-check:checked')).map(cb => cb.value);
+            if (!names.length) return alert('請先勾選要加入的生字。');
+            const qty = parseInt(document.getElementById('queueQty').value) || 1;
+            const btn = document.getElementById('btnAddSelectedLessonWords');
+            const oldText = btn.textContent;
+            btn.disabled = true; btn.textContent = '⏳ 正在加入…';
+            for (const name of names) {
+                const comps = await hydrateStoredComponents(name);
+                if (!comps.length) continue;
+                const uniqueId = Date.now().toString() + Math.floor(Math.random() * 1000000);
+                printQueue.push({ id: uniqueId, name, comps, qty });
+            }
+            renderQueueUI();
+            btn.disabled = false; btn.textContent = oldText;
+            alert(`✅ 已將 ${names.length} 個生字一次加入列印／學習單清單。`);
+        });
+
         const updateAndDraw = () => { updateUI(); drawPreview(); };
         
         document.getElementById('showBorders').addEventListener('change', drawPreview);
@@ -749,7 +938,9 @@
             const batchNameEl = document.getElementById('batchCharName');
             if (batchNameEl) batchNameEl.value = currentDesignName;
             updateTemplateDropdown(`custom_${name.trim()}`);
-            alert(`✅ 成功！「${name.trim()}」已經永遠儲存到您的選單中了。\n（邊距設定也一起儲存了）`);
+            if (currentLessonName) addTemplateToLesson(name.trim(), currentLessonName);
+            else { ensureUncategorizedTemplates(); renderLessonLibrary(); }
+            alert(`✅ 成功！「${name.trim()}」已儲存。${currentLessonName ? `\n並已收藏到「${currentLessonName}」。` : '\n目前放在「未分類」。'}`);
         });
 
         document.getElementById('btnDelTemplate').addEventListener('click', () => {
@@ -759,6 +950,9 @@
                 if (confirm(`確定要刪除自訂範本「${key}」嗎？`)) {
                     delete customTemplates[key];
                     localStorage.setItem('myCustomStickers', JSON.stringify(customTemplates));
+                    Object.keys(lessonCollections).forEach(k => lessonCollections[k] = lessonCollections[k].filter(x => x !== key));
+                    saveLessonCollections();
+                    renderLessonLibrary();
                     updateTemplateDropdown('default_老');
                     loadTemplate('default_老');
                 }
@@ -1685,8 +1879,10 @@
         };
 
         // 初始執行
+        ensureUncategorizedTemplates();
         updateTemplateDropdown('default_老');
         loadTemplate('default_老');
+        renderLessonLibrary();
     </script>
 </body>
 </html>
