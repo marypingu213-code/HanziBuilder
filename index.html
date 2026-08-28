@@ -19,7 +19,7 @@
 <body class="bg-slate-100 h-screen overflow-hidden flex flex-col md:flex-row">
 
     <!-- 左側：控制面板 -->
-    <div class="w-full md:w-[45%] lg:w-[35%] bg-white shadow-xl flex flex-col h-full z-10">
+    <div class="w-full md:w-[62%] lg:w-[60%] bg-white shadow-xl flex flex-col h-full z-10">
         <div class="p-4 bg-indigo-700 text-white shadow-md z-20 flex justify-between items-center">
             <div>
                 <h1 class="text-xl font-bold tracking-wider">國字部件標籤產生器</h1>
@@ -60,9 +60,14 @@
                     <select id="lessonSelect" class="flex-1 min-w-0 p-2 border border-violet-300 rounded bg-white text-sm font-bold"></select>
                     <button type="button" id="btnAddCurrentToLesson" class="bg-amber-500 hover:bg-amber-600 text-white px-3 rounded font-bold text-xs whitespace-nowrap">⭐ 收藏目前生字</button>
                 </div>
-                <div id="lessonWordList" class="grid grid-cols-4 sm:grid-cols-5 gap-1.5 max-h-32 overflow-y-auto bg-white border border-violet-200 rounded p-2 mb-2"></div>
+                <div id="lessonWordList" class="grid grid-cols-5 lg:grid-cols-7 xl:grid-cols-9 gap-1.5 max-h-40 overflow-y-auto bg-white border border-violet-200 rounded p-2 mb-2"></div>
 
-                <details class="mb-2 bg-white border border-amber-200 rounded-lg" open>
+                <div class="grid grid-cols-[1fr_auto] gap-2 mb-2 sticky top-0 z-10 bg-violet-50 py-1">
+                    <button type="button" id="btnQuickAddSelectedLessonWords" class="bg-violet-600 hover:bg-violet-700 text-white py-2.5 px-3 rounded font-bold text-sm shadow">➕ 勾選完成，直接加入列印／學習單清單</button>
+                    <span id="lessonCheckedCount" class="self-center bg-white border border-violet-200 text-violet-700 rounded px-3 py-2 text-xs font-bold whitespace-nowrap">已勾 0 字</span>
+                </div>
+
+                <details class="mb-2 bg-white border border-amber-200 rounded-lg">
                     <summary class="cursor-pointer px-2.5 py-2 text-xs font-bold text-amber-800 bg-amber-50 rounded-lg">📥 從所有已儲存生字加入本課</summary>
                     <div class="p-2 space-y-2">
                         <input type="text" id="allWordSearch" class="w-full p-1.5 border border-amber-300 rounded text-xs" placeholder="搜尋生字…">
@@ -81,7 +86,7 @@
                     <button type="button" id="btnClearLessonChecks" class="bg-white hover:bg-gray-100 text-gray-600 border border-gray-300 py-1.5 rounded font-bold text-xs">□ 取消勾選</button>
                     <button type="button" id="btnDeleteLesson" class="bg-white hover:bg-red-50 text-red-600 border border-red-200 py-1.5 rounded font-bold text-xs">🗑 刪除課次</button>
                 </div>
-                <button type="button" id="btnAddSelectedLessonWords" class="w-full mt-2 bg-violet-600 hover:bg-violet-700 text-white py-2 rounded font-bold text-sm shadow">➕ 將勾選生字一次加入列印／學習單清單</button>
+                <button type="button" id="btnAddSelectedLessonWords" class="w-full mt-2 bg-violet-100 hover:bg-violet-200 text-violet-800 border border-violet-300 py-2 rounded font-bold text-xs">➕ 將勾選生字一次加入列印／學習單清單</button>
                 <p class="text-[10px] text-violet-600 mt-2 leading-relaxed">提示：點生字名稱可立即載入修改；勾選多個字後可一次加入清單。既有範本會自動放進「未分類」。</p>
             </div>
 
@@ -113,7 +118,7 @@
             </div>
 
             <!-- 部件控制區 -->
-            <div id="componentsContainer" class="space-y-3">
+            <div id="componentsContainer" class="grid grid-cols-1 xl:grid-cols-2 gap-3">
                 <!-- 動態部件會插入這裡 -->
             </div>
             
@@ -161,7 +166,7 @@
                 <div class="space-y-2 pt-2 border-t border-indigo-200">
                     <div>
                         <div class="flex justify-between text-xs font-bold mb-1">
-                            <span class="text-pink-700">底紙用量 (70格)</span>
+                            <span class="text-pink-700">底紙用量（每頁70格・自動換頁）</span>
                             <span id="statusA" class="text-pink-700">0 / 70</span>
                         </div>
                         <div class="w-full bg-gray-200 rounded-full h-1.5">
@@ -282,7 +287,7 @@
                 
                 <!-- 貼紙 A 輸出 -->
                 <div class="bg-pink-50 p-2 rounded-lg border border-pink-200">
-                    <div class="text-pink-800 font-bold text-[13px] mb-1.5 px-1">🌸 底字大格貼紙 (70格)</div>
+                    <div class="text-pink-800 font-bold text-[13px] mb-1.5 px-1">🌸 LD-8119 白色底貼（70格／頁・自動換頁）</div>
                     <div class="flex gap-2">
                         <button type="button" onclick="executeOutput('A', 'print')" id="btnPrintA" class="flex-[2] bg-pink-600 hover:bg-pink-700 disabled:bg-gray-400 text-white font-bold py-2 px-2 rounded shadow transition-colors text-sm">
                             🖨️ 網頁直接列印
@@ -342,7 +347,7 @@
     </div>
 
     <!-- 右側：Canvas 預覽區 -->
-    <div id="canvasWrapper" class="w-full md:w-[55%] lg:w-[65%] p-4 flex justify-center items-center overflow-auto bg-slate-200 relative inset-0">
+    <div id="canvasWrapper" class="w-full md:w-[38%] lg:w-[40%] p-3 flex justify-center items-start overflow-auto bg-slate-200 relative inset-0">
         <div class="absolute top-4 left-4 z-10 flex gap-2">
             <label class="bg-white p-2 rounded shadow text-sm font-bold text-slate-800 cursor-pointer flex items-center gap-2 border border-slate-300 hover:bg-slate-50">
                 <input type="checkbox" id="showBorders" class="w-4 h-4 cursor-pointer" checked> 顯示畫布輔助線
@@ -808,6 +813,7 @@
                     <button type="button" class="lesson-word-load flex-1 min-w-0 text-left font-bold text-violet-800 hover:text-violet-950 truncate" data-name="${escapeHtml(name)}" title="點一下載入 ${escapeHtml(name)}">${escapeHtml(name)}</button>
                 </div>`).join('');
 
+            updateLessonCheckedCount();
             list.querySelectorAll('.lesson-word-load').forEach(btn => {
                 btn.addEventListener('click', () => {
                     const name = btn.dataset.name;
@@ -930,9 +936,24 @@
 
         document.getElementById('btnSelectAllLesson').addEventListener('click', () => {
             document.querySelectorAll('.lesson-word-check').forEach(cb => cb.checked = true);
+            updateLessonCheckedCount();
         });
         document.getElementById('btnClearLessonChecks').addEventListener('click', () => {
             document.querySelectorAll('.lesson-word-check').forEach(cb => cb.checked = false);
+            updateLessonCheckedCount();
+        });
+
+        function updateLessonCheckedCount() {
+            const el = document.getElementById('lessonCheckedCount');
+            if (!el) return;
+            const n = document.querySelectorAll('.lesson-word-check:checked').length;
+            el.textContent = `已勾 ${n} 字`;
+        }
+        document.getElementById('lessonWordList').addEventListener('change', (e) => {
+            if (e.target.classList.contains('lesson-word-check')) updateLessonCheckedCount();
+        });
+        document.getElementById('btnQuickAddSelectedLessonWords').addEventListener('click', () => {
+            document.getElementById('btnAddSelectedLessonWords').click();
         });
         document.getElementById('btnDeleteLesson').addEventListener('click', () => {
             if (!currentLessonName) return;
@@ -1358,10 +1379,11 @@
                 });
             }
 
-            document.getElementById('statusA').innerText = `${usedA} / 70`;
-            document.getElementById('barA').style.width = `${Math.min((usedA/70)*100, 100)}%`;
-            document.getElementById('barA').className = `h-1.5 rounded-full transition-all ${usedA > 70 ? 'bg-red-500' : 'bg-pink-500'}`;
-            document.getElementById('statusA').className = usedA > 70 ? 'text-red-600' : 'text-pink-700';
+            const aPages = Math.max(1, Math.ceil(usedA / 70));
+            document.getElementById('statusA').innerText = usedA > 0 ? `${usedA} 張 / ${aPages} 頁LD-8119` : '0 張';
+            document.getElementById('barA').style.width = `${usedA > 0 ? ((usedA % 70 || 70) / 70) * 100 : 0}%`;
+            document.getElementById('barA').className = 'bg-pink-500 h-1.5 rounded-full transition-all';
+            document.getElementById('statusA').className = 'text-pink-700';
 
             const bPages = Math.max(1, Math.ceil(usedB / 70));
             document.getElementById('statusB').innerText = usedB > 0 ? `${usedB} 張 / ${bPages} 頁A4` : '0 張';
@@ -1369,13 +1391,12 @@
             document.getElementById('barB').className = 'bg-blue-500 h-1.5 rounded-full transition-all';
             document.getElementById('statusB').className = 'text-blue-700';
 
-            const overLimit = usedA > 70;
-            if(warningEl) warningEl.style.display = overLimit ? 'block' : 'none';
+            // A/B 都支援自動分頁，不再因超過單頁格數而停用輸出。
+            if (warningEl) warningEl.style.display = 'none';
             updateFillerStatus();
-            
             ['btnPrintA', 'btnDownloadA', 'btnPrintB', 'btnDownloadB', 'btnPrintC', 'btnDownloadC'].forEach(id => {
                 const btn = document.getElementById(id);
-                if(btn) btn.disabled = overLimit;
+                if (btn) btn.disabled = false;
             });
         }
 
@@ -1404,8 +1425,9 @@
         function updateFillerStatus() {
             const status = document.getElementById('fillerStatus');
             if (!status) return;
-            const used = Math.min(70, getUsedACells());
-            const remaining = Math.max(0, 70 - used);
+            const used = getUsedACells();
+            const usedOnLastPage = used % 70;
+            const remaining = used === 0 ? 70 : (usedOnLastPage === 0 ? 0 : 70 - usedOnLastPage);
             const words = getFillerWords();
             const enabled = document.getElementById('fillRemainingA')?.checked !== false;
             status.textContent = words.length && enabled
@@ -1588,6 +1610,84 @@
                 }
             }
             return offCanvas;
+        }
+
+
+        function getBaseDrawList() {
+            const students = getStudentCount();
+            const drawList = [];
+            if (printQueue.length > 0) {
+                printQueue.forEach(item => {
+                    const validComps = item.comps.filter(c => c.target === 'A');
+                    const effectiveQty = item.qty * students;
+                    for (let i = 0; i < effectiveQty; i++) validComps.forEach(comp => drawList.push(comp));
+                });
+            } else {
+                const activeComps = getActiveComponents().filter(c => c.target === 'A');
+                // 保留舊版「直接列印目前字形」的行為：沒有清單時，會填滿一整張底紙。
+                if (activeComps.length) {
+                    const cellsPerComp = Math.floor(70 / activeComps.length);
+                    for (let i = 0; i < 70; i++) {
+                        let cIdx = Math.floor(i / cellsPerComp);
+                        if (cIdx >= activeComps.length) cIdx = activeComps.length - 1;
+                        drawList.push(activeComps[cIdx]);
+                    }
+                }
+            }
+            return drawList;
+        }
+
+        function generateBaseCanvases() {
+            const cols = A_COLS, rows = A_ROWS;
+            const cellW = A_W, cellH = A_H;
+            const marginL = getSafeValue('mL_A', 0) * PX_PER_MM;
+            const marginT = getSafeValue('mT_A', 0) * PX_PER_MM;
+            const gapX = getSafeValue('gX_A', 0) * PX_PER_MM;
+            const gapY = getSafeValue('gY_A', 0) * PX_PER_MM;
+            const contentOffsetX = getSafeValue('contentX_A', 2) * PX_PER_MM;
+            const contentOffsetY = getSafeValue('contentY_A', 2) * PX_PER_MM;
+            const totalCells = cols * rows;
+            const drawList = getBaseDrawList();
+            const fillerEnabled = document.getElementById('fillRemainingA')?.checked !== false;
+            const fillerWords = getFillerWords();
+
+            if (!drawList.length && !(fillerEnabled && fillerWords.length)) return [];
+
+            // 有底貼時，頁數依底貼數量決定；語詞只補最後一頁剩餘格，不會額外產生新頁。
+            const pageCount = Math.max(1, Math.ceil(drawList.length / totalCells));
+            const pages = [];
+            const printGrid = document.getElementById('printGridLines')?.checked === true;
+
+            for (let p = 0; p < pageCount; p++) {
+                const c = document.createElement('canvas');
+                c.width = 2480; c.height = 3508;
+                const xctx = c.getContext('2d');
+                xctx.fillStyle = '#FFFFFF'; xctx.fillRect(0, 0, c.width, c.height);
+                const slice = drawList.slice(p * totalCells, (p + 1) * totalCells);
+                const isLastPage = p === pageCount - 1;
+
+                for (let i = 0; i < totalCells; i++) {
+                    const row = Math.floor(i / cols), col = i % cols;
+                    const x = marginL + col * (cellW + gapX);
+                    const y = marginT + row * (cellH + gapY);
+                    if (printGrid) {
+                        xctx.strokeStyle = '#e5e7eb';
+                        xctx.lineWidth = 2;
+                        xctx.strokeRect(x, y, cellW, cellH);
+                    }
+                    const cx = x + cellW / 2 + contentOffsetX;
+                    const cy = y + cellH / 2 + contentOffsetY;
+                    if (i < slice.length) {
+                        const comp = slice[i];
+                        drawComponent(xctx, comp, comp.center ? cx : cx + comp.x, comp.center ? cy : cy + comp.y);
+                    } else if (isLastPage && fillerEnabled && fillerWords.length) {
+                        const fillerIndex = i - slice.length;
+                        drawFillerWord(xctx, fillerWords[fillerIndex % fillerWords.length], x + cellW/2, y + cellH/2, cellW, cellH, contentOffsetX, contentOffsetY);
+                    }
+                }
+                pages.push(c);
+            }
+            return pages;
         }
 
 
@@ -1976,6 +2076,24 @@
         // 執行輸出：直接列印 (Print) 或 下載圖檔 (Download)
         // ==========================================
         window.executeOutput = function(type, action) {
+            if (type === 'A') {
+                const pages = generateBaseCanvases();
+                if (!pages.length) { alert('請確認目前畫面或清單中有白色底貼內容，或已輸入補空白語詞！'); return; }
+                const urls = pages.map(c => c.toDataURL('image/png'));
+                if (action === 'download') {
+                    urls.forEach((u, i) => {
+                        const link = document.createElement('a');
+                        link.download = `LD-8119_白色底貼_第${i+1}頁_${Date.now()}.png`;
+                        link.href = u; link.click();
+                    });
+                } else {
+                    const students = getStudentCount();
+                    const studentLine = students > 1 ? `\n學生人數：${students} 位（數量已自動 ×${students}）` : '';
+                    if (!confirm(`即將列印：LD-8119 白色底貼\n\n共 ${urls.length} 頁。${studentLine}\n超過 70 格會自動接到下一張。\n若有設定補空白語詞，只會補最後一頁剩餘格。\n\n請確認：紙張 A4、縮放 100%（實際大小）、邊距 0。`)) return;
+                    buildMultiPagePrintIframe(urls, 'LD-8119白色底貼');
+                }
+                return;
+            }
             if (type === 'B') {
                 const pages = generateTransparentCanvases();
                 if (!pages.length) { alert('請確認目前畫面或清單中有透明部件內容！'); return; }
