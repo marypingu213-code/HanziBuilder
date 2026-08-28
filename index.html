@@ -203,6 +203,33 @@
                     </div>
                     <p class="text-[10px] text-amber-700 mt-1 leading-relaxed">可用換行、逗號、頓號或分號分隔。系統會先排生字底貼，再用語詞填剩餘格；語詞會自動縮放到標籤內。</p>
                 </div>
+
+                <!-- 💦 透明紙智慧補空白 -->
+                <div class="mt-3 pt-3 border-t border-indigo-200">
+                    <div class="flex items-center justify-between gap-2 mb-2">
+                        <label class="text-sm font-bold text-sky-800">💦 透明紙智慧補空白</label>
+                        <span id="transparentFillerStatus" class="text-[10px] font-bold text-sky-700 bg-sky-100 px-2 py-1 rounded-full">剩餘 70 格</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <select id="transparentFillerMode" class="border border-sky-300 rounded-lg p-2 text-sm bg-sky-50 font-bold text-sky-800">
+                            <option value="none">不補空白</option>
+                            <option value="radicals">高頻部件</option>
+                            <option value="rewards">鼓勵語</option>
+                            <option value="symbols">常用符號</option>
+                            <option value="custom">自訂素材</option>
+                        </select>
+                        <label class="flex items-center justify-center text-xs font-bold text-sky-800 cursor-pointer border border-sky-200 rounded-lg bg-white px-2">
+                            <input type="checkbox" id="fillRemainingB" class="mr-1.5 w-4 h-4 accent-sky-600" checked>
+                            循環補滿最後一頁
+                        </label>
+                    </div>
+                    <textarea id="transparentCustomItems" rows="2" placeholder="自訂素材：每行一個，例如：
+請訂正
+已完成
+→" class="w-full mt-2 border border-sky-300 rounded-lg p-2 text-sm bg-sky-50 focus:ring-sky-400 resize-y hidden"></textarea>
+                    <div id="transparentPresetPreview" class="mt-2 text-[11px] text-sky-700 bg-white border border-sky-100 rounded-lg p-2 leading-relaxed">選擇一種素材後，這裡會顯示將自動補入的內容。</div>
+                    <p class="text-[10px] text-sky-700 mt-1 leading-relaxed">系統會先排真正需要的透明部件，只利用最後一頁剩餘裁切格補素材，不會多開一張透明紙。每格仍維持 30 × 29.7 mm 與四角裁切記號。</p>
+                </div>
             </div>
 
             <!-- ⚙️ 實體紙張列印微調 -->
@@ -1394,6 +1421,7 @@
             // A/B 都支援自動分頁，不再因超過單頁格數而停用輸出。
             if (warningEl) warningEl.style.display = 'none';
             updateFillerStatus();
+            updateTransparentFillerUI();
             ['btnPrintA', 'btnDownloadA', 'btnPrintB', 'btnDownloadB', 'btnPrintC', 'btnDownloadC'].forEach(id => {
                 const btn = document.getElementById(id);
                 if (btn) btn.disabled = false;
@@ -1455,6 +1483,77 @@
             }
             ctx.font = `bold ${fontSize}px ${FONT_FAMILY}`;
             ctx.fillText(safeText, cx + offsetX, cy + offsetY);
+            ctx.restore();
+        }
+
+
+
+        const TRANSPARENT_FILLER_PRESETS = {
+            radicals: ['氵','亻','口','木','艹','忄','扌','日','月','女','子','言','心','土','火','山','人','宀','辶','糸'],
+            rewards: ['很棒','加油','進步了','完成','我會了','再試試','好認真','讚','正確','請訂正'],
+            symbols: ['★','☆','✓','○','△','？','！','→','←','↑','↓','①','②','③','④','⑤']
+        };
+
+        function getTransparentFillerItems() {
+            const mode = document.getElementById('transparentFillerMode')?.value || 'none';
+            if (mode === 'none') return [];
+            if (mode === 'custom') {
+                const raw = document.getElementById('transparentCustomItems')?.value || '';
+                return raw.split(/[\n,，、;；]+/).map(v => v.trim()).filter(Boolean).slice(0, 200);
+            }
+            return (TRANSPARENT_FILLER_PRESETS[mode] || []).slice();
+        }
+
+        function getUsedBCells() {
+            const students = getStudentCount();
+            if (printQueue.length > 0) {
+                return printQueue.reduce((sum, item) => {
+                    const countB = item.comps.filter(c => c.target === 'B').length;
+                    return sum + countB * item.qty * students;
+                }, 0);
+            }
+            return getActiveComponents().filter(c => c.target === 'B').length;
+        }
+
+        function updateTransparentFillerUI() {
+            const modeEl = document.getElementById('transparentFillerMode');
+            const customEl = document.getElementById('transparentCustomItems');
+            const status = document.getElementById('transparentFillerStatus');
+            const preview = document.getElementById('transparentPresetPreview');
+            if (!modeEl || !status) return;
+            const mode = modeEl.value;
+            if (customEl) customEl.classList.toggle('hidden', mode !== 'custom');
+            const used = getUsedBCells();
+            const usedOnLastPage = used % 70;
+            const remaining = used === 0 ? 70 : (usedOnLastPage === 0 ? 0 : 70 - usedOnLastPage);
+            const items = getTransparentFillerItems();
+            const enabled = document.getElementById('fillRemainingB')?.checked !== false && mode !== 'none';
+            status.textContent = enabled && items.length ? `剩餘 ${remaining} 格・將補 ${remaining} 格` : `剩餘 ${remaining} 格`;
+            if (preview) {
+                if (mode === 'none') preview.textContent = '目前不補透明紙空白。';
+                else if (!items.length) preview.textContent = '尚未輸入自訂素材。';
+                else preview.textContent = `將循環使用：${items.slice(0, 12).join('、')}${items.length > 12 ? '…' : ''}`;
+            }
+        }
+
+        function drawTransparentFiller(ctx, text, cx, cy, cellW, cellH) {
+            const safeText = String(text || '').trim();
+            if (!safeText) return;
+            ctx.save();
+            ctx.fillStyle = '#334155';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            let fontSize = safeText.length <= 1 ? 180 : (safeText.length <= 3 ? 125 : 92);
+            const maxWidth = cellW * 0.76;
+            const maxHeight = cellH * 0.58;
+            while (fontSize > 34) {
+                ctx.font = `bold ${fontSize}px ${FONT_FAMILY}`;
+                const m = ctx.measureText(safeText);
+                if (m.width <= maxWidth && fontSize <= maxHeight) break;
+                fontSize -= 4;
+            }
+            ctx.font = `bold ${fontSize}px ${FONT_FAMILY}`;
+            ctx.fillText(safeText, cx, cy);
             ctx.restore();
         }
 
@@ -1713,22 +1812,33 @@
                 if (activeComps.length === 0) return [];
                 activeComps.forEach(c => drawList.push(c));
             }
-            if (drawList.length === 0) return [];
+            const fillerEnabled = document.getElementById('fillRemainingB')?.checked !== false;
+            const fillerItems = getTransparentFillerItems();
+            if (drawList.length === 0 && !(fillerEnabled && fillerItems.length)) return [];
 
             const pages = [];
-            const pageCount = Math.ceil(drawList.length / totalCells);
+            // 補空白只使用最後一頁剩餘格，不額外產生新頁。
+            const pageCount = Math.max(1, Math.ceil(drawList.length / totalCells));
             for (let p = 0; p < pageCount; p++) {
                 const c = document.createElement('canvas');
                 c.width = 2480; c.height = 3508;
                 const xctx = c.getContext('2d');
                 xctx.fillStyle = '#FFFFFF'; xctx.fillRect(0,0,c.width,c.height);
                 const slice = drawList.slice(p*totalCells, (p+1)*totalCells);
-                slice.forEach((comp, i) => {
+                const isLastPage = p === pageCount - 1;
+                for (let i = 0; i < totalCells; i++) {
+                    if (i >= slice.length && !(isLastPage && fillerEnabled && fillerItems.length)) continue;
                     const row = Math.floor(i / cols), col = i % cols;
                     const x = marginL + col * (cellW + gapX);
                     const y = marginT + row * (cellH + gapY);
                     const cx = x + cellW/2, cy = y + cellH/2;
-                    drawComponent(xctx, comp, comp.center ? cx : cx + comp.x, comp.center ? cy : cy + comp.y);
+                    if (i < slice.length) {
+                        const comp = slice[i];
+                        drawComponent(xctx, comp, comp.center ? cx : cx + comp.x, comp.center ? cy : cy + comp.y);
+                    } else {
+                        const fillerIndex = i - slice.length;
+                        drawTransparentFiller(xctx, fillerItems[fillerIndex % fillerItems.length], cx, cy, cellW, cellH);
+                    }
                     // 淡裁切記號：只畫四角，避免整框太明顯
                     xctx.strokeStyle = '#d1d5db';
                     xctx.lineWidth = 2;
@@ -1736,7 +1846,7 @@
                     [[x+m,y+m,1,1],[x+cellW-m,y+m,-1,1],[x+m,y+cellH-m,1,-1],[x+cellW-m,y+cellH-m,-1,-1]].forEach(([px,py,sx,sy])=>{
                         xctx.beginPath(); xctx.moveTo(px,py); xctx.lineTo(px+sx*len,py); xctx.moveTo(px,py); xctx.lineTo(px,py+sy*len); xctx.stroke();
                     });
-                });
+                }
                 pages.push(c);
             }
             return pages;
@@ -2096,12 +2206,12 @@
             }
             if (type === 'B') {
                 const pages = generateTransparentCanvases();
-                if (!pages.length) { alert('請確認目前畫面或清單中有透明部件內容！'); return; }
+                if (!pages.length) { alert('請確認目前畫面或清單中有透明部件內容，或已選擇透明紙補空白素材！'); return; }
                 const urls = pages.map(c => c.toDataURL('image/png'));
                 if (action === 'download') {
                     urls.forEach((u, i) => { const link=document.createElement('a'); link.download=`透明貼紙_A4_第${i+1}頁_${Date.now()}.png`; link.href=u; link.click(); });
                 } else {
-                    if (!confirm(`即將列印：A4未切割透明貼紙\n\n共 ${urls.length} 頁。\n每個部件裁切區為 30 × 29.7 mm，四角有淡裁切記號。\n\n請確認：紙張 A4、縮放 100%（實際大小）、邊距 0。`)) return;
+                    if (!confirm(`即將列印：A4未切割透明貼紙\n\n共 ${urls.length} 頁。\n每個裁切區為 30 × 29.7 mm，四角有淡裁切記號。\n若啟用智慧補空白，只會補最後一頁剩餘格，不會額外多印一頁。\n\n請確認：紙張 A4、縮放 100%（實際大小）、邊距 0。`)) return;
                     buildMultiPagePrintIframe(urls, 'A4透明貼紙');
                 }
                 return;
@@ -2157,6 +2267,15 @@
         const fillRemainingAEl = document.getElementById('fillRemainingA');
         if (fillerWordsEl) fillerWordsEl.addEventListener('input', updateFillerStatus);
         if (fillRemainingAEl) fillRemainingAEl.addEventListener('change', updateFillerStatus);
+
+
+        const transparentFillerModeEl = document.getElementById('transparentFillerMode');
+        const transparentCustomItemsEl = document.getElementById('transparentCustomItems');
+        const fillRemainingBEl = document.getElementById('fillRemainingB');
+        if (transparentFillerModeEl) transparentFillerModeEl.addEventListener('change', updateTransparentFillerUI);
+        if (transparentCustomItemsEl) transparentCustomItemsEl.addEventListener('input', updateTransparentFillerUI);
+        if (fillRemainingBEl) fillRemainingBEl.addEventListener('change', updateTransparentFillerUI);
+        updateTransparentFillerUI();
 
         // 初始執行
         ensureUncategorizedTemplates();
