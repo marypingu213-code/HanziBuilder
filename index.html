@@ -179,6 +179,25 @@
                     </div>
                     <p id="queueWarning" class="text-xs text-red-600 font-bold hidden mt-1">⚠️ 警告：白色底貼超過單張 70 格；透明紙會自動換頁。</p>
                 </div>
+
+                <!-- 📝 白色底紙剩餘格補印語詞 -->
+                <div class="mt-3 pt-3 border-t border-indigo-200">
+                    <div class="flex items-center justify-between gap-2 mb-2">
+                        <label for="fillerWords" class="text-sm font-bold text-amber-800">📝 空白格補印語詞</label>
+                        <span id="fillerStatus" class="text-[10px] font-bold text-amber-700 bg-amber-100 px-2 py-1 rounded-full">剩餘 70 格</span>
+                    </div>
+                    <textarea id="fillerWords" rows="3" placeholder="每行輸入一個語詞，例如：
+早安
+加油
+好棒" class="w-full border border-amber-300 rounded-lg p-2 text-sm bg-amber-50 focus:ring-amber-400 resize-y"></textarea>
+                    <div class="flex items-center gap-2 mt-2">
+                        <label class="flex items-center text-xs font-bold text-amber-800 cursor-pointer">
+                            <input type="checkbox" id="fillRemainingA" class="mr-1.5 w-4 h-4 accent-amber-600" checked>
+                            自動循環填滿白色底紙剩餘格
+                        </label>
+                    </div>
+                    <p class="text-[10px] text-amber-700 mt-1 leading-relaxed">可用換行、逗號、頓號或分號分隔。系統會先排生字底貼，再用語詞填剩餘格；語詞會自動縮放到標籤內。</p>
+                </div>
             </div>
 
             <!-- ⚙️ 實體紙張列印微調 -->
@@ -1352,11 +1371,69 @@
 
             const overLimit = usedA > 70;
             if(warningEl) warningEl.style.display = overLimit ? 'block' : 'none';
+            updateFillerStatus();
             
             ['btnPrintA', 'btnDownloadA', 'btnPrintB', 'btnDownloadB', 'btnPrintC', 'btnDownloadC'].forEach(id => {
                 const btn = document.getElementById(id);
                 if(btn) btn.disabled = overLimit;
             });
+        }
+
+        function getFillerWords() {
+            const el = document.getElementById('fillerWords');
+            if (!el) return [];
+            return el.value
+                .split(/[\n,，、;；]+/)
+                .map(v => v.trim())
+                .filter(Boolean)
+                .slice(0, 200);
+        }
+
+        function getUsedACells() {
+            const students = getStudentCount();
+            if (printQueue.length > 0) {
+                return printQueue.reduce((sum, item) => {
+                    const countA = item.comps.filter(c => c.target === 'A').length;
+                    return sum + countA * item.qty * students;
+                }, 0);
+            }
+            const activeA = getActiveComponents().filter(c => c.target === 'A');
+            return activeA.length ? 70 : 0;
+        }
+
+        function updateFillerStatus() {
+            const status = document.getElementById('fillerStatus');
+            if (!status) return;
+            const used = Math.min(70, getUsedACells());
+            const remaining = Math.max(0, 70 - used);
+            const words = getFillerWords();
+            const enabled = document.getElementById('fillRemainingA')?.checked !== false;
+            status.textContent = words.length && enabled
+                ? `剩餘 ${remaining} 格・將補 ${remaining} 格`
+                : `剩餘 ${remaining} 格`;
+        }
+
+        function drawFillerWord(ctx, text, cx, cy, cellW, cellH, offsetX = 0, offsetY = 0) {
+            const safeText = String(text || '').trim();
+            if (!safeText) return;
+            ctx.save();
+            ctx.fillStyle = '#334155';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            let fontSize = Math.min(150, cellH * 0.42);
+            const maxWidth = cellW * 0.82;
+            const maxHeight = cellH * 0.62;
+            while (fontSize > 38) {
+                ctx.font = `bold ${fontSize}px ${FONT_FAMILY}`;
+                const metrics = ctx.measureText(safeText);
+                const widthOK = metrics.width <= maxWidth;
+                const heightOK = fontSize <= maxHeight;
+                if (widthOK && heightOK) break;
+                fontSize -= 4;
+            }
+            ctx.font = `bold ${fontSize}px ${FONT_FAMILY}`;
+            ctx.fillText(safeText, cx + offsetX, cy + offsetY);
+            ctx.restore();
         }
 
         function getSafeValue(id, defaultVal = 0) {
@@ -1454,15 +1531,20 @@
                         validComps.forEach(comp => drawList.push(comp));
                     }
                 });
-                if (drawList.length === 0) return null;
+                if (drawList.length === 0) {
+                    if (!(type === 'A' && getFillerWords().length > 0 && document.getElementById('fillRemainingA')?.checked !== false)) return null;
+                }
             } else {
                 const activeComps = getActiveComponents().filter(c => c.target === type);
-                if (activeComps.length === 0) return null;
-                const cellsPerComp = Math.floor(totalCells / activeComps.length);
-                for(let i=0; i<totalCells; i++){
-                    let cIdx = Math.floor(i / cellsPerComp);
-                    if(cIdx >= activeComps.length) cIdx = activeComps.length - 1; 
-                    drawList.push(activeComps[cIdx]);
+                if (activeComps.length === 0) {
+                    if (!(type === 'A' && getFillerWords().length > 0 && document.getElementById('fillRemainingA')?.checked !== false)) return null;
+                } else {
+                    const cellsPerComp = Math.floor(totalCells / activeComps.length);
+                    for(let i=0; i<totalCells; i++){
+                        let cIdx = Math.floor(i / cellsPerComp);
+                        if(cIdx >= activeComps.length) cIdx = activeComps.length - 1; 
+                        drawList.push(activeComps[cIdx]);
+                    }
                 }
             }
 
@@ -1481,17 +1563,25 @@
                         oCtx.strokeRect(x, y, cellW, cellH);
                     }
 
+                    const contentOffsetX = type === 'A' ? getSafeValue('contentX_A', 2) * PX_PER_MM : 0;
+                    const contentOffsetY = type === 'A' ? getSafeValue('contentY_A', 2) * PX_PER_MM : 0;
+                    const cx = x + cellW / 2 + contentOffsetX;
+                    const cy = y + cellH / 2 + contentOffsetY;
+
                     if (index < drawList.length) {
                         const comp = drawList[index];
-                        const contentOffsetX = type === 'A' ? getSafeValue('contentX_A', 2) * PX_PER_MM : 0;
-                        const contentOffsetY = type === 'A' ? getSafeValue('contentY_A', 2) * PX_PER_MM : 0;
-                        const cx = x + cellW / 2 + contentOffsetX;
-                        const cy = y + cellH / 2 + contentOffsetY;
-
                         if (comp.center) {
                             drawComponent(oCtx, comp, cx, cy);
                         } else {
                             drawComponent(oCtx, comp, cx + comp.x, cy + comp.y);
+                        }
+                    } else if (type === 'A') {
+                        const fillerEnabled = document.getElementById('fillRemainingA')?.checked !== false;
+                        const fillerWords = getFillerWords();
+                        if (fillerEnabled && fillerWords.length > 0) {
+                            const fillerIndex = index - drawList.length;
+                            const word = fillerWords[fillerIndex % fillerWords.length];
+                            drawFillerWord(oCtx, word, x + cellW / 2, y + cellH / 2, cellW, cellH, contentOffsetX, contentOffsetY);
                         }
                     }
                     index++;
@@ -1945,11 +2035,17 @@
             buildPrintIframe(dataUrl, nameLabel);
         };
 
+        const fillerWordsEl = document.getElementById('fillerWords');
+        const fillRemainingAEl = document.getElementById('fillRemainingA');
+        if (fillerWordsEl) fillerWordsEl.addEventListener('input', updateFillerStatus);
+        if (fillRemainingAEl) fillRemainingAEl.addEventListener('change', updateFillerStatus);
+
         // 初始執行
         ensureUncategorizedTemplates();
         updateTemplateDropdown('default_老');
         loadTemplate('default_老');
         renderLessonLibrary();
+        updateFillerStatus();
     </script>
 </body>
 </html>
