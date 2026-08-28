@@ -61,6 +61,21 @@
                     <button type="button" id="btnAddCurrentToLesson" class="bg-amber-500 hover:bg-amber-600 text-white px-3 rounded font-bold text-xs whitespace-nowrap">⭐ 收藏目前生字</button>
                 </div>
                 <div id="lessonWordList" class="grid grid-cols-4 sm:grid-cols-5 gap-1.5 max-h-32 overflow-y-auto bg-white border border-violet-200 rounded p-2 mb-2"></div>
+
+                <details class="mb-2 bg-white border border-amber-200 rounded-lg" open>
+                    <summary class="cursor-pointer px-2.5 py-2 text-xs font-bold text-amber-800 bg-amber-50 rounded-lg">📥 從所有已儲存生字加入本課</summary>
+                    <div class="p-2 space-y-2">
+                        <input type="text" id="allWordSearch" class="w-full p-1.5 border border-amber-300 rounded text-xs" placeholder="搜尋生字…">
+                        <div id="allSavedWordList" class="grid grid-cols-5 sm:grid-cols-7 gap-1.5 max-h-36 overflow-y-auto bg-white border border-amber-100 rounded p-2"></div>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button type="button" id="btnSelectAllSaved" class="bg-white hover:bg-amber-50 text-amber-700 border border-amber-300 py-1.5 rounded font-bold text-xs">☑ 全選顯示</button>
+                            <button type="button" id="btnClearSavedChecks" class="bg-white hover:bg-gray-100 text-gray-600 border border-gray-300 py-1.5 rounded font-bold text-xs">□ 取消勾選</button>
+                            <button type="button" id="btnAddSavedToLesson" class="bg-amber-500 hover:bg-amber-600 text-white py-1.5 rounded font-bold text-xs">＋ 加入本課</button>
+                        </div>
+                        <p class="text-[10px] text-amber-700">可直接勾選以前已儲存的生字加入目前課次，不必逐字載入。生字可同時收藏在不同課次。</p>
+                    </div>
+                </details>
+
                 <div class="grid grid-cols-3 gap-2">
                     <button type="button" id="btnSelectAllLesson" class="bg-white hover:bg-violet-100 text-violet-700 border border-violet-300 py-1.5 rounded font-bold text-xs">☑ 全選本課</button>
                     <button type="button" id="btnClearLessonChecks" class="bg-white hover:bg-gray-100 text-gray-600 border border-gray-300 py-1.5 rounded font-bold text-xs">□ 取消勾選</button>
@@ -746,6 +761,7 @@
                 select.appendChild(opt);
                 list.innerHTML = '<div class="col-span-full text-center text-xs text-gray-400 py-2">先建立「第1課」之類的課次，再收藏生字。</div>';
                 currentLessonName = '';
+                renderAllSavedWords();
                 return;
             }
 
@@ -764,6 +780,7 @@
             saveLessonCollections();
             if (words.length === 0) {
                 list.innerHTML = '<div class="col-span-full text-center text-xs text-gray-400 py-2">這一課還沒有收藏生字。</div>';
+                renderAllSavedWords();
                 return;
             }
             list.innerHTML = words.map(name => `
@@ -781,6 +798,7 @@
                     toggleDeleteBtn();
                 });
             });
+            renderAllSavedWords();
         }
 
         function addTemplateToLesson(templateName, lessonName) {
@@ -789,15 +807,37 @@
             if (!lessonName) return false;
             if (!lessonCollections[lessonName]) lessonCollections[lessonName] = [];
             if (!lessonCollections[lessonName].includes(templateName)) lessonCollections[lessonName].push(templateName);
-            // 同一生字只歸在一個課次；從其他課次移除，避免重複。
-            Object.keys(lessonCollections).forEach(k => {
-                if (k !== lessonName) lessonCollections[k] = lessonCollections[k].filter(x => x !== templateName);
-            });
+            // 生字可以同時收藏在多個課次；只有「未分類」會在正式歸類後移除。
+            if (lessonName !== '未分類' && lessonCollections['未分類']) {
+                lessonCollections['未分類'] = lessonCollections['未分類'].filter(x => x !== templateName);
+            }
             currentLessonName = lessonName;
             saveLessonCollections();
             localStorage.setItem('myCurrentLesson', currentLessonName);
             renderLessonLibrary();
             return true;
+        }
+
+        function renderAllSavedWords() {
+            const list = document.getElementById('allSavedWordList');
+            if (!list) return;
+            const query = (document.getElementById('allWordSearch')?.value || '').trim();
+            const currentWords = new Set(lessonCollections[currentLessonName] || []);
+            let names = Object.keys(customTemplates).sort((a,b) => a.localeCompare(b, 'zh-Hant'));
+            if (query) names = names.filter(name => name.includes(query));
+            if (!names.length) {
+                list.innerHTML = '<div class="col-span-full text-center text-xs text-gray-400 py-2">找不到符合的生字。</div>';
+                return;
+            }
+            list.innerHTML = names.map(name => {
+                const inLesson = currentWords.has(name);
+                return `
+                <label class="flex items-center gap-1 rounded px-1.5 py-1 border ${inLesson ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-100'} cursor-pointer min-w-0" title="${inLesson ? '已在本課' : '加入本課'}">
+                    <input type="checkbox" class="all-saved-word-check accent-amber-600 flex-shrink-0" value="${escapeHtml(name)}" ${inLesson ? 'checked' : ''}>
+                    <span class="font-bold text-slate-700 truncate">${escapeHtml(name)}</span>
+                    ${inLesson ? '<span class="text-[9px] text-emerald-600 ml-auto">✓</span>' : ''}
+                </label>`;
+            }).join('');
         }
 
         function hydrateStoredComponents(templateName) {
@@ -833,6 +873,33 @@
             currentLessonName = e.target.value;
             localStorage.setItem('myCurrentLesson', currentLessonName);
             renderLessonLibrary();
+        });
+
+        document.getElementById('allWordSearch').addEventListener('input', renderAllSavedWords);
+        document.getElementById('btnSelectAllSaved').addEventListener('click', () => {
+            document.querySelectorAll('.all-saved-word-check').forEach(cb => cb.checked = true);
+        });
+        document.getElementById('btnClearSavedChecks').addEventListener('click', () => {
+            document.querySelectorAll('.all-saved-word-check').forEach(cb => cb.checked = false);
+        });
+        document.getElementById('btnAddSavedToLesson').addEventListener('click', () => {
+            if (!currentLessonName) return alert('請先建立或選擇一個課次。');
+            const names = Array.from(document.querySelectorAll('.all-saved-word-check:checked')).map(cb => cb.value);
+            if (!names.length) return alert('請先勾選要加入本課的生字。');
+            let added = 0;
+            names.forEach(name => {
+                if (!lessonCollections[currentLessonName]) lessonCollections[currentLessonName] = [];
+                if (!lessonCollections[currentLessonName].includes(name) && customTemplates[name]) {
+                    lessonCollections[currentLessonName].push(name);
+                    added++;
+                }
+                if (currentLessonName !== '未分類' && lessonCollections['未分類']) {
+                    lessonCollections['未分類'] = lessonCollections['未分類'].filter(x => x !== name);
+                }
+            });
+            saveLessonCollections();
+            renderLessonLibrary();
+            alert(added ? `✅ 已加入 ${added} 個生字到「${currentLessonName}」。` : `這些生字原本就已經在「${currentLessonName}」裡了。`);
         });
 
         document.getElementById('btnAddCurrentToLesson').addEventListener('click', () => {
