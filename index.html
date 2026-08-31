@@ -44,13 +44,22 @@
                         🗑️ 刪除
                     </button>
                 </div>
+                <div class="grid grid-cols-3 gap-2 mt-2">
+                    <button type="button" id="btnExportBackup" class="bg-white hover:bg-amber-100 text-amber-800 border border-amber-300 text-xs font-bold py-2 rounded shadow-sm">⬇ 匯出備份</button>
+                    <label class="bg-white hover:bg-amber-100 text-amber-800 border border-amber-300 text-xs font-bold py-2 rounded shadow-sm text-center cursor-pointer">⬆ 匯入備份<input type="file" id="backupFileInput" accept="application/json,.json" class="hidden"></label>
+                    <button type="button" id="btnClearWorkspace" class="bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 text-xs font-bold py-2 rounded shadow-sm">🧹 清空暫存</button>
+                </div>
+                <div class="mt-2 flex items-center justify-between gap-2">
+                    <p class="text-[10px] text-amber-700 leading-relaxed">現在會自動保存目前畫面、課次、列印清單與已上傳部件圖片。建議仍定期匯出備份，避免更換瀏覽器或清除網站資料時遺失。</p>
+                    <span id="autosaveStatus" class="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-full whitespace-nowrap">💾 自動保存已啟用</span>
+                </div>
             </div>
 
             <!-- 📚 課次生字收藏庫 -->
             <div class="bg-violet-50 p-3 rounded-lg border border-violet-200 shadow-sm">
                 <div class="flex items-center justify-between gap-2 mb-2">
                     <label class="block text-sm font-bold text-violet-900">📚 課次生字收藏庫</label>
-                    <span class="text-[10px] text-violet-500">會永久儲存在此瀏覽器</span>
+                    <span class="text-[10px] text-violet-500">自動保存在此瀏覽器，可另行匯出備份</span>
                 </div>
                 <div class="flex gap-2 mb-2">
                     <input type="text" id="lessonNameInput" class="flex-1 min-w-0 p-2 border border-violet-300 rounded bg-white text-sm font-bold" placeholder="例如：第1課">
@@ -182,7 +191,7 @@
                             <div id="barB" class="bg-blue-500 h-1.5 rounded-full transition-all" style="width: 0%"></div>
                         </div>
                     </div>
-                    <p id="queueWarning" class="text-xs text-red-600 font-bold hidden mt-1">⚠️ 警告：白色底貼超過單張 70 格；透明紙會自動換頁。</p>
+                    <p id="queueWarning" class="text-xs text-red-600 font-bold hidden mt-1">⚠️ 警告：白色底貼超過單張 70 格會自動換頁；透明紙也會依安全邊界後的每頁容量自動換頁。</p>
                 </div>
 
                 <!-- 📝 白色底紙剩餘格補印語詞 -->
@@ -208,13 +217,17 @@
                 <div class="mt-3 pt-3 border-t border-indigo-200">
                     <div class="flex items-center justify-between gap-2 mb-2">
                         <label class="text-sm font-bold text-sky-800">💦 透明紙智慧補空白</label>
-                        <span id="transparentFillerStatus" class="text-[10px] font-bold text-sky-700 bg-sky-100 px-2 py-1 rounded-full">剩餘 70 格</span>
+                        <span id="transparentFillerStatus" class="text-[10px] font-bold text-sky-700 bg-sky-100 px-2 py-1 rounded-full">剩餘 0 格</span>
                     </div>
                     <div class="grid grid-cols-2 gap-2">
                         <select id="transparentFillerMode" class="border border-sky-300 rounded-lg p-2 text-sm bg-sky-50 font-bold text-sky-800">
                             <option value="none">不補空白</option>
                             <option value="radicals">高頻部件</option>
                             <option value="rewards">鼓勵語</option>
+                            <option value="cuteEmoji">可愛 emoji</option>
+                            <option value="animalEmoji">小動物 emoji</option>
+                            <option value="emojiRewards">emoji＋獎勵語</option>
+                            <option value="animalEmojiRewards">小動物＋獎勵語</option>
                             <option value="symbols">常用符號</option>
                             <option value="custom">自訂素材</option>
                         </select>
@@ -224,11 +237,12 @@
                         </label>
                     </div>
                     <textarea id="transparentCustomItems" rows="2" placeholder="自訂素材：每行一個，例如：
-請訂正
+🐻
+🐰好棒
 已完成
 →" class="w-full mt-2 border border-sky-300 rounded-lg p-2 text-sm bg-sky-50 focus:ring-sky-400 resize-y hidden"></textarea>
-                    <div id="transparentPresetPreview" class="mt-2 text-[11px] text-sky-700 bg-white border border-sky-100 rounded-lg p-2 leading-relaxed">選擇一種素材後，這裡會顯示將自動補入的內容。</div>
-                    <p class="text-[10px] text-sky-700 mt-1 leading-relaxed">系統會先排真正需要的透明部件，只利用最後一頁剩餘裁切格補素材，不會多開一張透明紙。每格仍維持 30 × 29.7 mm 與四角裁切記號。</p>
+                    <div id="transparentPresetPreview" class="mt-2 text-[11px] text-sky-700 bg-white border border-sky-100 rounded-lg p-2 leading-relaxed">選擇一種素材後，這裡會顯示將自動補入的內容；也可改成可愛 emoji、小動物 emoji，或自己輸入想要的 emoji 當獎勵貼紙。</div>
+                    <p class="text-[10px] text-sky-700 mt-1 leading-relaxed">系統會先排真正需要的透明部件，只利用最後一頁剩餘裁切格補素材，不會多開一張透明紙。每格仍維持 30 × 29.7 mm 與四角裁切記號；自訂素材也可直接輸入 emoji 或 emoji＋文字。</p>
                 </div>
             </div>
 
@@ -254,21 +268,24 @@
                                 <div><label class="text-gray-500 block">垂直間距 (Gap Y)</label> <input type="number" id="gY_A" value="0" step="0.1" class="w-full border p-1 rounded bg-gray-50"></div>
                                 <div><label class="text-pink-700 font-bold block">內容向右位移 (mm)</label> <input type="number" id="contentX_A" value="2" step="0.5" class="w-full border border-pink-300 p-1 rounded bg-pink-50"></div>
                                 <div><label class="text-pink-700 font-bold block">內容向下位移 (mm)</label> <input type="number" id="contentY_A" value="2" step="0.5" class="w-full border border-pink-300 p-1 rounded bg-pink-50"></div>
+                                <div class="col-span-2"><label class="text-pink-700 font-bold block">每格內容安全內縮 (mm)</label> <input type="number" id="safeInset_A" value="4" step="0.5" class="w-full border border-pink-300 p-1 rounded bg-pink-50"></div>
                             </div>
-                            <p class="text-[10px] text-pink-600 leading-relaxed">LD-8119 建議先用右移 2mm、下移 2mm 測試。這只移動字／圖片，不改變 70 格實際切線位置，因此不會讓右下角標籤整體跑出版面。</p>
+                            <p class="text-[10px] text-pink-600 leading-relaxed">建議先用：右移 2mm、下移 2mm、內容安全內縮 4mm。LD-8119 的格線仍固定貼齊紙張邊緣，但會把字／圖自動縮進安全區，避免上下左右都被印表機吃掉。</p>
                         </div>
 
                         <!-- B紙張設定 -->
                         <div class="space-y-2 pb-2">
                             <div class="flex justify-between items-center mb-1">
-                                <p class="font-bold text-blue-700">💦 透明紙張 (A4未切割)</p>
+                                <div><p class="font-bold text-blue-700">💦 透明紙張 (A4未切割)</p><p class="text-[10px] text-blue-600 mt-0.5">透明紙可直接啟用安全邊界，避開印表機四周不可列印區；每頁可用格數會自動重新計算。</p></div>
                                 <button type="button" onclick="printCalibration('B')" class="bg-blue-100 hover:bg-blue-200 text-blue-700 px-2 py-1 rounded font-bold border border-blue-300">🖨️ 印製校正網格</button>
                             </div>
                             <div class="grid grid-cols-2 gap-2">
-                                <div><label class="text-gray-500 block font-bold text-blue-600">左邊距 (mm)</label> <input type="number" id="mL_B" value="0" step="0.5" class="w-full border p-1 rounded bg-blue-50"></div>
-                                <div><label class="text-gray-500 block">上邊距 (mm)</label> <input type="number" id="mT_B" value="0" step="0.5" class="w-full border p-1 rounded bg-gray-50"></div>
+                                <div><label class="text-gray-500 block font-bold text-blue-600">額外左移/右移微調 (mm)</label> <input type="number" id="mL_B" value="0" step="0.5" class="w-full border p-1 rounded bg-blue-50"></div>
+                                <div><label class="text-gray-500 block">額外上移/下移微調 (mm)</label> <input type="number" id="mT_B" value="0" step="0.5" class="w-full border p-1 rounded bg-gray-50"></div>
                                 <div><label class="text-gray-500 block">水平間距 (Gap X)</label> <input type="number" id="gX_B" value="0" step="0.1" class="w-full border p-1 rounded bg-gray-50"></div>
                                 <div><label class="text-gray-500 block">垂直間距 (Gap Y)</label> <input type="number" id="gY_B" value="0" step="0.1" class="w-full border p-1 rounded bg-gray-50"></div>
+                                <div><label class="text-blue-700 font-bold block">整頁安全邊界 (mm)</label> <input type="number" id="safeBorder_B" value="5" step="0.5" class="w-full border border-blue-300 p-1 rounded bg-blue-50"></div>
+                                <div><label class="text-blue-700 font-bold block">每格內容安全內縮 (mm)</label> <input type="number" id="contentInset_B" value="2" step="0.5" class="w-full border border-blue-300 p-1 rounded bg-blue-50"></div>
                             </div>
                         </div>
 
@@ -327,7 +344,7 @@
 
                 <!-- 貼紙 B 輸出 -->
                 <div class="bg-blue-50 p-2 rounded-lg border border-blue-200">
-                    <div class="text-blue-800 font-bold text-[13px] mb-1.5 px-1">💦 透明貼紙 (A4未切割)</div><div class="text-[10px] text-blue-600 px-1 mb-1">每格 30 × 29.7 mm，自動換頁，列印後依淡色四角裁切記號裁切。</div>
+                    <div class="text-blue-800 font-bold text-[13px] mb-1.5 px-1">💦 透明貼紙 (A4未切割)</div><div class="text-[10px] text-blue-600 px-1 mb-1">每格 30 × 29.7 mm，會依安全邊界自動計算每頁可排數量並自動換頁；列印後依淡色四角裁切記號裁切。</div>
                     <div class="flex gap-2">
                         <button type="button" onclick="executeOutput('B', 'print')" id="btnPrintB" class="flex-[2] bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-bold py-2 px-2 rounded shadow transition-colors text-sm">
                             🖨️ 網頁直接列印
@@ -441,8 +458,24 @@
         let lessonCollections = JSON.parse(localStorage.getItem('myLessonCollections')) || {};
         let currentLessonName = localStorage.getItem('myCurrentLesson') || '';
 
+        const WORKSPACE_STORAGE_KEY = 'myWorkspaceState';
+        let isRestoringWorkspace = false;
+        let autosaveTimer = null;
+
+        function setAutosaveStatus(message, tone = 'emerald') {
+            const el = document.getElementById('autosaveStatus');
+            if (!el) return;
+            el.textContent = message;
+            el.className = 'text-[10px] font-bold px-2 py-1 rounded-full whitespace-nowrap border';
+            if (tone === 'red') el.className += ' text-red-700 bg-red-50 border-red-200';
+            else if (tone === 'amber') el.className += ' text-amber-700 bg-amber-50 border-amber-200';
+            else if (tone === 'slate') el.className += ' text-slate-700 bg-slate-50 border-slate-200';
+            else el.className += ' text-emerald-700 bg-emerald-50 border-emerald-200';
+        }
+
         function saveLessonCollections() {
             localStorage.setItem('myLessonCollections', JSON.stringify(lessonCollections));
+            if (typeof scheduleWorkspaceSave === 'function') scheduleWorkspaceSave();
         }
 
         function ensureUncategorizedTemplates() {
@@ -467,10 +500,13 @@
                 gY_A: getSafeValue('gY_A', 0),
                 contentX_A: getSafeValue('contentX_A', 2),
                 contentY_A: getSafeValue('contentY_A', 2),
+                safeInset_A: getSafeValue('safeInset_A', 4),
                 mL_B: getSafeValue('mL_B', 0),
                 mT_B: getSafeValue('mT_B', 0),
                 gX_B: getSafeValue('gX_B', 0),
                 gY_B: getSafeValue('gY_B', 0),
+                safeBorder_B: getSafeValue('safeBorder_B', 5),
+                contentInset_B: getSafeValue('contentInset_B', 2),
             };
             localStorage.setItem('myMarginPreset', JSON.stringify(preset));
             alert('✅ 邊距設定已儲存！下次按「還原上次儲存的邊距」即可快速套用。');
@@ -484,6 +520,7 @@
                 const el = document.getElementById(k);
                 if (el) el.value = preset[k];
             });
+            if (typeof scheduleWorkspaceSave === 'function') scheduleWorkspaceSave();
             alert('✅ 已還原上次儲存的邊距設定！');
         };
 
@@ -548,6 +585,250 @@
             const tCtx = tempCanvas.getContext('2d');
             tCtx.drawImage(imgObj, 0, 0, w, h);
             return tempCanvas.toDataURL('image/png', 0.8);
+        }
+
+
+        function getMarginDataSnapshot() {
+            return {
+                mL_A: getSafeValue('mL_A', 0), mT_A: getSafeValue('mT_A', 0), gX_A: getSafeValue('gX_A', 0), gY_A: getSafeValue('gY_A', 0),
+                contentX_A: getSafeValue('contentX_A', 2), contentY_A: getSafeValue('contentY_A', 2), safeInset_A: getSafeValue('safeInset_A', 4),
+                mL_B: getSafeValue('mL_B', 0), mT_B: getSafeValue('mT_B', 0), gX_B: getSafeValue('gX_B', 0), gY_B: getSafeValue('gY_B', 0),
+                safeBorder_B: getSafeValue('safeBorder_B', 5), contentInset_B: getSafeValue('contentInset_B', 2)
+            };
+        }
+
+        function applyMarginDataSnapshot(margins = {}) {
+            Object.keys(margins || {}).forEach(k => {
+                const el = document.getElementById(k);
+                if (el != null && margins[k] != null) el.value = margins[k];
+            });
+        }
+
+        function serializeComponentForStorage(comp) {
+            const copy = { ...comp };
+            if (copy.type === 'image') {
+                if (!copy.imgBase64 && copy.imgObj) copy.imgBase64 = getBase64Image(copy.imgObj);
+                delete copy.imgObj;
+            }
+            return copy;
+        }
+
+        function serializePanelComponents() {
+            const panels = document.querySelectorAll('.comp-panel');
+            const comps = [];
+            panels.forEach(panel => {
+                const id = panel.dataset.id;
+                const type = document.querySelector(`input[name="type${id}"]:checked`)?.value || 'text';
+                const data = {
+                    type,
+                    char: document.getElementById(`char${id}`)?.value || '',
+                    color: document.getElementById(`color${id}`)?.value || '#4AAEEA',
+                    size: parseInt(document.getElementById(`size${id}`)?.value) || 160,
+                    x: parseInt(document.getElementById(`x${id}`)?.value) || 0,
+                    y: parseInt(document.getElementById(`y${id}`)?.value) || 0,
+                    target: document.getElementById(`target${id}`)?.value || 'B',
+                    center: !!document.getElementById(`center${id}`)?.checked,
+                    active: !!document.getElementById(`active${id}`)?.checked,
+                    fileName: panel.dataset.fileName || ''
+                };
+                if (type === 'image') {
+                    if (loadedImages[id]) data.imgBase64 = getBase64Image(loadedImages[id]);
+                    else {
+                        const previewSrc = document.getElementById(`previewImg${id}`)?.src || '';
+                        if (previewSrc.startsWith('data:image/')) data.imgBase64 = previewSrc;
+                    }
+                }
+                comps.push(data);
+            });
+            return comps;
+        }
+
+        async function hydrateComponentsForStorage(source = []) {
+            const comps = [];
+            for (const c of (source || [])) {
+                const copy = { ...c };
+                if (copy.type === 'image' && copy.imgBase64) {
+                    const img = new Image();
+                    await new Promise(resolve => { img.onload = resolve; img.onerror = resolve; img.src = copy.imgBase64; });
+                    if (img.complete && img.naturalWidth) copy.imgObj = img;
+                }
+                comps.push(copy);
+            }
+            return comps;
+        }
+
+        function getWorkspaceSnapshot() {
+            const templateSelect = document.getElementById('templateSelect');
+            return {
+                version: 2,
+                savedAt: new Date().toISOString(),
+                currentDesignName,
+                selectedTemplate: templateSelect ? templateSelect.value : 'default_自訂',
+                batchCharName: document.getElementById('batchCharName')?.value || '',
+                queueQty: parseInt(document.getElementById('queueQty')?.value) || 1,
+                studentCount: parseInt(document.getElementById('studentCount')?.value) || 1,
+                currentLessonName,
+                fillerWords: document.getElementById('fillerWords')?.value || '',
+                fillRemainingA: document.getElementById('fillRemainingA')?.checked !== false,
+                transparentFillerMode: document.getElementById('transparentFillerMode')?.value || 'none',
+                transparentCustomItems: document.getElementById('transparentCustomItems')?.value || '',
+                fillRemainingB: document.getElementById('fillRemainingB')?.checked !== false,
+                margins: getMarginDataSnapshot(),
+                components: serializePanelComponents(),
+                printQueue: printQueue.map(item => ({
+                    id: item.id,
+                    name: item.name,
+                    qty: item.qty,
+                    comps: (item.comps || []).map(serializeComponentForStorage)
+                }))
+            };
+        }
+
+        function saveWorkspaceNow() {
+            if (isRestoringWorkspace) return;
+            try {
+                localStorage.setItem(WORKSPACE_STORAGE_KEY, JSON.stringify(getWorkspaceSnapshot()));
+                setAutosaveStatus('💾 已自動保存', 'emerald');
+            } catch (error) {
+                console.error('workspace save failed', error);
+                setAutosaveStatus('⚠️ 自動保存失敗', 'red');
+            }
+        }
+
+        function scheduleWorkspaceSave() {
+            if (isRestoringWorkspace) return;
+            setAutosaveStatus('💾 正在自動保存…', 'amber');
+            clearTimeout(autosaveTimer);
+            autosaveTimer = setTimeout(saveWorkspaceNow, 350);
+        }
+
+        async function restoreWorkspaceState() {
+            const raw = localStorage.getItem(WORKSPACE_STORAGE_KEY);
+            if (!raw) return false;
+            let state = null;
+            try { state = JSON.parse(raw); } catch (error) { console.error(error); return false; }
+            if (!state) return false;
+            isRestoringWorkspace = true;
+            try {
+                currentLessonName = state.currentLessonName || currentLessonName || '';
+                const batchCharNameEl = document.getElementById('batchCharName');
+                const queueQtyEl = document.getElementById('queueQty');
+                const studentCountEl = document.getElementById('studentCount');
+                const fillerWordsEl = document.getElementById('fillerWords');
+                const fillRemainingAEl = document.getElementById('fillRemainingA');
+                const transparentModeEl = document.getElementById('transparentFillerMode');
+                const transparentCustomEl = document.getElementById('transparentCustomItems');
+                const fillRemainingBEl = document.getElementById('fillRemainingB');
+                if (batchCharNameEl) batchCharNameEl.value = state.batchCharName || '';
+                if (queueQtyEl && state.queueQty != null) queueQtyEl.value = state.queueQty;
+                if (studentCountEl && state.studentCount != null) studentCountEl.value = state.studentCount;
+                if (fillerWordsEl) fillerWordsEl.value = state.fillerWords || '';
+                if (fillRemainingAEl) fillRemainingAEl.checked = state.fillRemainingA !== false;
+                if (transparentModeEl) transparentModeEl.value = state.transparentFillerMode || 'none';
+                if (transparentCustomEl) transparentCustomEl.value = state.transparentCustomItems || '';
+                if (fillRemainingBEl) fillRemainingBEl.checked = state.fillRemainingB !== false;
+                applyMarginDataSnapshot(state.margins || {});
+                currentDesignName = state.currentDesignName || (state.batchCharName || '');
+                updateTemplateDropdown(state.selectedTemplate || 'default_自訂');
+                const select = document.getElementById('templateSelect');
+                if (select && state.selectedTemplate && select.querySelector(`option[value="${state.selectedTemplate}"]`)) {
+                    select.value = state.selectedTemplate;
+                    toggleDeleteBtn();
+                }
+
+                const container = document.getElementById('componentsContainer');
+                if (container) container.innerHTML = '';
+                loadedImages = {};
+                compIdCounter = 0;
+                const componentList = Array.isArray(state.components) ? state.components : [];
+                if (componentList.length) {
+                    componentList.forEach(comp => createComponentPanel(comp));
+                } else if (select && select.value) {
+                    loadTemplate(select.value);
+                }
+
+                printQueue = [];
+                for (const item of (state.printQueue || [])) {
+                    const comps = await hydrateComponentsForStorage(item.comps || []);
+                    printQueue.push({
+                        id: item.id || (Date.now().toString() + Math.floor(Math.random() * 100000)),
+                        name: item.name || '未命名',
+                        qty: parseInt(item.qty) || 1,
+                        comps
+                    });
+                }
+                renderLessonLibrary();
+                if (currentLessonName && lessonCollections[currentLessonName]) {
+                    const lessonSelect = document.getElementById('lessonSelect');
+                    if (lessonSelect) lessonSelect.value = currentLessonName;
+                }
+                updateUI();
+                drawPreview();
+                renderQueueUI();
+                updateFillerStatus();
+                updateTransparentFillerUI();
+                setAutosaveStatus('✅ 已自動載入上次內容', 'emerald');
+                return true;
+            } catch (error) {
+                console.error('workspace restore failed', error);
+                setAutosaveStatus('⚠️ 還原暫存失敗', 'red');
+                return false;
+            } finally {
+                isRestoringWorkspace = false;
+            }
+        }
+
+        function downloadTextFile(filename, textContent, mime = 'application/json') {
+            const blob = new Blob([textContent], { type: mime });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 500);
+        }
+
+        function exportBackupData() {
+            const data = {
+                version: 2,
+                exportedAt: new Date().toISOString(),
+                customTemplates,
+                lessonCollections,
+                currentLessonName,
+                marginPreset: JSON.parse(localStorage.getItem('myMarginPreset') || 'null'),
+                workspaceState: getWorkspaceSnapshot()
+            };
+            const stamp = new Date().toISOString().slice(0,19).replace(/[T:]/g,'-');
+            downloadTextFile(`國字部件標籤備份_${stamp}.json`, JSON.stringify(data, null, 2));
+            setAutosaveStatus('⬇ 已匯出備份', 'emerald');
+        }
+
+        async function importBackupFile(file) {
+            if (!file) return;
+            const text = await file.text();
+            const data = JSON.parse(text);
+            if (!data || (!data.customTemplates && !data.workspaceState)) {
+                throw new Error('這不是可辨識的備份檔。');
+            }
+            customTemplates = data.customTemplates || {};
+            lessonCollections = data.lessonCollections || {};
+            currentLessonName = data.currentLessonName || '';
+            localStorage.setItem('myCustomStickers', JSON.stringify(customTemplates));
+            localStorage.setItem('myLessonCollections', JSON.stringify(lessonCollections));
+            localStorage.setItem('myCurrentLesson', currentLessonName);
+            if (data.marginPreset) localStorage.setItem('myMarginPreset', JSON.stringify(data.marginPreset));
+            if (data.workspaceState) localStorage.setItem(WORKSPACE_STORAGE_KEY, JSON.stringify(data.workspaceState));
+            ensureUncategorizedTemplates();
+            updateTemplateDropdown('default_老');
+            renderLessonLibrary();
+            const ok = await restoreWorkspaceState();
+            if (!ok) {
+                loadTemplate('default_老');
+                renderQueueUI();
+            }
+            setAutosaveStatus('⬆ 已匯入備份', 'emerald');
         }
 
         function escapeHtml(value = '') {
@@ -796,6 +1077,7 @@
 
         document.getElementById('batchCharName').addEventListener('input', event => {
             currentDesignName = event.target.value.trim();
+            scheduleWorkspaceSave();
         });
 
         function renderLessonLibrary() {
@@ -1010,7 +1292,7 @@
             alert(`✅ 已將 ${names.length} 個生字一次加入列印／學習單清單。`);
         });
 
-        const updateAndDraw = () => { updateUI(); drawPreview(); };
+        const updateAndDraw = () => { updateUI(); drawPreview(); scheduleWorkspaceSave(); };
         
         document.getElementById('showBorders').addEventListener('change', drawPreview);
         
@@ -1059,10 +1341,13 @@
                 gY_A: getSafeValue('gY_A', 0),
                 contentX_A: getSafeValue('contentX_A', 2),
                 contentY_A: getSafeValue('contentY_A', 2),
+                safeInset_A: getSafeValue('safeInset_A', 4),
                 mL_B: getSafeValue('mL_B', 0),
                 mT_B: getSafeValue('mT_B', 0),
                 gX_B: getSafeValue('gX_B', 0),
                 gY_B: getSafeValue('gY_B', 0),
+                safeBorder_B: getSafeValue('safeBorder_B', 5),
+                contentInset_B: getSafeValue('contentInset_B', 2),
             };
 
             customTemplates[name.trim()] = { comps: compsToSave, margins: marginData };
@@ -1089,6 +1374,7 @@
                     renderLessonLibrary();
                     updateTemplateDropdown('default_老');
                     loadTemplate('default_老');
+                    scheduleWorkspaceSave();
                 }
             }
         });
@@ -1412,9 +1698,10 @@
             document.getElementById('barA').className = 'bg-pink-500 h-1.5 rounded-full transition-all';
             document.getElementById('statusA').className = 'text-pink-700';
 
-            const bPages = Math.max(1, Math.ceil(usedB / 70));
-            document.getElementById('statusB').innerText = usedB > 0 ? `${usedB} 張 / ${bPages} 頁A4` : '0 張';
-            document.getElementById('barB').style.width = `${usedB > 0 ? ((usedB % 70 || 70) / 70) * 100 : 0}%`;
+            const bCapacity = getTransparentLayoutInfo().totalCells;
+            const bPages = Math.max(1, Math.ceil(usedB / bCapacity));
+            document.getElementById('statusB').innerText = usedB > 0 ? `${usedB} 張 / ${bPages} 頁A4（每頁${bCapacity}格）` : '0 張';
+            document.getElementById('barB').style.width = `${usedB > 0 ? ((usedB % bCapacity || bCapacity) / bCapacity) * 100 : 0}%`;
             document.getElementById('barB').className = 'bg-blue-500 h-1.5 rounded-full transition-all';
             document.getElementById('statusB').className = 'text-blue-700';
 
@@ -1426,6 +1713,7 @@
                 const btn = document.getElementById(id);
                 if (btn) btn.disabled = false;
             });
+            scheduleWorkspaceSave();
         }
 
         function getFillerWords() {
@@ -1461,6 +1749,7 @@
             status.textContent = words.length && enabled
                 ? `剩餘 ${remaining} 格・將補 ${remaining} 格`
                 : `剩餘 ${remaining} 格`;
+            scheduleWorkspaceSave();
         }
 
         function drawFillerWord(ctx, text, cx, cy, cellW, cellH, offsetX = 0, offsetY = 0) {
@@ -1491,6 +1780,10 @@
         const TRANSPARENT_FILLER_PRESETS = {
             radicals: ['氵','亻','口','木','艹','忄','扌','日','月','女','子','言','心','土','火','山','人','宀','辶','糸'],
             rewards: ['很棒','加油','進步了','完成','我會了','再試試','好認真','讚','正確','請訂正'],
+            cuteEmoji: ['🌟','⭐','💖','🎉','🎈','🌈','🍀','🌸','🍎','🍓','🦄','😊','🥳','👍','💯','🎀','🫶','🌼'],
+            animalEmoji: ['🐻','🐰','🐱','🐶','🐼','🐯','🦊','🐷','🐸','🐵','🐥','🐨','🦄','🐹','🦁','🐮'],
+            emojiRewards: ['🌟好棒','🎉太棒了','💖加油','😊做到了','🥳完成','👍真厲害','🍀繼續加油','🌈進步了'],
+            animalEmojiRewards: ['🐻好棒','🐰加油','🐱做到了','🐶真厲害','🐼完成了','🦊進步了','🐯好認真','🐥繼續加油'],
             symbols: ['★','☆','✓','○','△','？','！','→','←','↑','↓','①','②','③','④','⑤']
         };
 
@@ -1502,6 +1795,64 @@
                 return raw.split(/[\n,，、;；]+/).map(v => v.trim()).filter(Boolean).slice(0, 200);
             }
             return (TRANSPARENT_FILLER_PRESETS[mode] || []).slice();
+        }
+
+        function containsEmojiChar(text) {
+            const s = String(text || '');
+            return /[\u2600-\u27BF]/.test(s) || /\uD83C[\uDF00-\uDFFF]/.test(s) || /\uD83D[\uDC00-\uDEFF]/.test(s) || /\uD83E[\uDD00-\uDDFF]/.test(s);
+        }
+
+        function getTransparentLayoutInfo() {
+            const cellWmm = 30, cellHmm = 29.7;
+            const gapXmm = getSafeValue('gX_B', 0);
+            const gapYmm = getSafeValue('gY_B', 0);
+            const safeBorderMm = Math.max(0, getSafeValue('safeBorder_B', 5));
+            const extraLm = getSafeValue('mL_B', 0);
+            const extraTm = getSafeValue('mT_B', 0);
+            const usableW = 210 - safeBorderMm * 2;
+            const usableH = 297 - safeBorderMm * 2;
+            let cols = Math.floor((usableW + gapXmm) / (cellWmm + gapXmm));
+            let rows = Math.floor((usableH + gapYmm) / (cellHmm + gapYmm));
+            cols = Math.max(1, cols);
+            rows = Math.max(1, rows);
+            const contentWmm = cols * cellWmm + (cols - 1) * gapXmm;
+            const contentHmm = rows * cellHmm + (rows - 1) * gapYmm;
+            const marginLmm = Math.max(0, (210 - contentWmm) / 2 + extraLm);
+            const marginTmm = Math.max(0, (297 - contentHmm) / 2 + extraTm);
+            return {
+                cols, rows, totalCells: cols * rows,
+                cellW: B_W, cellH: B_H,
+                gapX: gapXmm * PX_PER_MM, gapY: gapYmm * PX_PER_MM,
+                marginL: marginLmm * PX_PER_MM, marginT: marginTmm * PX_PER_MM,
+                safeBorderMm, contentInsetPx: Math.max(0, getSafeValue('contentInset_B', 2) * PX_PER_MM)
+            };
+        }
+
+        function drawComponentWithinBox(ctx, comp, baseX, baseY, maxW, maxH) {
+            const safeW = Math.max(10, maxW);
+            const safeH = Math.max(10, maxH);
+            if (comp.type === 'text') {
+                ctx.save();
+                ctx.fillStyle = comp.color;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                let fontSize = comp.size;
+                while (fontSize > 16) {
+                    ctx.font = `${fontSize}px ${FONT_FAMILY}`;
+                    const metrics = ctx.measureText(comp.char || '');
+                    if (metrics.width <= safeW * 0.96 && fontSize <= safeH * 0.96) break;
+                    fontSize -= 4;
+                }
+                ctx.font = `${fontSize}px ${FONT_FAMILY}`;
+                ctx.fillText(comp.char, baseX, baseY);
+                ctx.restore();
+            } else if (comp.type === 'image' && comp.imgObj) {
+                let h = comp.size;
+                let w = (comp.imgObj.width / comp.imgObj.height) * h;
+                const scale = Math.min(1, safeW / w, safeH / h);
+                w *= scale; h *= scale;
+                ctx.drawImage(comp.imgObj, baseX - w / 2, baseY - h / 2, w, h);
+            }
         }
 
         function getUsedBCells() {
@@ -1523,36 +1874,41 @@
             if (!modeEl || !status) return;
             const mode = modeEl.value;
             if (customEl) customEl.classList.toggle('hidden', mode !== 'custom');
+            const layout = getTransparentLayoutInfo();
             const used = getUsedBCells();
-            const usedOnLastPage = used % 70;
-            const remaining = used === 0 ? 70 : (usedOnLastPage === 0 ? 0 : 70 - usedOnLastPage);
+            const usedOnLastPage = used % layout.totalCells;
+            const remaining = used === 0 ? layout.totalCells : (usedOnLastPage === 0 ? 0 : layout.totalCells - usedOnLastPage);
             const items = getTransparentFillerItems();
             const enabled = document.getElementById('fillRemainingB')?.checked !== false && mode !== 'none';
-            status.textContent = enabled && items.length ? `剩餘 ${remaining} 格・將補 ${remaining} 格` : `剩餘 ${remaining} 格`;
+            status.textContent = enabled && items.length ? `每頁 ${layout.totalCells} 格・剩餘 ${remaining} 格・將補 ${remaining} 格` : `每頁 ${layout.totalCells} 格・剩餘 ${remaining} 格`;
             if (preview) {
-                if (mode === 'none') preview.textContent = '目前不補透明紙空白。';
+                if (mode === 'none') preview.textContent = `目前不補透明紙空白。安全邊界 ${layout.safeBorderMm} mm；本設定每頁約可排 ${layout.totalCells} 格。`;
                 else if (!items.length) preview.textContent = '尚未輸入自訂素材。';
-                else preview.textContent = `將循環使用：${items.slice(0, 12).join('、')}${items.length > 12 ? '…' : ''}`;
+                else preview.textContent = `每頁 ${layout.totalCells} 格；將循環使用：${items.slice(0, 12).join('、')}${items.length > 12 ? '…' : ''}`;
             }
+            scheduleWorkspaceSave();
         }
 
-        function drawTransparentFiller(ctx, text, cx, cy, cellW, cellH) {
+        function drawTransparentFiller(ctx, text, cx, cy, cellW, cellH, insetPx = 0) {
             const safeText = String(text || '').trim();
             if (!safeText) return;
+            const maxWidth = Math.max(20, cellW - insetPx * 2);
+            const maxHeight = Math.max(20, cellH - insetPx * 2);
             ctx.save();
             ctx.fillStyle = '#334155';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            let fontSize = safeText.length <= 1 ? 180 : (safeText.length <= 3 ? 125 : 92);
-            const maxWidth = cellW * 0.76;
-            const maxHeight = cellH * 0.58;
-            while (fontSize > 34) {
-                ctx.font = `bold ${fontSize}px ${FONT_FAMILY}`;
+            const isEmoji = containsEmojiChar(safeText);
+            const emojiFont = '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+            const fontFamily = isEmoji ? `${emojiFont}, ${FONT_FAMILY}` : FONT_FAMILY;
+            let fontSize = isEmoji ? (safeText.length <= 2 ? 220 : (safeText.length <= 4 ? 160 : 118)) : (safeText.length <= 1 ? 180 : (safeText.length <= 3 ? 125 : 92));
+            while (fontSize > 30) {
+                ctx.font = `bold ${fontSize}px ${fontFamily}`;
                 const m = ctx.measureText(safeText);
-                if (m.width <= maxWidth && fontSize <= maxHeight) break;
+                if (m.width <= maxWidth * (isEmoji ? 0.98 : 0.96) && fontSize <= maxHeight * (isEmoji ? 0.98 : 0.9)) break;
                 fontSize -= 4;
             }
-            ctx.font = `bold ${fontSize}px ${FONT_FAMILY}`;
+            ctx.font = `bold ${fontSize}px ${fontFamily}`;
             ctx.fillText(safeText, cx, cy);
             ctx.restore();
         }
@@ -1588,22 +1944,31 @@
                 gapX = getSafeValue('gX_A', 0) * PX_PER_MM;
                 gapY = getSafeValue('gY_A', 0) * PX_PER_MM;
             } else if (type === 'B') {
-                cols = B_COLS; rows = B_ROWS;
-                cellW = B_W; cellH = B_H;
-                marginL = getSafeValue('mL_B', 0) * PX_PER_MM;
-                marginT = getSafeValue('mT_B', 0) * PX_PER_MM;
-                gapX = getSafeValue('gX_B', 0) * PX_PER_MM;
-                gapY = getSafeValue('gY_B', 0) * PX_PER_MM;
+                const layout = getTransparentLayoutInfo();
+                cols = layout.cols; rows = layout.rows;
+                cellW = layout.cellW; cellH = layout.cellH;
+                marginL = layout.marginL;
+                marginT = layout.marginT;
+                gapX = layout.gapX;
+                gapY = layout.gapY;
             } else if (type === 'Calib_A' || type === 'Calib_B') {
                 const isA = type === 'Calib_A';
-                cols = isA ? A_COLS : B_COLS;
-                rows = isA ? A_ROWS : B_ROWS;
-                cellW = isA ? A_W : B_W;
-                cellH = isA ? A_H : B_H;
-                marginL = getSafeValue(isA ? 'mL_A' : 'mL_B', 0) * PX_PER_MM;
-                marginT = getSafeValue(isA ? 'mT_A' : 'mT_B', 0) * PX_PER_MM;
-                gapX = getSafeValue(isA ? 'gX_A' : 'gX_B', 0) * PX_PER_MM;
-                gapY = getSafeValue(isA ? 'gY_A' : 'gY_B', 0) * PX_PER_MM;
+                if (isA) {
+                    cols = A_COLS; rows = A_ROWS;
+                    cellW = A_W; cellH = A_H;
+                    marginL = getSafeValue('mL_A', 0) * PX_PER_MM;
+                    marginT = getSafeValue('mT_A', 0) * PX_PER_MM;
+                    gapX = getSafeValue('gX_A', 0) * PX_PER_MM;
+                    gapY = getSafeValue('gY_A', 0) * PX_PER_MM;
+                } else {
+                    const layout = getTransparentLayoutInfo();
+                    cols = layout.cols; rows = layout.rows;
+                    cellW = layout.cellW; cellH = layout.cellH;
+                    marginL = layout.marginL;
+                    marginT = layout.marginT;
+                    gapX = layout.gapX;
+                    gapY = layout.gapY;
+                }
                 
                 oCtx.fillStyle = '#334155';
                 oCtx.font = `bold 60px ${FONT_FAMILY}`;
@@ -1686,23 +2051,22 @@
 
                     const contentOffsetX = type === 'A' ? getSafeValue('contentX_A', 2) * PX_PER_MM : 0;
                     const contentOffsetY = type === 'A' ? getSafeValue('contentY_A', 2) * PX_PER_MM : 0;
+                    const safeInset = type === 'A' ? Math.max(0, getSafeValue('safeInset_A', 4) * PX_PER_MM) : getTransparentLayoutInfo().contentInsetPx;
                     const cx = x + cellW / 2 + contentOffsetX;
                     const cy = y + cellH / 2 + contentOffsetY;
 
                     if (index < drawList.length) {
                         const comp = drawList[index];
-                        if (comp.center) {
-                            drawComponent(oCtx, comp, cx, cy);
-                        } else {
-                            drawComponent(oCtx, comp, cx + comp.x, cy + comp.y);
-                        }
+                        const bx = comp.center ? cx : cx + comp.x;
+                        const by = comp.center ? cy : cy + comp.y;
+                        drawComponentWithinBox(oCtx, comp, bx, by, cellW - safeInset * 2, cellH - safeInset * 2);
                     } else if (type === 'A') {
                         const fillerEnabled = document.getElementById('fillRemainingA')?.checked !== false;
                         const fillerWords = getFillerWords();
                         if (fillerEnabled && fillerWords.length > 0) {
                             const fillerIndex = index - drawList.length;
                             const word = fillerWords[fillerIndex % fillerWords.length];
-                            drawFillerWord(oCtx, word, x + cellW / 2, y + cellH / 2, cellW, cellH, contentOffsetX, contentOffsetY);
+                            drawFillerWord(oCtx, word, x + cellW / 2, y + cellH / 2, cellW - safeInset * 2, cellH - safeInset * 2, contentOffsetX, contentOffsetY);
                         }
                     }
                     index++;
@@ -1745,6 +2109,7 @@
             const gapY = getSafeValue('gY_A', 0) * PX_PER_MM;
             const contentOffsetX = getSafeValue('contentX_A', 2) * PX_PER_MM;
             const contentOffsetY = getSafeValue('contentY_A', 2) * PX_PER_MM;
+            const safeInset = Math.max(0, getSafeValue('safeInset_A', 4) * PX_PER_MM);
             const totalCells = cols * rows;
             const drawList = getBaseDrawList();
             const fillerEnabled = document.getElementById('fillRemainingA')?.checked !== false;
@@ -1778,10 +2143,10 @@
                     const cy = y + cellH / 2 + contentOffsetY;
                     if (i < slice.length) {
                         const comp = slice[i];
-                        drawComponent(xctx, comp, comp.center ? cx : cx + comp.x, comp.center ? cy : cy + comp.y);
+                        drawComponentWithinBox(xctx, comp, comp.center ? cx : cx + comp.x, comp.center ? cy : cy + comp.y, cellW - safeInset * 2, cellH - safeInset * 2);
                     } else if (isLastPage && fillerEnabled && fillerWords.length) {
                         const fillerIndex = i - slice.length;
-                        drawFillerWord(xctx, fillerWords[fillerIndex % fillerWords.length], x + cellW/2, y + cellH/2, cellW, cellH, contentOffsetX, contentOffsetY);
+                        drawFillerWord(xctx, fillerWords[fillerIndex % fillerWords.length], x + cellW/2, y + cellH/2, cellW - safeInset * 2, cellH - safeInset * 2, contentOffsetX, contentOffsetY);
                     }
                 }
                 pages.push(c);
@@ -1791,13 +2156,15 @@
 
 
         function generateTransparentCanvases() {
-            const cols = B_COLS, rows = B_ROWS;
-            const cellW = B_W, cellH = B_H;
-            const marginL = getSafeValue('mL_B', 0) * PX_PER_MM;
-            const marginT = getSafeValue('mT_B', 0) * PX_PER_MM;
-            const gapX = getSafeValue('gX_B', 0) * PX_PER_MM;
-            const gapY = getSafeValue('gY_B', 0) * PX_PER_MM;
-            const totalCells = cols * rows;
+            const layout = getTransparentLayoutInfo();
+            const cols = layout.cols, rows = layout.rows;
+            const cellW = layout.cellW, cellH = layout.cellH;
+            const marginL = layout.marginL;
+            const marginT = layout.marginT;
+            const gapX = layout.gapX;
+            const gapY = layout.gapY;
+            const totalCells = layout.totalCells;
+            const contentInset = layout.contentInsetPx;
             const students = getStudentCount();
             let drawList = [];
 
@@ -1834,10 +2201,10 @@
                     const cx = x + cellW/2, cy = y + cellH/2;
                     if (i < slice.length) {
                         const comp = slice[i];
-                        drawComponent(xctx, comp, comp.center ? cx : cx + comp.x, comp.center ? cy : cy + comp.y);
+                        drawComponentWithinBox(xctx, comp, comp.center ? cx : cx + comp.x, comp.center ? cy : cy + comp.y, cellW - contentInset * 2, cellH - contentInset * 2);
                     } else {
                         const fillerIndex = i - slice.length;
-                        drawTransparentFiller(xctx, fillerItems[fillerIndex % fillerItems.length], cx, cy, cellW, cellH);
+                        drawTransparentFiller(xctx, fillerItems[fillerIndex % fillerItems.length], cx, cy, cellW, cellH, contentInset);
                     }
                     // 淡裁切記號：只畫四角，避免整框太明顯
                     xctx.strokeStyle = '#d1d5db';
@@ -2211,7 +2578,7 @@
                 if (action === 'download') {
                     urls.forEach((u, i) => { const link=document.createElement('a'); link.download=`透明貼紙_A4_第${i+1}頁_${Date.now()}.png`; link.href=u; link.click(); });
                 } else {
-                    if (!confirm(`即將列印：A4未切割透明貼紙\n\n共 ${urls.length} 頁。\n每個裁切區為 30 × 29.7 mm，四角有淡裁切記號。\n若啟用智慧補空白，只會補最後一頁剩餘格，不會額外多印一頁。\n\n請確認：紙張 A4、縮放 100%（實際大小）、邊距 0。`)) return;
+                    if (!confirm(`即將列印：A4未切割透明貼紙\n\n共 ${urls.length} 頁。\n每個裁切區為 30 × 29.7 mm，四角有淡裁切記號。\n若啟用智慧補空白，只會補最後一頁剩餘格，不會額外多印一頁。若設定安全邊界，透明紙每頁可排格數會自動減少。\n\n請確認：紙張 A4、縮放 100%（實際大小）、邊距 0。`)) return;
                     buildMultiPagePrintIframe(urls, 'A4透明貼紙');
                 }
                 return;
@@ -2277,12 +2644,49 @@
         if (fillRemainingBEl) fillRemainingBEl.addEventListener('change', updateTransparentFillerUI);
         updateTransparentFillerUI();
 
+
+        document.getElementById('btnExportBackup')?.addEventListener('click', exportBackupData);
+        document.getElementById('backupFileInput')?.addEventListener('change', async (e) => {
+            const file = e.target.files && e.target.files[0];
+            if (!file) return;
+            try {
+                if (!confirm('匯入備份會覆蓋目前瀏覽器裡儲存的收藏、課次與暫存畫面，確定要繼續嗎？')) {
+                    e.target.value = '';
+                    return;
+                }
+                await importBackupFile(file);
+                alert('✅ 已成功匯入備份。');
+            } catch (error) {
+                console.error(error);
+                alert(`❌ 匯入失敗：${error.message}`);
+                setAutosaveStatus('⚠️ 匯入備份失敗', 'red');
+            } finally {
+                e.target.value = '';
+            }
+        });
+        document.getElementById('btnClearWorkspace')?.addEventListener('click', () => {
+            if (!confirm(`要清除「自動保存的目前畫面暫存」嗎？
+已儲存的生字範本與課次收藏不會刪除。`)) return;
+            localStorage.removeItem(WORKSPACE_STORAGE_KEY);
+            setAutosaveStatus('🧹 已清除畫面暫存', 'slate');
+            alert('✅ 已清除目前畫面暫存。下次開啟時不會自動還原這個畫面。');
+        });
+        window.addEventListener('beforeunload', saveWorkspaceNow);
+
         // 初始執行
-        ensureUncategorizedTemplates();
-        updateTemplateDropdown('default_老');
-        loadTemplate('default_老');
-        renderLessonLibrary();
-        updateFillerStatus();
+        (async function initApp() {
+            ensureUncategorizedTemplates();
+            updateTemplateDropdown('default_老');
+            renderLessonLibrary();
+            const restored = await restoreWorkspaceState();
+            if (!restored) {
+                loadTemplate('default_老');
+                renderQueueUI();
+                updateFillerStatus();
+                updateTransparentFillerUI();
+                setAutosaveStatus('💾 自動保存已啟用', 'emerald');
+            }
+        })();
     </script>
 </body>
 </html>
