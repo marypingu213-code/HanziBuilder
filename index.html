@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>國字部件標籤產生器 - LD-8119 白底紙優化版</title>
+    <title>國字部件標籤產生器 - 一課一人份・2.5cm半切版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap');
@@ -74,6 +74,10 @@
                 <div class="grid grid-cols-[1fr_auto] gap-2 mb-2 sticky top-0 z-10 bg-violet-50 py-1">
                     <button type="button" id="btnQuickAddSelectedLessonWords" class="bg-violet-600 hover:bg-violet-700 text-white py-2.5 px-3 rounded font-bold text-sm shadow">➕ 勾選完成，直接加入列印／學習單清單</button>
                     <span id="lessonCheckedCount" class="self-center bg-white border border-violet-200 text-violet-700 rounded px-3 py-2 text-xs font-bold whitespace-nowrap">已勾 0 字</span>
+                </div>
+                <div class="mb-2 p-2 bg-emerald-50 border border-emerald-200 rounded-lg">
+                    <button type="button" id="btnBuildOneStudentLesson" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 px-3 rounded font-bold text-sm shadow">✂️ 建立「本課・1人份」裁切清單</button>
+                    <p class="text-[10px] text-emerald-700 mt-1 leading-relaxed">會清空目前列印清單，依本課生字順序各放 1 份。白底先排本課生字、剩餘格再補語詞；透明部件先排本課、剩餘格再補 emoji／獎勵語。</p>
                 </div>
 
                 <details class="mb-2 bg-white border border-amber-200 rounded-lg">
@@ -276,7 +280,7 @@
                         <!-- B紙張設定 -->
                         <div class="space-y-2 pb-2">
                             <div class="flex justify-between items-center mb-1">
-                                <div><p class="font-bold text-blue-700">💦 透明紙張 (A4未切割)</p><p class="text-[10px] text-blue-600 mt-0.5">透明紙可直接啟用安全邊界，避開印表機四周不可列印區；每頁可用格數會自動重新計算。</p></div>
+                                <div><p class="font-bold text-blue-700">💦 透明紙張 (A4未切割)</p><p class="text-[10px] text-blue-600 mt-0.5">半切剪刀模式：每格固定 25×25 mm、整齊成直條，不再上下錯位。先把 A4 切成 2.5 cm 寬長條，再沿橫線半切。</p></div>
                                 <button type="button" onclick="printCalibration('B')" class="bg-blue-100 hover:bg-blue-200 text-blue-700 px-2 py-1 rounded font-bold border border-blue-300">🖨️ 印製校正網格</button>
                             </div>
                             <div class="grid grid-cols-2 gap-2">
@@ -286,6 +290,7 @@
                                 <div><label class="text-gray-500 block">垂直間距 (Gap Y)</label> <input type="number" id="gY_B" value="0" step="0.1" class="w-full border p-1 rounded bg-gray-50"></div>
                                 <div><label class="text-blue-700 font-bold block">整頁安全邊界 (mm)</label> <input type="number" id="safeBorder_B" value="5" step="0.5" class="w-full border border-blue-300 p-1 rounded bg-blue-50"></div>
                                 <div><label class="text-blue-700 font-bold block">每格內容安全內縮 (mm)</label> <input type="number" id="contentInset_B" value="2" step="0.5" class="w-full border border-blue-300 p-1 rounded bg-blue-50"></div>
+                                <div class="col-span-2 bg-blue-50 border border-blue-200 rounded p-2 text-[10px] text-blue-700 font-bold">✂️ 透明貼紙裁切尺寸固定：25 × 25 mm（2.5 × 2.5 cm）・直條對齊・完整淡色裁切線</div>
                             </div>
                         </div>
 
@@ -344,7 +349,7 @@
 
                 <!-- 貼紙 B 輸出 -->
                 <div class="bg-blue-50 p-2 rounded-lg border border-blue-200">
-                    <div class="text-blue-800 font-bold text-[13px] mb-1.5 px-1">💦 透明貼紙 (A4未切割)</div><div class="text-[10px] text-blue-600 px-1 mb-1">每格 30 × 29.7 mm，會依安全邊界自動計算每頁可排數量並自動換頁；列印後依淡色四角裁切記號裁切。</div>
+                    <div class="text-blue-800 font-bold text-[13px] mb-1.5 px-1">💦 透明貼紙 (A4未切割)</div><div class="text-[10px] text-blue-600 px-1 mb-1">每格固定 25 × 25 mm，直條對齊、自動換頁；可先直切成 2.5 cm 寬長條，再沿淡色橫線半切。</div>
                     <div class="flex gap-2">
                         <button type="button" onclick="executeOutput('B', 'print')" id="btnPrintB" class="flex-[2] bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-bold py-2 px-2 rounded shadow transition-colors text-sm">
                             🖨️ 網頁直接列印
@@ -410,8 +415,8 @@
         // 紙張基礎規格
         const A_COLS = 7, A_ROWS = 10;
         const A_W = 30 * PX_PER_MM, A_H = 29.7 * PX_PER_MM;
-        const B_COLS = 7, B_ROWS = 10;
-        const B_W = 30 * PX_PER_MM, B_H = 29.7 * PX_PER_MM;
+        const B_COLS = 8, B_ROWS = 11;
+        const B_W = 25 * PX_PER_MM, B_H = 25 * PX_PER_MM;
         
         const FONT_FAMILY = '"BiauKai", "DFKai-SB", "TW-Kai", "KaiTi", sans-serif';
 
@@ -1264,6 +1269,38 @@
         document.getElementById('btnQuickAddSelectedLessonWords').addEventListener('click', () => {
             document.getElementById('btnAddSelectedLessonWords').click();
         });
+
+        document.getElementById('btnBuildOneStudentLesson')?.addEventListener('click', async () => {
+            if (!currentLessonName || !lessonCollections[currentLessonName]) return alert('請先建立或選擇一個課次。');
+            const names = (lessonCollections[currentLessonName] || []).filter(name => customTemplates[name]);
+            if (!names.length) return alert(`「${currentLessonName}」目前沒有已收藏的生字。`);
+            if (printQueue.length && !confirm(`這會清空目前列印清單，改成「${currentLessonName}」1人份裁切清單。確定繼續嗎？`)) return;
+            const btn = document.getElementById('btnBuildOneStudentLesson');
+            const old = btn.textContent;
+            btn.disabled = true; btn.textContent = '⏳ 正在建立本課一人份…';
+            try {
+                printQueue = [];
+                for (const name of names) {
+                    const comps = await hydrateStoredComponents(name);
+                    if (!comps.length) continue;
+                    printQueue.push({
+                        id: Date.now().toString() + Math.floor(Math.random() * 1000000),
+                        name,
+                        comps,
+                        qty: 1
+                    });
+                }
+                const studentEl = document.getElementById('studentCount');
+                if (studentEl) studentEl.value = 1;
+                const qtyEl = document.getElementById('queueQty');
+                if (qtyEl) qtyEl.value = 1;
+                renderQueueUI();
+                scheduleWorkspaceSave();
+                alert(`✅ 已建立「${currentLessonName}」1人份：共 ${printQueue.length} 個生字，已依課次順序排列。`);
+            } finally {
+                btn.disabled = false; btn.textContent = old;
+            }
+        });
         document.getElementById('btnDeleteLesson').addEventListener('click', () => {
             if (!currentLessonName) return;
             if (!confirm(`確定刪除課次「${currentLessonName}」嗎？\n生字範本本身不會刪除，會回到「未分類」。`)) return;
@@ -1803,10 +1840,10 @@
         }
 
         function getTransparentLayoutInfo() {
-            const cellWmm = 30, cellHmm = 29.7;
-            const gapXmm = getSafeValue('gX_B', 0);
-            const gapYmm = getSafeValue('gY_B', 0);
-            const safeBorderMm = Math.max(0, getSafeValue('safeBorder_B', 5));
+            const cellWmm = 25, cellHmm = 25;
+            const gapXmm = Math.max(0, getSafeValue('gX_B', 0));
+            const gapYmm = Math.max(0, getSafeValue('gY_B', 0));
+            const safeBorderMm = Math.max(3, getSafeValue('safeBorder_B', 5));
             const extraLm = getSafeValue('mL_B', 0);
             const extraTm = getSafeValue('mT_B', 0);
             const usableW = 210 - safeBorderMm * 2;
@@ -1817,8 +1854,8 @@
             rows = Math.max(1, rows);
             const contentWmm = cols * cellWmm + (cols - 1) * gapXmm;
             const contentHmm = rows * cellHmm + (rows - 1) * gapYmm;
-            const marginLmm = Math.max(0, (210 - contentWmm) / 2 + extraLm);
-            const marginTmm = Math.max(0, (297 - contentHmm) / 2 + extraTm);
+            const marginLmm = Math.max(safeBorderMm, (210 - contentWmm) / 2 + extraLm);
+            const marginTmm = Math.max(safeBorderMm, (297 - contentHmm) / 2 + extraTm);
             return {
                 cols, rows, totalCells: cols * rows,
                 cellW: B_W, cellH: B_H,
@@ -1882,9 +1919,9 @@
             const enabled = document.getElementById('fillRemainingB')?.checked !== false && mode !== 'none';
             status.textContent = enabled && items.length ? `每頁 ${layout.totalCells} 格・剩餘 ${remaining} 格・將補 ${remaining} 格` : `每頁 ${layout.totalCells} 格・剩餘 ${remaining} 格`;
             if (preview) {
-                if (mode === 'none') preview.textContent = `目前不補透明紙空白。安全邊界 ${layout.safeBorderMm} mm；本設定每頁約可排 ${layout.totalCells} 格。`;
+                if (mode === 'none') preview.textContent = `目前不補透明紙空白。25×25mm 半切格；安全邊界 ${layout.safeBorderMm} mm；本設定每頁可排 ${layout.totalCells} 格。`;
                 else if (!items.length) preview.textContent = '尚未輸入自訂素材。';
-                else preview.textContent = `每頁 ${layout.totalCells} 格；將循環使用：${items.slice(0, 12).join('、')}${items.length > 12 ? '…' : ''}`;
+                else preview.textContent = `25×25mm 半切格・每頁 ${layout.totalCells} 格；將循環使用：${items.slice(0, 12).join('、')}${items.length > 12 ? '…' : ''}`;
             }
             scheduleWorkspaceSave();
         }
@@ -2169,22 +2206,21 @@
             let drawList = [];
 
             if (printQueue.length > 0) {
+                // 保留列印清單順序：課次一人份模式下即為「生字1的全部透明部件 → 生字2…」
                 printQueue.forEach(item => {
                     const validComps = item.comps.filter(c => c.target === 'B');
                     const effectiveQty = item.qty * students;
-                    for (let i = 0; i < effectiveQty; i++) validComps.forEach(comp => drawList.push(comp));
+                    for (let i = 0; i < effectiveQty; i++) validComps.forEach(comp => drawList.push({comp, wordName:item.name}));
                 });
             } else {
                 const activeComps = getActiveComponents().filter(c => c.target === 'B');
-                if (activeComps.length === 0) return [];
-                activeComps.forEach(c => drawList.push(c));
+                activeComps.forEach(c => drawList.push({comp:c, wordName:currentDesignName || ''}));
             }
             const fillerEnabled = document.getElementById('fillRemainingB')?.checked !== false;
             const fillerItems = getTransparentFillerItems();
             if (drawList.length === 0 && !(fillerEnabled && fillerItems.length)) return [];
 
             const pages = [];
-            // 補空白只使用最後一頁剩餘格，不額外產生新頁。
             const pageCount = Math.max(1, Math.ceil(drawList.length / totalCells));
             for (let p = 0; p < pageCount; p++) {
                 const c = document.createElement('canvas');
@@ -2193,26 +2229,38 @@
                 xctx.fillStyle = '#FFFFFF'; xctx.fillRect(0,0,c.width,c.height);
                 const slice = drawList.slice(p*totalCells, (p+1)*totalCells);
                 const isLastPage = p === pageCount - 1;
+
+                // 先畫完整對齊裁切格：25mm直條 + 25mm橫切，避免視覺上高低不一。
+                xctx.save();
+                xctx.strokeStyle = '#cbd5e1';
+                xctx.lineWidth = 2;
+                for (let col = 0; col < cols; col++) {
+                    for (let row = 0; row < rows; row++) {
+                        const x = marginL + col * (cellW + gapX);
+                        const y = marginT + row * (cellH + gapY);
+                        xctx.strokeRect(x, y, cellW, cellH);
+                    }
+                }
+                xctx.restore();
+
                 for (let i = 0; i < totalCells; i++) {
                     if (i >= slice.length && !(isLastPage && fillerEnabled && fillerItems.length)) continue;
-                    const row = Math.floor(i / cols), col = i % cols;
+                    // 直條優先：先填滿第一條 2.5cm 直條，再到下一條，裁切後順序不易亂。
+                    const col = Math.floor(i / rows);
+                    const row = i % rows;
+                    if (col >= cols) continue;
                     const x = marginL + col * (cellW + gapX);
                     const y = marginT + row * (cellH + gapY);
                     const cx = x + cellW/2, cy = y + cellH/2;
                     if (i < slice.length) {
-                        const comp = slice[i];
+                        const item = slice[i];
+                        const comp = item.comp;
+                        // 裁切格位置固定；部件本身保留原本 X/Y 微調，但限制在 25×25mm 安全框內。
                         drawComponentWithinBox(xctx, comp, comp.center ? cx : cx + comp.x, comp.center ? cy : cy + comp.y, cellW - contentInset * 2, cellH - contentInset * 2);
                     } else {
                         const fillerIndex = i - slice.length;
                         drawTransparentFiller(xctx, fillerItems[fillerIndex % fillerItems.length], cx, cy, cellW, cellH, contentInset);
                     }
-                    // 淡裁切記號：只畫四角，避免整框太明顯
-                    xctx.strokeStyle = '#d1d5db';
-                    xctx.lineWidth = 2;
-                    const m = 18, len = 26;
-                    [[x+m,y+m,1,1],[x+cellW-m,y+m,-1,1],[x+m,y+cellH-m,1,-1],[x+cellW-m,y+cellH-m,-1,-1]].forEach(([px,py,sx,sy])=>{
-                        xctx.beginPath(); xctx.moveTo(px,py); xctx.lineTo(px+sx*len,py); xctx.moveTo(px,py); xctx.lineTo(px,py+sy*len); xctx.stroke();
-                    });
                 }
                 pages.push(c);
             }
@@ -2578,7 +2626,7 @@
                 if (action === 'download') {
                     urls.forEach((u, i) => { const link=document.createElement('a'); link.download=`透明貼紙_A4_第${i+1}頁_${Date.now()}.png`; link.href=u; link.click(); });
                 } else {
-                    if (!confirm(`即將列印：A4未切割透明貼紙\n\n共 ${urls.length} 頁。\n每個裁切區為 30 × 29.7 mm，四角有淡裁切記號。\n若啟用智慧補空白，只會補最後一頁剩餘格，不會額外多印一頁。若設定安全邊界，透明紙每頁可排格數會自動減少。\n\n請確認：紙張 A4、縮放 100%（實際大小）、邊距 0。`)) return;
+                    if (!confirm(`即將列印：A4未切割透明貼紙\n\n共 ${urls.length} 頁。\n每個裁切區固定為 25 × 25 mm，完整淡色格線對齊。建議先直切成 2.5 cm 寬長條，再沿橫線半切。\n若啟用智慧補空白，只會補最後一頁剩餘格，不會額外多印一頁。若設定安全邊界，透明紙每頁可排格數會自動減少。\n\n請確認：紙張 A4、縮放 100%（實際大小）、邊距 0。`)) return;
                     buildMultiPagePrintIframe(urls, 'A4透明貼紙');
                 }
                 return;
