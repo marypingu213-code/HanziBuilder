@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>國字部件標籤產生器 - 一課一人份・2.5cm半切版</title>
+    <title>國字部件標籤產生器 - 多人分行・2.5cm半切版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap');
@@ -76,7 +76,11 @@
                     <span id="lessonCheckedCount" class="self-center bg-white border border-violet-200 text-violet-700 rounded px-3 py-2 text-xs font-bold whitespace-nowrap">已勾 0 字</span>
                 </div>
                 <div class="mb-2 p-2 bg-emerald-50 border border-emerald-200 rounded-lg">
-                    <button type="button" id="btnBuildOneStudentLesson" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 px-3 rounded font-bold text-sm shadow">✂️ 建立「本課・1人份」裁切清單</button>
+                    <button type="button" id="btnBuildOneStudentLesson" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 px-3 rounded font-bold text-sm shadow">✂️ 建立「本課・多人分行」裁切清單</button>
+                    <div class="mt-1.5 flex items-center justify-between gap-2 text-[10px]">
+                        <span class="text-emerald-700">每位學生整課連續排列；本課結束後補滿該行，下一位一定從下一行開始。</span>
+                        <span id="rowModeBadge" class="hidden bg-emerald-100 border border-emerald-300 text-emerald-800 font-bold px-2 py-1 rounded-full whitespace-nowrap">✓ 多人分行模式</span>
+                    </div>
                     <p class="text-[10px] text-emerald-700 mt-1 leading-relaxed">會清空目前列印清單，依本課生字順序各放 1 份。白底先排本課生字、剩餘格再補語詞；透明部件先排本課、剩餘格再補 emoji／獎勵語。</p>
                 </div>
 
@@ -425,6 +429,7 @@
         const FONT_FAMILY = '"BiauKai", "DFKai-SB", "TW-Kai", "KaiTi", sans-serif';
 
         let printQueue = [];
+        let lessonRowMode = false;
         let compIdCounter = 0;
         let loadedImages = {};
         let currentDesignName = ''; // 目前正在編輯的生字名稱（批次上傳／範本共用）
@@ -484,6 +489,19 @@
 
         function saveLessonCollections() {
             localStorage.setItem('myLessonCollections', JSON.stringify(lessonCollections));
+            if (typeof scheduleWorkspaceSave === 'function') scheduleWorkspaceSave();
+        }
+
+        function updateRowModeBadge() {
+            const badge = document.getElementById('rowModeBadge');
+            if (!badge) return;
+            badge.classList.toggle('hidden', !lessonRowMode);
+        }
+
+        function disableLessonRowMode() {
+            if (!lessonRowMode) return;
+            lessonRowMode = false;
+            updateRowModeBadge();
             if (typeof scheduleWorkspaceSave === 'function') scheduleWorkspaceSave();
         }
 
@@ -685,6 +703,7 @@
                 queueQty: parseInt(document.getElementById('queueQty')?.value) || 1,
                 studentCount: parseInt(document.getElementById('studentCount')?.value) || 1,
                 currentLessonName,
+                lessonRowMode,
                 fillerWords: document.getElementById('fillerWords')?.value || '',
                 fillRemainingA: document.getElementById('fillRemainingA')?.checked !== false,
                 transparentFillerMode: document.getElementById('transparentFillerMode')?.value || 'none',
@@ -728,6 +747,8 @@
             isRestoringWorkspace = true;
             try {
                 currentLessonName = state.currentLessonName || currentLessonName || '';
+                lessonRowMode = state.lessonRowMode === true;
+                updateRowModeBadge();
                 const batchCharNameEl = document.getElementById('batchCharName');
                 const queueQtyEl = document.getElementById('queueQty');
                 const studentCountEl = document.getElementById('studentCount');
@@ -1286,10 +1307,11 @@
             if (!currentLessonName || !lessonCollections[currentLessonName]) return alert('請先建立或選擇一個課次。');
             const names = (lessonCollections[currentLessonName] || []).filter(name => customTemplates[name]);
             if (!names.length) return alert(`「${currentLessonName}」目前沒有已收藏的生字。`);
-            if (printQueue.length && !confirm(`這會清空目前列印清單，改成「${currentLessonName}」1人份裁切清單。確定繼續嗎？`)) return;
+            const students = getStudentCount();
+            if (printQueue.length && !confirm(`這會清空目前列印清單，改成「${currentLessonName}」${students}人份的多人分行裁切清單。確定繼續嗎？`)) return;
             const btn = document.getElementById('btnBuildOneStudentLesson');
             const old = btn.textContent;
-            btn.disabled = true; btn.textContent = '⏳ 正在建立本課一人份…';
+            btn.disabled = true; btn.textContent = '⏳ 正在建立多人分行清單…';
             try {
                 printQueue = [];
                 for (const name of names) {
@@ -1302,13 +1324,14 @@
                         qty: 1
                     });
                 }
-                const studentEl = document.getElementById('studentCount');
-                if (studentEl) studentEl.value = 1;
+                lessonRowMode = true;
+                updateRowModeBadge();
                 const qtyEl = document.getElementById('queueQty');
                 if (qtyEl) qtyEl.value = 1;
                 renderQueueUI();
                 scheduleWorkspaceSave();
-                alert(`✅ 已建立「${currentLessonName}」1人份：共 ${printQueue.length} 個生字，已依課次順序排列。`);
+                alert(`✅ 已建立「${currentLessonName}」${students}人份多人分行清單。
+每位學生整課結束時會補滿最後一行，下一位從下一行開始。`);
             } finally {
                 btn.disabled = false; btn.textContent = old;
             }
@@ -1324,6 +1347,7 @@
         });
 
         document.getElementById('btnAddSelectedLessonWords').addEventListener('click', async () => {
+            disableLessonRowMode();
             const names = Array.from(document.querySelectorAll('.lesson-word-check:checked')).map(cb => cb.value);
             if (!names.length) return alert('請先勾選要加入的生字。');
             const qty = parseInt(document.getElementById('queueQty').value) || 1;
@@ -1643,7 +1667,8 @@
         }
 
         document.getElementById('btnAddQueue').addEventListener('click', (e) => {
-            e.preventDefault(); 
+            e.preventDefault();
+            disableLessonRowMode(); 
             
             const comps = getActiveComponents();
             if(comps.length === 0) return alert('畫面中沒有啟用的部件，或是圖片尚未上傳完成。');
@@ -1742,15 +1767,16 @@
                 });
             }
 
-            const aPages = Math.max(1, Math.ceil(usedA / 70));
-            document.getElementById('statusA').innerText = usedA > 0 ? `${usedA} 張 / ${aPages} 頁LD-8119` : '0 張';
+            const aPages = lessonRowMode && printQueue.length ? getGroupedPageCount('A', A_COLS, A_ROWS) : Math.max(1, Math.ceil(usedA / 70));
+            document.getElementById('statusA').innerText = usedA > 0 ? `${usedA} 張 / ${aPages} 頁LD-8119${lessonRowMode ? '・分行' : ''}` : '0 張';
             document.getElementById('barA').style.width = `${usedA > 0 ? ((usedA % 70 || 70) / 70) * 100 : 0}%`;
             document.getElementById('barA').className = 'bg-pink-500 h-1.5 rounded-full transition-all';
             document.getElementById('statusA').className = 'text-pink-700';
 
-            const bCapacity = getTransparentLayoutInfo().totalCells;
-            const bPages = Math.max(1, Math.ceil(usedB / bCapacity));
-            document.getElementById('statusB').innerText = usedB > 0 ? `${usedB} 張 / ${bPages} 頁A4（每頁${bCapacity}格）` : '0 張';
+            const bLayout = getTransparentLayoutInfo();
+            const bCapacity = bLayout.totalCells;
+            const bPages = lessonRowMode && printQueue.length ? getGroupedPageCount('B', bLayout.cols, bLayout.rows) : Math.max(1, Math.ceil(usedB / bCapacity));
+            document.getElementById('statusB').innerText = usedB > 0 ? `${usedB} 張 / ${bPages} 頁A4（每頁${bCapacity}格${lessonRowMode ? '・分行' : ''}）` : '0 張';
             document.getElementById('barB').style.width = `${usedB > 0 ? ((usedB % bCapacity || bCapacity) / bCapacity) * 100 : 0}%`;
             document.getElementById('barB').className = 'bg-blue-500 h-1.5 rounded-full transition-all';
             document.getElementById('statusB').className = 'text-blue-700';
@@ -2127,6 +2153,84 @@
         }
 
 
+        function getOneStudentSequence(type) {
+            const sequence = [];
+            if (!printQueue.length) return sequence;
+            printQueue.forEach(item => {
+                const validComps = (item.comps || []).filter(c => c.target === type);
+                const qty = Math.max(1, parseInt(item.qty) || 1);
+                for (let q = 0; q < qty; q++) {
+                    validComps.forEach(comp => sequence.push({ kind: 'comp', comp, wordName: item.name }));
+                }
+            });
+            return sequence;
+        }
+
+        function buildStudentRowPages(type, cols, rows, fillerItems = []) {
+            const oneStudent = getOneStudentSequence(type);
+            if (!oneStudent.length) return [];
+            const students = getStudentCount();
+            const totalCells = cols * rows;
+            const pages = [];
+            let page = Array(totalCells).fill(null);
+            let currentRow = 0;
+            let fillerCursor = 0;
+
+            const fillerKind = type === 'A' ? 'wordFiller' : 'transparentFiller';
+            const nextFiller = () => {
+                if (!fillerItems.length) return null;
+                const value = fillerItems[fillerCursor % fillerItems.length];
+                fillerCursor++;
+                return { kind: fillerKind, value };
+            };
+            const fillRowsToEnd = () => {
+                if (!fillerItems.length) return;
+                for (let r = currentRow; r < rows; r++) {
+                    for (let c = 0; c < cols; c++) page[r * cols + c] = nextFiller();
+                }
+            };
+            const pushPage = () => {
+                pages.push(page);
+                page = Array(totalCells).fill(null);
+                currentRow = 0;
+            };
+
+            for (let s = 0; s < students; s++) {
+                const requiredRows = Math.ceil(oneStudent.length / cols);
+                if (currentRow > 0 && requiredRows <= rows && currentRow + requiredRows > rows) {
+                    fillRowsToEnd();
+                    pushPage();
+                }
+
+                let sourceIndex = 0;
+                while (sourceIndex < oneStudent.length) {
+                    if (currentRow >= rows) pushPage();
+                    for (let col = 0; col < cols; col++) {
+                        const cellIndex = currentRow * cols + col;
+                        if (sourceIndex < oneStudent.length) {
+                            const source = oneStudent[sourceIndex++];
+                            page[cellIndex] = { ...source, studentIndex: s };
+                        } else {
+                            page[cellIndex] = nextFiller();
+                        }
+                    }
+                    currentRow++;
+                }
+                // 每位學生結束時已經剛好停在行尾；下一位自然從下一行第一格開始。
+            }
+
+            // 最後一位學生排完後，剩餘紙張也用既有補空白素材填滿。
+            fillRowsToEnd();
+            pages.push(page);
+            return pages;
+        }
+
+        function getGroupedPageCount(type, cols, rows) {
+            if (!lessonRowMode || !printQueue.length) return 0;
+            const fillers = type === 'A' ? getFillerWords() : getTransparentFillerItems();
+            return buildStudentRowPages(type, cols, rows, fillers).length;
+        }
+
         function getBaseDrawList() {
             const students = getStudentCount();
             const drawList = [];
@@ -2162,10 +2266,43 @@
             const contentOffsetY = getSafeValue('contentY_A', 2) * PX_PER_MM;
             const safeInset = Math.max(0, getSafeValue('safeInset_A', 4) * PX_PER_MM);
             const totalCells = cols * rows;
-            const drawList = getBaseDrawList();
             const fillerEnabled = document.getElementById('fillRemainingA')?.checked !== false;
             const fillerWords = getFillerWords();
 
+            if (lessonRowMode && printQueue.length) {
+                const groupedPages = buildStudentRowPages('A', cols, rows, fillerEnabled ? fillerWords : []);
+                if (!groupedPages.length) return [];
+                const pages = [];
+                const printGrid = document.getElementById('printGridLines')?.checked === true;
+                groupedPages.forEach(pageCells => {
+                    const c = document.createElement('canvas');
+                    c.width = 2480; c.height = 3508;
+                    const xctx = c.getContext('2d');
+                    xctx.fillStyle = '#FFFFFF'; xctx.fillRect(0, 0, c.width, c.height);
+                    for (let i = 0; i < totalCells; i++) {
+                        const row = Math.floor(i / cols), col = i % cols;
+                        const x = marginL + col * (cellW + gapX);
+                        const y = marginT + row * (cellH + gapY);
+                        if (printGrid) {
+                            xctx.strokeStyle = '#e5e7eb'; xctx.lineWidth = 2; xctx.strokeRect(x, y, cellW, cellH);
+                        }
+                        const cell = pageCells[i];
+                        if (!cell) continue;
+                        const cx = x + cellW / 2 + contentOffsetX;
+                        const cy = y + cellH / 2 + contentOffsetY;
+                        if (cell.kind === 'comp') {
+                            const comp = cell.comp;
+                            drawComponentWithinBox(xctx, comp, comp.center ? cx : cx + comp.x, comp.center ? cy : cy + comp.y, cellW - safeInset * 2, cellH - safeInset * 2);
+                        } else if (cell.kind === 'wordFiller') {
+                            drawFillerWord(xctx, cell.value, x + cellW/2, y + cellH/2, cellW - safeInset * 2, cellH - safeInset * 2, contentOffsetX, contentOffsetY);
+                        }
+                    }
+                    pages.push(c);
+                });
+                return pages;
+            }
+
+            const drawList = getBaseDrawList();
             if (!drawList.length && !(fillerEnabled && fillerWords.length)) return [];
 
             // 有底貼時，頁數依底貼數量決定；語詞只補最後一頁剩餘格，不會額外產生新頁。
@@ -2217,39 +2354,54 @@
             const totalCells = layout.totalCells;
             const contentInset = layout.contentInsetPx;
             const students = getStudentCount();
-            let drawList = [];
-
-            if (printQueue.length > 0) {
-                // 保留列印清單順序：課次一人份模式下即為「生字1的全部透明部件 → 生字2…」
-                printQueue.forEach(item => {
-                    const validComps = item.comps.filter(c => c.target === 'B');
-                    const effectiveQty = item.qty * students;
-                    for (let i = 0; i < effectiveQty; i++) validComps.forEach(comp => drawList.push({comp, wordName:item.name}));
-                });
-            } else {
-                const activeComps = getActiveComponents().filter(c => c.target === 'B');
-                activeComps.forEach(c => drawList.push({comp:c, wordName:currentDesignName || ''}));
-            }
             const fillerEnabled = document.getElementById('fillRemainingB')?.checked !== false;
             const fillerItems = getTransparentFillerItems();
-            if (drawList.length === 0 && !(fillerEnabled && fillerItems.length)) return [];
+
+            let pageCellLists = [];
+            if (lessonRowMode && printQueue.length) {
+                pageCellLists = buildStudentRowPages('B', cols, rows, fillerEnabled ? fillerItems : []);
+            } else {
+                let drawList = [];
+                if (printQueue.length > 0) {
+                    printQueue.forEach(item => {
+                        const validComps = item.comps.filter(c => c.target === 'B');
+                        const effectiveQty = item.qty * students;
+                        for (let i = 0; i < effectiveQty; i++) validComps.forEach(comp => drawList.push({kind:'comp', comp, wordName:item.name}));
+                    });
+                } else {
+                    const activeComps = getActiveComponents().filter(c => c.target === 'B');
+                    activeComps.forEach(c => drawList.push({kind:'comp', comp:c, wordName:currentDesignName || ''}));
+                }
+                if (drawList.length === 0 && !(fillerEnabled && fillerItems.length)) return [];
+                const pageCount = Math.max(1, Math.ceil(drawList.length / totalCells));
+                let fillerCursor = 0;
+                for (let p = 0; p < pageCount; p++) {
+                    const cells = Array(totalCells).fill(null);
+                    const slice = drawList.slice(p*totalCells, (p+1)*totalCells);
+                    for (let i=0;i<slice.length;i++) cells[i]=slice[i];
+                    if (p === pageCount-1 && fillerEnabled && fillerItems.length) {
+                        for (let i=slice.length;i<totalCells;i++) {
+                            cells[i] = {kind:'transparentFiller', value:fillerItems[fillerCursor++ % fillerItems.length]};
+                        }
+                    }
+                    pageCellLists.push(cells);
+                }
+            }
+            if (!pageCellLists.length) return [];
 
             const pages = [];
-            const pageCount = Math.max(1, Math.ceil(drawList.length / totalCells));
-            for (let p = 0; p < pageCount; p++) {
+            pageCellLists.forEach(cells => {
                 const c = document.createElement('canvas');
                 c.width = 2480; c.height = 3508;
                 const xctx = c.getContext('2d');
                 xctx.fillStyle = '#FFFFFF'; xctx.fillRect(0,0,c.width,c.height);
-                const slice = drawList.slice(p*totalCells, (p+1)*totalCells);
-                const isLastPage = p === pageCount - 1;
 
-                // 先畫完整對齊裁切格：25mm直條 + 25mm橫切，避免視覺上高低不一。
+                // 25×25 mm 固定半切格。所有橫線／直線完全對齊。
                 xctx.save();
                 xctx.strokeStyle = '#cbd5e1';
                 xctx.lineWidth = 2;
-                for (let col = 0; col < cols; col++) {
-                    for (let row = 0; row < rows; row++) {
+                for (let row = 0; row < rows; row++) {
+                    for (let col = 0; col < cols; col++) {
                         const x = marginL + col * (cellW + gapX);
                         const y = marginT + row * (cellH + gapY);
                         xctx.strokeRect(x, y, cellW, cellH);
@@ -2257,30 +2409,27 @@
                 }
                 xctx.restore();
 
+                // 改為「橫向一行一行」排列：同一位學生的整課連續，下一位從下一行開始。
                 for (let i = 0; i < totalCells; i++) {
-                    if (i >= slice.length && !(isLastPage && fillerEnabled && fillerItems.length)) continue;
-                    // 直條優先：先填滿第一條 2.5cm 直條，再到下一條，裁切後順序不易亂。
-                    const col = Math.floor(i / rows);
-                    const row = i % rows;
-                    if (col >= cols) continue;
+                    const cell = cells[i];
+                    if (!cell) continue;
+                    const row = Math.floor(i / cols);
+                    const col = i % cols;
                     const x = marginL + col * (cellW + gapX);
                     const y = marginT + row * (cellH + gapY);
                     const cx = x + cellW/2, cy = y + cellH/2;
-                    if (i < slice.length) {
-                        const item = slice[i];
-                        const comp = item.comp;
-                        // 半切模式預設強制置中：忽略原本為疊合用途設定的 X/Y 位移，讓每個獨立部件都在 25×25mm 格中央。
+                    if (cell.kind === 'comp') {
+                        const comp = cell.comp;
                         const forceCenter = document.getElementById('forceCenter_B')?.checked !== false;
                         const bx = forceCenter ? cx : (comp.center ? cx : cx + comp.x);
                         const by = forceCenter ? cy : (comp.center ? cy : cy + comp.y);
                         drawComponentWithinBox(xctx, comp, bx, by, cellW - contentInset * 2, cellH - contentInset * 2);
-                    } else {
-                        const fillerIndex = i - slice.length;
-                        drawTransparentFiller(xctx, fillerItems[fillerIndex % fillerItems.length], cx, cy, cellW, cellH, contentInset);
+                    } else if (cell.kind === 'transparentFiller') {
+                        drawTransparentFiller(xctx, cell.value, cx, cy, cellW, cellH, contentInset);
                     }
                 }
                 pages.push(c);
-            }
+            });
             return pages;
         }
 
@@ -2631,7 +2780,7 @@
                 } else {
                     const students = getStudentCount();
                     const studentLine = students > 1 ? `\n學生人數：${students} 位（數量已自動 ×${students}）` : '';
-                    if (!confirm(`即將列印：LD-8119 白色底貼\n\n共 ${urls.length} 頁。${studentLine}\n超過 70 格會自動接到下一張。\n若有設定補空白語詞，只會補最後一頁剩餘格。\n\n請確認：紙張 A4、縮放 100%（實際大小）、邊距 0。`)) return;
+                    if (!confirm(`即將列印：LD-8119 白色底貼\n\n共 ${urls.length} 頁。${studentLine}\n超過 70 格會自動接到下一張。\n多人分行模式下，每位學生最後一行未用格會先補語詞，最後一頁剩餘格也會補滿。\n\n請確認：紙張 A4、縮放 100%（實際大小）、邊距 0。`)) return;
                     buildMultiPagePrintIframe(urls, 'LD-8119白色底貼');
                 }
                 return;
@@ -2643,7 +2792,7 @@
                 if (action === 'download') {
                     urls.forEach((u, i) => { const link=document.createElement('a'); link.download=`透明貼紙_A4_第${i+1}頁_${Date.now()}.png`; link.href=u; link.click(); });
                 } else {
-                    if (!confirm(`即將列印：A4未切割透明貼紙\n\n共 ${urls.length} 頁。\n每個裁切區固定為 25 × 25 mm，完整淡色格線對齊。建議先直切成 2.5 cm 寬長條，再沿橫線半切。\n若啟用智慧補空白，只會補最後一頁剩餘格，不會額外多印一頁。若設定安全邊界，透明紙每頁可排格數會自動減少。\n\n請確認：紙張 A4、縮放 100%（實際大小）、邊距 0。`)) return;
+                    if (!confirm(`即將列印：A4未切割透明貼紙\n\n共 ${urls.length} 頁。\n每個裁切區固定為 25 × 25 mm，完整淡色格線對齊。建議先直切成 2.5 cm 寬長條，再沿橫線半切。\n多人分行模式下，每位學生最後一行未用格會補 emoji／自訂素材，下一位學生從下一行開始；最後一頁剩餘格也會補滿。\n\n請確認：紙張 A4、縮放 100%（實際大小）、邊距 0。`)) return;
                     buildMultiPagePrintIframe(urls, 'A4透明貼紙');
                 }
                 return;
@@ -2751,6 +2900,7 @@
                 renderQueueUI();
                 updateFillerStatus();
                 updateTransparentFillerUI();
+                updateRowModeBadge();
                 setAutosaveStatus('💾 自動保存已啟用', 'emerald');
             }
         })();
