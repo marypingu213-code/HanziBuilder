@@ -290,6 +290,10 @@
                                 <div><label class="text-gray-500 block">垂直間距 (Gap Y)</label> <input type="number" id="gY_B" value="0" step="0.1" class="w-full border p-1 rounded bg-gray-50"></div>
                                 <div><label class="text-blue-700 font-bold block">整頁安全邊界 (mm)</label> <input type="number" id="safeBorder_B" value="5" step="0.5" class="w-full border border-blue-300 p-1 rounded bg-blue-50"></div>
                                 <div><label class="text-blue-700 font-bold block">每格內容安全內縮 (mm)</label> <input type="number" id="contentInset_B" value="2" step="0.5" class="w-full border border-blue-300 p-1 rounded bg-blue-50"></div>
+                                <label class="col-span-2 flex items-center gap-2 bg-emerald-50 border border-emerald-300 rounded p-2 text-xs text-emerald-800 font-bold cursor-pointer">
+                                    <input type="checkbox" id="forceCenter_B" class="w-4 h-4 accent-emerald-600" checked>
+                                    🎯 透明部件全部置中每一格（建議開啟，裁切最整齊）
+                                </label>
                                 <div class="col-span-2 bg-blue-50 border border-blue-200 rounded p-2 text-[10px] text-blue-700 font-bold">✂️ 透明貼紙裁切尺寸固定：25 × 25 mm（2.5 × 2.5 cm）・直條對齊・完整淡色裁切線</div>
                             </div>
                         </div>
@@ -512,6 +516,7 @@
                 gY_B: getSafeValue('gY_B', 0),
                 safeBorder_B: getSafeValue('safeBorder_B', 5),
                 contentInset_B: getSafeValue('contentInset_B', 2),
+                forceCenter_B: document.getElementById('forceCenter_B')?.checked !== false,
             };
             localStorage.setItem('myMarginPreset', JSON.stringify(preset));
             alert('✅ 邊距設定已儲存！下次按「還原上次儲存的邊距」即可快速套用。');
@@ -523,7 +528,10 @@
             const preset = JSON.parse(saved);
             Object.keys(preset).forEach(k => {
                 const el = document.getElementById(k);
-                if (el) el.value = preset[k];
+                if (el) {
+                    if (el.type === 'checkbox') el.checked = !!preset[k];
+                    else el.value = preset[k];
+                }
             });
             if (typeof scheduleWorkspaceSave === 'function') scheduleWorkspaceSave();
             alert('✅ 已還原上次儲存的邊距設定！');
@@ -598,14 +606,18 @@
                 mL_A: getSafeValue('mL_A', 0), mT_A: getSafeValue('mT_A', 0), gX_A: getSafeValue('gX_A', 0), gY_A: getSafeValue('gY_A', 0),
                 contentX_A: getSafeValue('contentX_A', 2), contentY_A: getSafeValue('contentY_A', 2), safeInset_A: getSafeValue('safeInset_A', 4),
                 mL_B: getSafeValue('mL_B', 0), mT_B: getSafeValue('mT_B', 0), gX_B: getSafeValue('gX_B', 0), gY_B: getSafeValue('gY_B', 0),
-                safeBorder_B: getSafeValue('safeBorder_B', 5), contentInset_B: getSafeValue('contentInset_B', 2)
+                safeBorder_B: getSafeValue('safeBorder_B', 5), contentInset_B: getSafeValue('contentInset_B', 2),
+                forceCenter_B: document.getElementById('forceCenter_B')?.checked !== false
             };
         }
 
         function applyMarginDataSnapshot(margins = {}) {
             Object.keys(margins || {}).forEach(k => {
                 const el = document.getElementById(k);
-                if (el != null && margins[k] != null) el.value = margins[k];
+                if (el != null && margins[k] != null) {
+                    if (el.type === 'checkbox') el.checked = !!margins[k];
+                    else el.value = margins[k];
+                }
             });
         }
 
@@ -1385,6 +1397,7 @@
                 gY_B: getSafeValue('gY_B', 0),
                 safeBorder_B: getSafeValue('safeBorder_B', 5),
                 contentInset_B: getSafeValue('contentInset_B', 2),
+                forceCenter_B: document.getElementById('forceCenter_B')?.checked !== false,
             };
 
             customTemplates[name.trim()] = { comps: compsToSave, margins: marginData };
@@ -2094,8 +2107,9 @@
 
                     if (index < drawList.length) {
                         const comp = drawList[index];
-                        const bx = comp.center ? cx : cx + comp.x;
-                        const by = comp.center ? cy : cy + comp.y;
+                        const forceCenter = type === 'B' && document.getElementById('forceCenter_B')?.checked !== false;
+                        const bx = forceCenter ? cx : (comp.center ? cx : cx + comp.x);
+                        const by = forceCenter ? cy : (comp.center ? cy : cy + comp.y);
                         drawComponentWithinBox(oCtx, comp, bx, by, cellW - safeInset * 2, cellH - safeInset * 2);
                     } else if (type === 'A') {
                         const fillerEnabled = document.getElementById('fillRemainingA')?.checked !== false;
@@ -2255,8 +2269,11 @@
                     if (i < slice.length) {
                         const item = slice[i];
                         const comp = item.comp;
-                        // 裁切格位置固定；部件本身保留原本 X/Y 微調，但限制在 25×25mm 安全框內。
-                        drawComponentWithinBox(xctx, comp, comp.center ? cx : cx + comp.x, comp.center ? cy : cy + comp.y, cellW - contentInset * 2, cellH - contentInset * 2);
+                        // 半切模式預設強制置中：忽略原本為疊合用途設定的 X/Y 位移，讓每個獨立部件都在 25×25mm 格中央。
+                        const forceCenter = document.getElementById('forceCenter_B')?.checked !== false;
+                        const bx = forceCenter ? cx : (comp.center ? cx : cx + comp.x);
+                        const by = forceCenter ? cy : (comp.center ? cy : cy + comp.y);
+                        drawComponentWithinBox(xctx, comp, bx, by, cellW - contentInset * 2, cellH - contentInset * 2);
                     } else {
                         const fillerIndex = i - slice.length;
                         drawTransparentFiller(xctx, fillerItems[fillerIndex % fillerItems.length], cx, cy, cellW, cellH, contentInset);
@@ -2690,6 +2707,8 @@
         if (transparentFillerModeEl) transparentFillerModeEl.addEventListener('change', updateTransparentFillerUI);
         if (transparentCustomItemsEl) transparentCustomItemsEl.addEventListener('input', updateTransparentFillerUI);
         if (fillRemainingBEl) fillRemainingBEl.addEventListener('change', updateTransparentFillerUI);
+        const forceCenterBEl = document.getElementById('forceCenter_B');
+        if (forceCenterBEl) forceCenterBEl.addEventListener('change', () => { scheduleWorkspaceSave(); updateTransparentFillerUI(); });
         updateTransparentFillerUI();
 
 
