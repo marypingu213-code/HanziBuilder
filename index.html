@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>國字部件標籤產生器 - 多選補空白・新版學習單（描寫縮小版）</title>
+    <title>國字部件標籤產生器 - 多選補空白・新版學習單（貼紙同格版）</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap');
@@ -2669,20 +2669,14 @@
 
                 drawWorksheetArrow(oCtx, 560, boxMidY + 8);
 
-                drawWriteBox(oCtx, writeX, writeY, writeSize, ghost, '② 寫一次（大格）');
+                drawWriteBox(oCtx, writeX, writeY, writeSize, ghost, '');
 
                 drawWorksheetArrow(oCtx, 1110, boxMidY + 8);
 
-                oCtx.fillStyle = '#7c3aed';
-                oCtx.font = `bold 36px ${FONT_FAMILY}`;
-                oCtx.fillText('③ 貼貼紙 / 寫語詞', phraseX + phraseW/2 - 10, stickerY - 36);
 
                 drawPasteBox(oCtx, stickerX, stickerY, stickerSize);
-                oCtx.fillStyle = '#64748b';
-                oCtx.font = `32px ${FONT_FAMILY}`;
-                oCtx.fillText('貼貼紙', stickerX + stickerSize/2, stickerY + stickerSize + 46);
 
-                drawPhraseBox(oCtx, phraseX, stickerY, phraseW, stickerSize, '語詞（可自己寫）', phraseCells);
+                drawPhraseBox(oCtx, phraseX, stickerY, phraseW, stickerSize, '', phraseCells);
 
                 oCtx.strokeStyle = '#e2e8f0';
                 oCtx.lineWidth = 2;
