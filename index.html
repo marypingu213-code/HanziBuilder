@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>國字部件標籤產生器 - 多選補空白・新版學習單（修正版）</title>
+    <title>國字部件標籤產生器 - 多選補空白・新版學習單（去箭頭修正版）</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap');
@@ -2635,7 +2635,8 @@
             const leftX = 70;
             const pasteX = 170;
             const writeX = 640;
-            const phraseX = 980;
+            const stickerX = 980;
+            const phraseX = 1380;
 
             items.forEach((item, idx) => {
                 const rowY = startY + idx * (rowHeight + rowGap);
@@ -2666,12 +2667,10 @@
                 oCtx.font = `bold 36px ${FONT_FAMILY}`;
                 oCtx.fillText('① 貼部件', pasteX + pasteSize/2, pasteY - 36);
 
-                drawWorksheetArrow(oCtx, 560, boxMidY + 8);
-
                 drawWriteBox(oCtx, writeX, writeY, writeSize, ghost, '');
 
-                drawWorksheetArrow(oCtx, 1110, boxMidY + 8);
 
+                drawPasteBox(oCtx, stickerX, stickerY, stickerSize);
 
                 drawPhraseBox(oCtx, phraseX, stickerY, phraseW, stickerSize, '', phraseCells);
 
