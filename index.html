@@ -81,9 +81,22 @@
                         <button type="button" id="btnBuildFullLesson" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white py-2.5 px-3 rounded font-bold text-sm shadow">📚 建立「全課生字・多人分行」</button>
                     </div>
                     <div class="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-lg">
-                        <div class="grid grid-cols-1 sm:grid-cols-[auto_1fr_auto] gap-2 items-center">
-                            <label class="text-xs font-bold text-amber-800 whitespace-nowrap">🎲 隨機學生數</label>
-                            <input type="number" id="transparentShuffleStudentCount" min="0" value="0" class="w-full p-2 border border-amber-300 rounded bg-white text-sm font-bold text-center">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
+                            <div class="grid grid-cols-[auto_1fr] gap-2 items-center bg-white border border-violet-200 rounded-lg px-2 py-1.5">
+                                <label class="text-xs font-bold text-violet-800 whitespace-nowrap">🧑‍🎓 學生總數</label>
+                                <div class="flex items-center gap-1.5 justify-end">
+                                    <button type="button" id="btnTopStudentsMinus" class="w-7 h-7 rounded-full bg-violet-100 hover:bg-violet-200 text-violet-900 font-bold">−</button>
+                                    <input type="number" id="topStudentCount" min="1" max="20" value="1" class="w-16 p-1.5 border border-violet-300 rounded bg-white text-sm font-bold text-center">
+                                    <button type="button" id="btnTopStudentsPlus" class="w-7 h-7 rounded-full bg-violet-100 hover:bg-violet-200 text-violet-900 font-bold">＋</button>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-[auto_1fr] gap-2 items-center bg-white border border-amber-200 rounded-lg px-2 py-1.5">
+                                <label class="text-xs font-bold text-amber-800 whitespace-nowrap">🎲 隨機學生數</label>
+                                <input type="number" id="transparentShuffleStudentCount" min="0" value="0" class="w-full p-1.5 border border-amber-300 rounded bg-white text-sm font-bold text-center">
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between gap-2 mb-2 px-1">
+                            <span class="text-[10px] text-amber-700">可在這裡直接設定總人數，不必再往下找「學生人數」。</span>
                             <span id="shuffleStudentSummary" class="text-[11px] font-bold text-amber-800 whitespace-nowrap">正常 1 人＋隨機 0 人</span>
                         </div>
                         <div class="grid grid-cols-[1fr_auto] gap-2 mt-2">
@@ -91,7 +104,7 @@
                             <button type="button" id="btnResetTransparentOrder" class="bg-white hover:bg-amber-50 text-amber-700 border border-amber-300 py-2 px-3 rounded font-bold text-xs whitespace-nowrap">↩ 全部原順序</button>
                         </div>
                         <div class="mt-1.5 flex items-center justify-between gap-2 text-[10px]">
-                            <span class="text-amber-700">例如 4 位學生輸入 2：前 2 位維持正常順序，後 2 位透明部件各自隨機；白底與學習單順序不變。</span>
+                            <span class="text-amber-700">例如：學生總數 4、隨機學生數 2 → 前 2 位正常順序，後 2 位透明部件各自隨機；白底與學習單順序不變。</span>
                             <span id="shufflePartsBadge" class="bg-slate-100 border border-slate-300 text-slate-600 font-bold px-2 py-1 rounded-full whitespace-nowrap">全部順序排列</span>
                         </div>
                     </div>
@@ -567,7 +580,27 @@
             return n;
         }
 
+        function syncTopStudentCountFromMain() {
+            const main = document.getElementById('studentCount');
+            const top = document.getElementById('topStudentCount');
+            if (!main || !top) return;
+            const val = Math.max(1, Math.min(20, parseInt(main.value) || 1));
+            if (String(top.value) !== String(val)) top.value = val;
+        }
+
+        function setStudentCountEverywhere(value) {
+            const val = Math.max(1, Math.min(20, parseInt(value) || 1));
+            const main = document.getElementById('studentCount');
+            const top = document.getElementById('topStudentCount');
+            if (main) main.value = val;
+            if (top) top.value = val;
+            renderQueueUI();
+            updateTransparentShuffleUI();
+            scheduleWorkspaceSave();
+        }
+
         function updateTransparentShuffleUI() {
+            syncTopStudentCountFromMain();
             const students = Math.max(1, getStudentCount());
             const randomCount = getTransparentShuffleStudentCount();
             const normalCount = Math.max(0, students - randomCount);
@@ -883,6 +916,7 @@
                 if (batchCharNameEl) batchCharNameEl.value = state.batchCharName || '';
                 if (queueQtyEl && state.queueQty != null) queueQtyEl.value = state.queueQty;
                 if (studentCountEl && state.studentCount != null) studentCountEl.value = state.studentCount;
+                syncTopStudentCountFromMain();
                 if (fillerWordsEl) fillerWordsEl.value = state.fillerWords || '';
                 if (fillRemainingAEl) fillRemainingAEl.checked = state.fillRemainingA !== false;
                 setTransparentFillerModes(state.transparentFillerModes || state.transparentFillerMode || []);
@@ -1860,8 +1894,7 @@
         window.changeStudents = function(delta) {
             const el = document.getElementById('studentCount');
             const val = Math.min(20, Math.max(1, (parseInt(el.value) || 1) + delta));
-            el.value = val;
-            renderQueueUI();
+            setStudentCountEverywhere(val);
         };
 
         function getStudentCount() {
@@ -3326,7 +3359,24 @@
             renderQueueUI();
             scheduleWorkspaceSave();
         });
-        document.getElementById('studentCount')?.addEventListener('input', () => { updateTransparentShuffleUI(); scheduleWorkspaceSave(); });
+        document.getElementById('studentCount')?.addEventListener('input', (e) => {
+            const val = Math.max(1, Math.min(20, parseInt(e.target.value) || 1));
+            e.target.value = val;
+            const top = document.getElementById('topStudentCount');
+            if (top) top.value = val;
+            renderQueueUI();
+            updateTransparentShuffleUI();
+            scheduleWorkspaceSave();
+        });
+        document.getElementById('topStudentCount')?.addEventListener('input', (e) => {
+            setStudentCountEverywhere(e.target.value);
+        });
+        document.getElementById('btnTopStudentsMinus')?.addEventListener('click', () => {
+            setStudentCountEverywhere(getStudentCount() - 1);
+        });
+        document.getElementById('btnTopStudentsPlus')?.addEventListener('click', () => {
+            setStudentCountEverywhere(getStudentCount() + 1);
+        });
         updateTransparentFillerUI();
         updateTransparentShuffleUI();
 
