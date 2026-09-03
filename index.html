@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>國字部件標籤產生器 - 多選補空白・新版學習單（末尾新增A同大格版）</title>
+    <title>國字部件標籤產生器 - 多選補空白・新版學習單（語詞三層次版）</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap');
@@ -395,6 +395,19 @@
                         🌱 有提示：貼部件 → 大格寫一次（淡字提示） → 貼貼紙／寫語詞
                     </p>
 
+                    <div class="bg-white border border-emerald-200 rounded-lg p-2 mb-2">
+                        <div class="text-[11px] font-bold text-emerald-800 mb-1.5">③ 語詞學習層次</div>
+                        <div class="grid grid-cols-3 gap-1.5 mb-2">
+                            <button type="button" id="btnWordMode_sticker" onclick="setWorksheetWordMode('sticker')" class="py-1.5 px-1 text-[11px] font-bold rounded border border-emerald-300 bg-emerald-600 text-white">🟢 貼語詞貼紙</button>
+                            <button type="button" id="btnWordMode_choice" onclick="setWorksheetWordMode('choice')" class="py-1.5 px-1 text-[11px] font-bold rounded border border-emerald-300 bg-white text-emerald-700">🟡 選語詞</button>
+                            <button type="button" id="btnWordMode_create" onclick="setWorksheetWordMode('create')" class="py-1.5 px-1 text-[11px] font-bold rounded border border-emerald-300 bg-white text-emerald-700">🔵 自己造詞</button>
+                        </div>
+                        <textarea id="worksheetChoiceMap" rows="3" class="hidden w-full border border-amber-300 rounded p-2 text-[11px] bg-amber-50 resize-y" placeholder="選語詞模式：每行一個生字，例如：
+季=四季|季節|冬季
+迎=歡迎|迎接|迎面"></textarea>
+                        <p id="worksheetWordModeHint" class="text-[10px] text-emerald-700 leading-relaxed">🟢 語詞區保留完整長框，讓學生直接貼上老師準備的語詞貼紙。</p>
+                    </div>
+
                     <div class="flex gap-2">
                         <button type="button" onclick="executeOutput('C', 'print')" id="btnPrintC" class="flex-[2] bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-400 text-white font-bold py-2 px-2 rounded shadow transition-colors text-sm">
                             🖨️ 網頁直接列印
@@ -716,6 +729,9 @@
                 transparentFillerMode: getTransparentFillerModes()[0] || 'none',
                 transparentCustomItems: document.getElementById('transparentCustomItems')?.value || '',
                 fillRemainingB: document.getElementById('fillRemainingB')?.checked !== false,
+                worksheetMode,
+                worksheetWordMode,
+                worksheetChoiceMap: document.getElementById('worksheetChoiceMap')?.value || '',
                 margins: getMarginDataSnapshot(),
                 components: serializePanelComponents(),
                 printQueue: printQueue.map(item => ({
@@ -771,6 +787,11 @@
                 setTransparentFillerModes(state.transparentFillerModes || state.transparentFillerMode || []);
                 if (transparentCustomEl) transparentCustomEl.value = state.transparentCustomItems || '';
                 if (fillRemainingBEl) fillRemainingBEl.checked = state.fillRemainingB !== false;
+                if (state.worksheetMode === 'high' || state.worksheetMode === 'low') setWorksheetMode(state.worksheetMode);
+                setWorksheetWordMode(state.worksheetWordMode || 'sticker');
+                const worksheetChoiceMapEl = document.getElementById('worksheetChoiceMap');
+                if (worksheetChoiceMapEl) worksheetChoiceMapEl.value = state.worksheetChoiceMap || '';
+                updateWorksheetWordModeUI();
                 applyMarginDataSnapshot(state.margins || {});
                 currentDesignName = state.currentDesignName || (state.batchCharName || '');
                 updateTemplateDropdown(state.selectedTemplate || 'default_自訂');
@@ -2492,6 +2513,47 @@
             }
         };
 
+        let worksheetWordMode = 'sticker'; // sticker | choice | create
+
+        function parseWorksheetChoiceMap() {
+            const raw = document.getElementById('worksheetChoiceMap')?.value || '';
+            const map = {};
+            raw.split(/\n+/).forEach(line => {
+                const trimmed = line.trim();
+                if (!trimmed) return;
+                const parts = trimmed.split(/[=＝]/);
+                if (parts.length < 2) return;
+                const key = parts.shift().trim();
+                const values = parts.join('=').split(/[|｜,，、;；]+/).map(v => v.trim()).filter(Boolean).slice(0, 3);
+                if (key && values.length) map[key] = values;
+            });
+            return map;
+        }
+
+        function updateWorksheetWordModeUI() {
+            const modes = ['sticker', 'choice', 'create'];
+            modes.forEach(mode => {
+                const btn = document.getElementById(`btnWordMode_${mode}`);
+                if (!btn) return;
+                const active = worksheetWordMode === mode;
+                btn.className = `py-1.5 px-1 text-[11px] font-bold rounded border border-emerald-300 ${active ? 'bg-emerald-600 text-white' : 'bg-white text-emerald-700'}`;
+            });
+            const mapEl = document.getElementById('worksheetChoiceMap');
+            if (mapEl) mapEl.classList.toggle('hidden', worksheetWordMode !== 'choice');
+            const hint = document.getElementById('worksheetWordModeHint');
+            if (hint) {
+                if (worksheetWordMode === 'sticker') hint.textContent = '🟢 語詞區保留完整長框，讓學生直接貼上老師準備的語詞貼紙。';
+                else if (worksheetWordMode === 'choice') hint.textContent = '🟡 每個生字可設定 2～3 個語詞選項，學習單會直接印出來讓學生圈選或指認。';
+                else hint.textContent = '🔵 語詞區分成兩個等大書寫格，讓學生自己寫出一個語詞。';
+            }
+        }
+
+        window.setWorksheetWordMode = function(mode) {
+            worksheetWordMode = ['sticker','choice','create'].includes(mode) ? mode : 'sticker';
+            updateWorksheetWordModeUI();
+            scheduleWorkspaceSave();
+        };
+
         // 共用：畫貼一貼方框
         function drawPasteBox(oCtx, x, y, size) {
             oCtx.strokeStyle = '#cbd5e1';
@@ -2600,6 +2662,60 @@
             }
         }
 
+
+        function drawStickerPhraseBox(oCtx, x, y, w, h) {
+            oCtx.strokeStyle = '#a5b4fc';
+            oCtx.lineWidth = 5;
+            oCtx.strokeRect(x, y, w, h);
+        }
+
+        function drawChoicePhraseBox(oCtx, x, y, w, h, options) {
+            oCtx.strokeStyle = '#a5b4fc';
+            oCtx.lineWidth = 5;
+            oCtx.strokeRect(x, y, w, h);
+            const list = (options || []).slice(0, 3);
+            if (!list.length) {
+                oCtx.save();
+                oCtx.fillStyle = '#cbd5e1';
+                oCtx.font = `34px ${FONT_FAMILY}`;
+                oCtx.textAlign = 'center';
+                oCtx.textBaseline = 'middle';
+                oCtx.fillText('尚未設定語詞選項', x + w/2, y + h/2);
+                oCtx.restore();
+                return;
+            }
+            const segmentW = w / list.length;
+            list.forEach((word, i) => {
+                if (i > 0) {
+                    oCtx.beginPath();
+                    oCtx.strokeStyle = '#e2e8f0';
+                    oCtx.lineWidth = 3;
+                    oCtx.moveTo(x + segmentW * i, y);
+                    oCtx.lineTo(x + segmentW * i, y + h);
+                    oCtx.stroke();
+                }
+                oCtx.save();
+                oCtx.fillStyle = '#475569';
+                oCtx.textAlign = 'center';
+                oCtx.textBaseline = 'middle';
+                let fontSize = word.length <= 2 ? 62 : (word.length <= 4 ? 50 : 40);
+                oCtx.font = `bold ${fontSize}px ${FONT_FAMILY}`;
+                const maxW = segmentW - 40;
+                while (fontSize > 28 && oCtx.measureText(word).width > maxW) {
+                    fontSize -= 3;
+                    oCtx.font = `bold ${fontSize}px ${FONT_FAMILY}`;
+                }
+                const cx = x + segmentW * i + segmentW/2;
+                oCtx.beginPath();
+                oCtx.strokeStyle = '#94a3b8';
+                oCtx.lineWidth = 3;
+                oCtx.arc(cx, y + 44, 13, 0, Math.PI * 2);
+                oCtx.stroke();
+                oCtx.fillText(word, cx, y + h/2 + 25);
+                oCtx.restore();
+            });
+        }
+
         function renderWorksheetPage(oCtx, items, pageIndex, pageCount) {
             const isHigh = worksheetMode === 'high';
             oCtx.fillStyle = '#FFFFFF';
@@ -2613,9 +2729,10 @@
 
             oCtx.font = `40px ${FONT_FAMILY}`;
             oCtx.fillStyle = '#64748b';
+            const wordModeInstruction = worksheetWordMode === 'sticker' ? '貼上語詞貼紙' : (worksheetWordMode === 'choice' ? '選出正確語詞' : '自己寫一個語詞');
             oCtx.fillText(isHigh
-                ? '請先把部件貼在第一格，再在大格寫一次，最後貼上生字貼紙，或在語詞格寫一個語詞。'
-                : '請先貼部件，再照著生字在大格寫一次，最後可貼上生字貼紙，或自己寫一個語詞。', 1240, 245);
+                ? `請先貼部件，再完成兩次書寫，最後${wordModeInstruction}。`
+                : `請先貼部件，再依提示完成兩次書寫，最後${wordModeInstruction}。`, 1240, 245);
 
             if (pageCount > 1) {
                 oCtx.fillStyle = '#94a3b8';
@@ -2674,7 +2791,14 @@
 
                 drawPasteBox(oCtx, stickerX, stickerY, stickerSize);
 
-                drawPhraseBox(oCtx, phraseX, stickerY, phraseW, stickerSize, '', phraseCells);
+                if (worksheetWordMode === 'sticker') {
+                    drawStickerPhraseBox(oCtx, phraseX, stickerY, phraseW, stickerSize);
+                } else if (worksheetWordMode === 'choice') {
+                    const choiceMap = parseWorksheetChoiceMap();
+                    drawChoicePhraseBox(oCtx, phraseX, stickerY, phraseW, stickerSize, choiceMap[item.name] || []);
+                } else {
+                    drawPhraseBox(oCtx, phraseX, stickerY, phraseW, stickerSize, '', phraseCells);
+                }
 
                 drawPasteBox(oCtx, extraBoxX, pasteY, pasteSize);
 
@@ -2857,7 +2981,7 @@
                     if (!confirm(`即將列印：學習單練習紙
 
 共 ${urls.length} 頁。
-新版版型：貼部件 → 大格寫一次 → 貼貼紙／寫語詞。
+新版版型：貼部件 → 兩次書寫 → 語詞三層次（貼貼紙／選語詞／自己造詞）。
 
 請確認：紙張 A4、縮放 100%（實際大小）、邊距 0。`)) return;
                     buildMultiPagePrintIframe(urls, '學習單練習紙');
@@ -2935,6 +3059,10 @@
         if (forceCenterBEl) forceCenterBEl.addEventListener('change', () => { scheduleWorkspaceSave(); updateTransparentFillerUI(); });
         updateTransparentFillerUI();
 
+
+        const worksheetChoiceMapEl = document.getElementById('worksheetChoiceMap');
+        if (worksheetChoiceMapEl) worksheetChoiceMapEl.addEventListener('input', scheduleWorkspaceSave);
+        updateWorksheetWordModeUI();
 
         document.getElementById('btnExportBackup')?.addEventListener('click', exportBackupData);
         document.getElementById('backupFileInput')?.addEventListener('change', async (e) => {
