@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>國字部件標籤產生器 - 多選補空白・新版學習單（去箭頭修正版）</title>
+    <title>國字部件標籤產生器 - 多選補空白・新版學習單（AB同大修正版）</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap');
@@ -2628,15 +2628,15 @@
             const rowHeight = 540;
             const pasteSize = 340;
             const writeSize = 260;
-            const stickerSize = 340;
+            const stickerSize = writeSize;
             const phraseCells = 2;
-            const phraseW = stickerSize * phraseCells;
+            const phraseW = writeSize * phraseCells;
             const rowGap = 28;
             const leftX = 70;
             const pasteX = 170;
             const writeX = 640;
             const stickerX = 980;
-            const phraseX = 1380;
+            const phraseX = 1285;
 
             items.forEach((item, idx) => {
                 const rowY = startY + idx * (rowHeight + rowGap);
