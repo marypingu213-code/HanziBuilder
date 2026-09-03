@@ -434,6 +434,16 @@
                         <p id="worksheetWordModeHint" class="text-[10px] text-emerald-700 leading-relaxed">🟢 語詞區保留完整長框，讓學生直接貼上老師準備的語詞貼紙。</p>
                     </div>
 
+                    <div class="bg-white border border-emerald-200 rounded-lg p-2 mb-2">
+                        <div class="text-[11px] font-bold text-emerald-800 mb-1.5">④ 學習單分頁方式</div>
+                        <select id="worksheetPaginationMode" class="w-full border border-emerald-300 rounded p-2 text-[11px] bg-white text-emerald-800 font-bold">
+                            <option value="standard">標準：每頁最多 5 字</option>
+                            <option value="balanced">⚖️ 智慧均衡分頁</option>
+                            <option value="balanced_review" selected>📝 均衡分頁＋最後一頁複習挑戰區（推薦）</option>
+                        </select>
+                        <p id="worksheetPaginationHint" class="text-[10px] text-emerald-700 mt-1 leading-relaxed">7 個字會自動排成 4＋3；最後一頁剩餘空間會加入複習挑戰區。</p>
+                    </div>
+
                     <div class="flex gap-2">
                         <button type="button" onclick="executeOutput('C', 'print')" id="btnPrintC" class="flex-[2] bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-400 text-white font-bold py-2 px-2 rounded shadow transition-colors text-sm">
                             🖨️ 網頁直接列印
@@ -816,6 +826,7 @@
                 worksheetMode,
                 worksheetWordMode,
                 worksheetChoiceMap: document.getElementById('worksheetChoiceMap')?.value || '',
+                worksheetPaginationMode: document.getElementById('worksheetPaginationMode')?.value || 'balanced_review',
                 margins: getMarginDataSnapshot(),
                 components: serializePanelComponents(),
                 printQueue: printQueue.map(item => ({
@@ -881,7 +892,10 @@
                 setWorksheetWordMode(state.worksheetWordMode || 'sticker');
                 const worksheetChoiceMapEl = document.getElementById('worksheetChoiceMap');
                 if (worksheetChoiceMapEl) worksheetChoiceMapEl.value = state.worksheetChoiceMap || '';
+                const worksheetPaginationModeEl = document.getElementById('worksheetPaginationMode');
+                if (worksheetPaginationModeEl) worksheetPaginationModeEl.value = state.worksheetPaginationMode || 'balanced_review';
                 updateWorksheetWordModeUI();
+                updateWorksheetPaginationHint();
                 applyMarginDataSnapshot(state.margins || {});
                 currentDesignName = state.currentDesignName || (state.batchCharName || '');
                 updateTemplateDropdown(state.selectedTemplate || 'default_自訂');
@@ -2862,7 +2876,7 @@
             });
         }
 
-        function renderWorksheetPage(oCtx, items, pageIndex, pageCount) {
+        function renderWorksheetPage(oCtx, items, pageIndex, pageCount, options = {}) {
             const isHigh = worksheetMode === 'high';
             oCtx.fillStyle = '#FFFFFF';
             oCtx.fillRect(0, 0, 2480, 3508);
@@ -2887,15 +2901,22 @@
                 oCtx.fillText(`第 ${pageIndex} / ${pageCount} 頁`, 2340, 110);
             }
 
-            const startY = 390;
             const rowHeight = 540;
+            const rowGap = 28;
+            const normalStartY = 390;
+            const contentStep = rowHeight + rowGap;
+            const rowBlockHeight = items.length * contentStep;
+            const availableRowsHeight = 5 * contentStep;
+            const shouldCenterRows = options.centerRows === true && items.length < 5 && !options.showReview;
+            const startY = shouldCenterRows
+                ? normalStartY + Math.max(0, (availableRowsHeight - rowBlockHeight) / 2)
+                : normalStartY;
             const pasteSize = 340;
             const writeSize = 260;
             const stickerSize = writeSize;
             const phraseCells = 2;
             const phraseW = writeSize * phraseCells;
             const extraBoxGap = 45;
-            const rowGap = 28;
             const leftX = 70;
             const pasteX = 170;
             const writeX = 640;
@@ -2955,22 +2976,98 @@
                 oCtx.lineTo(2400, rowY + rowHeight + 25);
                 oCtx.stroke();
             });
+
+            if (options.showReview) {
+                const reviewTop = startY + items.length * (rowHeight + rowGap) + 45;
+                const reviewBottom = 3370;
+                const reviewH = reviewBottom - reviewTop;
+                if (reviewH >= 260) {
+                    oCtx.save();
+                    oCtx.fillStyle = '#ecfdf5';
+                    oCtx.strokeStyle = '#86efac';
+                    oCtx.lineWidth = 4;
+                    oCtx.fillRect(90, reviewTop, 2300, reviewH);
+                    oCtx.strokeRect(90, reviewTop, 2300, reviewH);
+
+                    oCtx.fillStyle = '#047857';
+                    oCtx.font = `bold 46px ${FONT_FAMILY}`;
+                    oCtx.textAlign = 'left';
+                    oCtx.textBaseline = 'top';
+                    oCtx.fillText('🌟 複習挑戰區', 145, reviewTop + 28);
+
+                    const prompts = [
+                        '我最容易記得的字是：',
+                        '我還要再練習的字是：',
+                        '老師念一個字，我自己寫：'
+                    ];
+                    const usableTop = reviewTop + 105;
+                    const promptGap = Math.max(105, Math.min(180, (reviewH - 135) / prompts.length));
+                    prompts.forEach((prompt, i) => {
+                        const y = usableTop + i * promptGap;
+                        if (y + 65 > reviewBottom) return;
+                        oCtx.fillStyle = '#334155';
+                        oCtx.font = `36px ${FONT_FAMILY}`;
+                        oCtx.fillText(prompt, 160, y);
+                        oCtx.strokeStyle = '#94a3b8';
+                        oCtx.lineWidth = 3;
+                        oCtx.beginPath();
+                        oCtx.moveTo(760, y + 45);
+                        oCtx.lineTo(2220, y + 45);
+                        oCtx.stroke();
+                    });
+                    oCtx.restore();
+                }
+            }
+        }
+
+        function getWorksheetPageGroups(items) {
+            const mode = document.getElementById('worksheetPaginationMode')?.value || 'balanced_review';
+            if (mode === 'standard') {
+                const groups = [];
+                for (let i = 0; i < items.length; i += 5) groups.push(items.slice(i, i + 5));
+                return { mode, groups };
+            }
+            const pageCount = Math.max(1, Math.ceil(items.length / 5));
+            const base = Math.floor(items.length / pageCount);
+            const remainder = items.length % pageCount;
+            const groups = [];
+            let cursor = 0;
+            for (let p = 0; p < pageCount; p++) {
+                const count = base + (p < remainder ? 1 : 0);
+                groups.push(items.slice(cursor, cursor + count));
+                cursor += count;
+            }
+            return { mode, groups };
+        }
+
+        function updateWorksheetPaginationHint() {
+            const modeEl = document.getElementById('worksheetPaginationMode');
+            const hint = document.getElementById('worksheetPaginationHint');
+            if (!modeEl || !hint) return;
+            if (modeEl.value === 'standard') hint.textContent = '維持原本排法：每頁最多 5 個字，例如 7 個字會排成 5＋2。';
+            else if (modeEl.value === 'balanced') hint.textContent = '平均分配各頁字數，例如 7 個字排成 4＋3、11 個字排成 4＋4＋3；字數較少的頁面會垂直置中。';
+            else hint.textContent = '平均分配各頁字數，例如 7 個字排成 4＋3；最後一頁有空間時自動加入複習挑戰區。';
         }
 
         function generateWorksheetCanvases() {
             const items = getWorksheetItems();
             if (!items.length) return [];
-            const rowsPerPage = 5;
-            const totalPages = Math.ceil(items.length / rowsPerPage);
+            const plan = getWorksheetPageGroups(items);
+            const totalPages = plan.groups.length;
             const pages = [];
-            for (let p = 0; p < totalPages; p++) {
+            plan.groups.forEach((group, p) => {
                 const c = document.createElement('canvas');
                 c.width = 2480;
                 c.height = 3508;
                 const ctx = c.getContext('2d');
-                renderWorksheetPage(ctx, items.slice(p * rowsPerPage, (p + 1) * rowsPerPage), p + 1, totalPages);
+                const isLastPage = p === totalPages - 1;
+                const showReview = plan.mode === 'balanced_review' && isLastPage && group.length < 5;
+                renderWorksheetPage(ctx, group, p + 1, totalPages, {
+                    showReview,
+                    centerRows: plan.mode === 'balanced'
+                });
                 pages.push(c);
-            }
+            });
             return pages;
         }
 
@@ -2978,7 +3075,9 @@
         function renderWorksheet(oCtx, offCanvas) {
             const items = getWorksheetItems();
             if (!items.length) return null;
-            renderWorksheetPage(oCtx, items.slice(0, 5), 1, Math.ceil(items.length / 5));
+            const plan = getWorksheetPageGroups(items);
+            const firstGroup = plan.groups[0] || [];
+            renderWorksheetPage(oCtx, firstGroup, 1, plan.groups.length, { showReview: plan.mode === 'balanced_review' && plan.groups.length === 1 && firstGroup.length < 5, centerRows: plan.mode === 'balanced' });
             return offCanvas;
         }
 
@@ -3127,7 +3226,7 @@
                     if (!confirm(`即將列印：學習單練習紙
 
 共 ${urls.length} 頁。
-新版版型：貼部件 → 兩次書寫 → 語詞三層次（貼貼紙／選語詞／自己造詞）。
+新版版型：貼部件 → 兩次書寫 → 語詞三層次，並支援智慧均衡分頁與複習挑戰區。
 
 請確認：紙張 A4、縮放 100%（實際大小）、邊距 0。`)) return;
                     buildMultiPagePrintIframe(urls, '學習單練習紙');
@@ -3234,7 +3333,10 @@
 
         const worksheetChoiceMapEl = document.getElementById('worksheetChoiceMap');
         if (worksheetChoiceMapEl) worksheetChoiceMapEl.addEventListener('input', scheduleWorkspaceSave);
+        const worksheetPaginationModeEl = document.getElementById('worksheetPaginationMode');
+        if (worksheetPaginationModeEl) worksheetPaginationModeEl.addEventListener('change', () => { updateWorksheetPaginationHint(); scheduleWorkspaceSave(); });
         updateWorksheetWordModeUI();
+        updateWorksheetPaginationHint();
 
         const btnToggleOutputPanel = document.getElementById('btnToggleOutputPanel');
         const outputPanelBody = document.getElementById('outputPanelBody');
