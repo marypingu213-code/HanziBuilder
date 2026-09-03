@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>國字部件標籤產生器 - 多選補空白・新版學習單（語詞三層次版）</title>
+    <title>HanziBuilder - 國字部件標籤產生器 - 多選補空白・新版學習單（語詞三層次・輸入修正版）</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap');
@@ -76,12 +76,14 @@
                     <span id="lessonCheckedCount" class="self-center bg-white border border-violet-200 text-violet-700 rounded px-3 py-2 text-xs font-bold whitespace-nowrap">已勾 0 字</span>
                 </div>
                 <div class="mb-2 p-2 bg-emerald-50 border border-emerald-200 rounded-lg">
-                    <button type="button" id="btnBuildOneStudentLesson" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 px-3 rounded font-bold text-sm shadow">✂️ 建立「本課・多人分行」裁切清單</button>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <button type="button" id="btnBuildOneStudentLesson" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 px-3 rounded font-bold text-sm shadow">✂️ 建立「勾選生字・多人分行」</button>
+                        <button type="button" id="btnBuildFullLesson" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white py-2.5 px-3 rounded font-bold text-sm shadow">📚 建立「全課生字・多人分行」</button>
+                    </div>
                     <div class="mt-1.5 flex items-center justify-between gap-2 text-[10px]">
-                        <span class="text-emerald-700">每位學生整課連續排列；本課結束後補滿該行，下一位一定從下一行開始。</span>
+                        <span class="text-emerald-700">左：只用目前勾選的生字；右：使用本課收藏的全部生字。兩種模式都會依學生分行排列。</span>
                         <span id="rowModeBadge" class="hidden bg-emerald-100 border border-emerald-300 text-emerald-800 font-bold px-2 py-1 rounded-full whitespace-nowrap">✓ 多人分行模式</span>
                     </div>
-                    <p class="text-[10px] text-emerald-700 mt-1 leading-relaxed">會清空目前列印清單，依本課生字順序各放 1 份。白底先排本課生字、剩餘格再補語詞；透明部件先排本課、剩餘格再補 emoji／獎勵語。</p>
                 </div>
 
                 <details class="mb-2 bg-white border border-amber-200 rounded-lg">
@@ -335,10 +337,15 @@
 
         <!-- 列印與下載輸出區 -->
         <div class="p-3 bg-slate-100 border-t border-slate-300 z-20 shadow-[0_-4px_10px_-1px_rgba(0,0,0,0.1)]">
-            <div class="flex items-center justify-between mb-2 px-1">
-                <h3 class="text-sm font-bold text-slate-800">輸出操作區 (強烈建議使用直接列印)</h3>
-                <span id="outputStudentBadge" class="text-xs bg-violet-100 text-violet-800 font-bold px-2 py-0.5 rounded-full border border-violet-200">👤 1 位學生</span>
+            <div class="flex items-center justify-between gap-2 px-1">
+                <div class="flex items-center gap-2 min-w-0">
+                    <h3 class="text-sm font-bold text-slate-800 whitespace-nowrap">輸出操作區</h3>
+                    <span id="outputStudentBadge" class="text-xs bg-violet-100 text-violet-800 font-bold px-2 py-0.5 rounded-full border border-violet-200 whitespace-nowrap">👤 1 位學生</span>
+                </div>
+                <button type="button" id="btnToggleOutputPanel" class="bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 text-xs font-bold px-3 py-1.5 rounded shadow-sm whitespace-nowrap">⬇ 展開列印區</button>
             </div>
+            <p id="outputCollapsedHint" class="text-[10px] text-slate-500 mt-1 px-1">排版時可收合此區，列印或存圖前再展開即可。</p>
+            <div id="outputPanelBody" class="hidden mt-2">
             
             <!-- ✅ 修法新增：列印提示橫幅 -->
             <div class="mb-2 bg-yellow-50 border border-yellow-300 rounded-lg px-3 py-2 text-[11px] text-yellow-800 font-bold flex items-start gap-2">
@@ -402,7 +409,11 @@
                             <button type="button" id="btnWordMode_choice" onclick="setWorksheetWordMode('choice')" class="py-1.5 px-1 text-[11px] font-bold rounded border border-emerald-300 bg-white text-emerald-700">🟡 選語詞</button>
                             <button type="button" id="btnWordMode_create" onclick="setWorksheetWordMode('create')" class="py-1.5 px-1 text-[11px] font-bold rounded border border-emerald-300 bg-white text-emerald-700">🔵 自己造詞</button>
                         </div>
-                        <textarea id="worksheetChoiceMap" rows="3" class="hidden w-full border border-amber-300 rounded p-2 text-[11px] bg-amber-50 resize-y" placeholder="選語詞模式：每行一個生字，例如：
+                        <textarea id="worksheetChoiceMap" rows="3" class="hidden w-full border border-amber-300 rounded p-2 text-[11px] bg-amber-50 resize-y" placeholder="可直接輸入 2～3 個語詞（每行一個），例如：
+獲得
+收穫
+
+若每個生字要不同選項，可輸入：
 季=四季|季節|冬季
 迎=歡迎|迎接|迎面"></textarea>
                         <p id="worksheetWordModeHint" class="text-[10px] text-emerald-700 leading-relaxed">🟢 語詞區保留完整長框，讓學生直接貼上老師準備的語詞貼紙。</p>
@@ -419,6 +430,7 @@
                 </div>
 
             </div>
+            </div><!-- /outputPanelBody -->
         </div>
     </div>
 
@@ -1332,13 +1344,15 @@
 
         document.getElementById('btnBuildOneStudentLesson')?.addEventListener('click', async () => {
             if (!currentLessonName || !lessonCollections[currentLessonName]) return alert('請先建立或選擇一個課次。');
-            const names = (lessonCollections[currentLessonName] || []).filter(name => customTemplates[name]);
-            if (!names.length) return alert(`「${currentLessonName}」目前沒有已收藏的生字。`);
+            const names = Array.from(document.querySelectorAll('.lesson-word-check:checked'))
+                .map(cb => cb.value)
+                .filter(name => customTemplates[name]);
+            if (!names.length) return alert('請先勾選要建立多人分行清單的生字。');
             const students = getStudentCount();
-            if (printQueue.length && !confirm(`這會清空目前列印清單，改成「${currentLessonName}」${students}人份的多人分行裁切清單。確定繼續嗎？`)) return;
+            if (printQueue.length && !confirm(`這會清空目前列印清單，改成「${currentLessonName}」已勾選的 ${names.length} 個生字，共 ${students} 人份的多人分行裁切清單。確定繼續嗎？`)) return;
             const btn = document.getElementById('btnBuildOneStudentLesson');
             const old = btn.textContent;
-            btn.disabled = true; btn.textContent = '⏳ 正在建立多人分行清單…';
+            btn.disabled = true; btn.textContent = '⏳ 正在建立勾選生字的多人分行清單…';
             try {
                 printQueue = [];
                 for (const name of names) {
@@ -1357,12 +1371,46 @@
                 if (qtyEl) qtyEl.value = 1;
                 renderQueueUI();
                 scheduleWorkspaceSave();
-                alert(`✅ 已建立「${currentLessonName}」${students}人份多人分行清單。
-每位學生整課結束時會補滿最後一行，下一位從下一行開始。`);
+                alert(`✅ 已建立「${currentLessonName}」勾選的 ${names.length} 個生字，共 ${students} 人份多人分行清單。
+每位學生完成這 ${names.length} 個生字後會補滿最後一行，下一位從下一行開始。`);
             } finally {
                 btn.disabled = false; btn.textContent = old;
             }
         });
+        document.getElementById('btnBuildFullLesson')?.addEventListener('click', async () => {
+            if (!currentLessonName || !lessonCollections[currentLessonName]) return alert('請先建立或選擇一個課次。');
+            const names = (lessonCollections[currentLessonName] || []).filter(name => customTemplates[name]);
+            if (!names.length) return alert(`「${currentLessonName}」目前沒有已收藏的生字。`);
+            const students = getStudentCount();
+            if (printQueue.length && !confirm(`這會清空目前列印清單，改成「${currentLessonName}」全部 ${names.length} 個生字，共 ${students} 人份的多人分行裁切清單。確定繼續嗎？`)) return;
+            const btn = document.getElementById('btnBuildFullLesson');
+            const old = btn.textContent;
+            btn.disabled = true; btn.textContent = '⏳ 正在建立全課多人分行清單…';
+            try {
+                printQueue = [];
+                for (const name of names) {
+                    const comps = await hydrateStoredComponents(name);
+                    if (!comps.length) continue;
+                    printQueue.push({
+                        id: Date.now().toString() + Math.floor(Math.random() * 1000000),
+                        name,
+                        comps,
+                        qty: 1
+                    });
+                }
+                lessonRowMode = true;
+                updateRowModeBadge();
+                const qtyEl = document.getElementById('queueQty');
+                if (qtyEl) qtyEl.value = 1;
+                renderQueueUI();
+                scheduleWorkspaceSave();
+                alert(`✅ 已建立「${currentLessonName}」全課 ${names.length} 個生字，共 ${students} 人份多人分行清單。
+每位學生完成全課生字後會補滿最後一行，下一位從下一行開始。`);
+            } finally {
+                btn.disabled = false; btn.textContent = old;
+            }
+        });
+
         document.getElementById('btnDeleteLesson').addEventListener('click', () => {
             if (!currentLessonName) return;
             if (!confirm(`確定刪除課次「${currentLessonName}」嗎？\n生字範本本身不會刪除，會回到「未分類」。`)) return;
@@ -2518,15 +2566,20 @@
         function parseWorksheetChoiceMap() {
             const raw = document.getElementById('worksheetChoiceMap')?.value || '';
             const map = {};
+            const globalItems = [];
             raw.split(/\n+/).forEach(line => {
                 const trimmed = line.trim();
                 if (!trimmed) return;
                 const parts = trimmed.split(/[=＝]/);
-                if (parts.length < 2) return;
-                const key = parts.shift().trim();
-                const values = parts.join('=').split(/[|｜,，、;；]+/).map(v => v.trim()).filter(Boolean).slice(0, 3);
-                if (key && values.length) map[key] = values;
+                if (parts.length >= 2) {
+                    const key = parts.shift().trim();
+                    const values = parts.join('=').split(/[|｜,，、;；]+/).map(v => v.trim()).filter(Boolean).slice(0, 3);
+                    if (key && values.length) map[key] = values;
+                } else {
+                    trimmed.split(/[|｜,，、;；]+/).map(v => v.trim()).filter(Boolean).forEach(v => globalItems.push(v));
+                }
             });
+            if (globalItems.length) map.__default = globalItems.slice(0, 3);
             return map;
         }
 
@@ -2543,7 +2596,7 @@
             const hint = document.getElementById('worksheetWordModeHint');
             if (hint) {
                 if (worksheetWordMode === 'sticker') hint.textContent = '🟢 語詞區保留完整長框，讓學生直接貼上老師準備的語詞貼紙。';
-                else if (worksheetWordMode === 'choice') hint.textContent = '🟡 每個生字可設定 2～3 個語詞選項，學習單會直接印出來讓學生圈選或指認。';
+                else if (worksheetWordMode === 'choice') hint.textContent = '🟡 可直接輸入 2～3 個語詞（每行一個）套用全部；也可用「生字=選項1|選項2|選項3」設定各字不同選項。';
                 else hint.textContent = '🔵 語詞區分成兩個等大書寫格，讓學生自己寫出一個語詞。';
             }
         }
@@ -2795,7 +2848,7 @@
                     drawStickerPhraseBox(oCtx, phraseX, stickerY, phraseW, stickerSize);
                 } else if (worksheetWordMode === 'choice') {
                     const choiceMap = parseWorksheetChoiceMap();
-                    drawChoicePhraseBox(oCtx, phraseX, stickerY, phraseW, stickerSize, choiceMap[item.name] || []);
+                    drawChoicePhraseBox(oCtx, phraseX, stickerY, phraseW, stickerSize, choiceMap[item.name] || choiceMap.__default || []);
                 } else {
                     drawPhraseBox(oCtx, phraseX, stickerY, phraseW, stickerSize, '', phraseCells);
                 }
@@ -3063,6 +3116,20 @@
         const worksheetChoiceMapEl = document.getElementById('worksheetChoiceMap');
         if (worksheetChoiceMapEl) worksheetChoiceMapEl.addEventListener('input', scheduleWorkspaceSave);
         updateWorksheetWordModeUI();
+
+        const btnToggleOutputPanel = document.getElementById('btnToggleOutputPanel');
+        const outputPanelBody = document.getElementById('outputPanelBody');
+        const outputCollapsedHint = document.getElementById('outputCollapsedHint');
+        function setOutputPanelOpen(open) {
+            if (!outputPanelBody || !btnToggleOutputPanel) return;
+            outputPanelBody.classList.toggle('hidden', !open);
+            btnToggleOutputPanel.textContent = open ? '⬆ 收合列印區' : '⬇ 展開列印區';
+            if (outputCollapsedHint) outputCollapsedHint.classList.toggle('hidden', open);
+        }
+        btnToggleOutputPanel?.addEventListener('click', () => {
+            setOutputPanelOpen(outputPanelBody?.classList.contains('hidden'));
+        });
+        setOutputPanelOpen(false);
 
         document.getElementById('btnExportBackup')?.addEventListener('click', exportBackupData);
         document.getElementById('backupFileInput')?.addEventListener('change', async (e) => {
