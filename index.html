@@ -80,6 +80,14 @@
                         <button type="button" id="btnBuildOneStudentLesson" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 px-3 rounded font-bold text-sm shadow">✂️ 建立「勾選生字・多人分行」</button>
                         <button type="button" id="btnBuildFullLesson" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white py-2.5 px-3 rounded font-bold text-sm shadow">📚 建立「全課生字・多人分行」</button>
                     </div>
+                    <div class="grid grid-cols-[1fr_auto] gap-2 mt-2">
+                        <button type="button" id="btnShuffleTransparentParts" class="w-full bg-amber-500 hover:bg-amber-600 text-white py-2 px-3 rounded font-bold text-xs shadow">🎲 透明部件隨機排列</button>
+                        <button type="button" id="btnResetTransparentOrder" class="bg-white hover:bg-amber-50 text-amber-700 border border-amber-300 py-2 px-3 rounded font-bold text-xs whitespace-nowrap">↩ 原順序</button>
+                    </div>
+                    <div class="mt-1.5 flex items-center justify-between gap-2 text-[10px]">
+                        <span class="text-amber-700">只改變透明部件貼紙順序；白底貼紙與學習單仍維持原本生字順序。啟用後再按一次可重新洗牌。</span>
+                        <span id="shufflePartsBadge" class="bg-slate-100 border border-slate-300 text-slate-600 font-bold px-2 py-1 rounded-full whitespace-nowrap">順序排列</span>
+                    </div>
                     <div class="mt-1.5 flex items-center justify-between gap-2 text-[10px]">
                         <span class="text-emerald-700">左：只用目前勾選的生字；右：使用本課收藏的全部生字。兩種模式都會依學生分行排列。</span>
                         <span id="rowModeBadge" class="hidden bg-emerald-100 border border-emerald-300 text-emerald-800 font-bold px-2 py-1 rounded-full whitespace-nowrap">✓ 多人分行模式</span>
@@ -461,6 +469,8 @@
 
         let printQueue = [];
         let lessonRowMode = false;
+        let transparentShuffleEnabled = false;
+        let transparentShuffleSeed = Math.floor(Date.now() % 2147483647) || 1;
         let compIdCounter = 0;
         let loadedImages = {};
         let currentDesignName = ''; // 目前正在編輯的生字名稱（批次上傳／範本共用）
@@ -527,6 +537,39 @@
             const badge = document.getElementById('rowModeBadge');
             if (!badge) return;
             badge.classList.toggle('hidden', !lessonRowMode);
+        }
+
+        function updateTransparentShuffleUI() {
+            const badge = document.getElementById('shufflePartsBadge');
+            const btn = document.getElementById('btnShuffleTransparentParts');
+            if (badge) {
+                badge.textContent = transparentShuffleEnabled ? '🎲 隨機排列中' : '順序排列';
+                badge.className = transparentShuffleEnabled
+                    ? 'bg-amber-100 border border-amber-300 text-amber-800 font-bold px-2 py-1 rounded-full whitespace-nowrap'
+                    : 'bg-slate-100 border border-slate-300 text-slate-600 font-bold px-2 py-1 rounded-full whitespace-nowrap';
+            }
+            if (btn) btn.textContent = transparentShuffleEnabled ? '🎲 重新隨機排列透明部件' : '🎲 透明部件隨機排列';
+        }
+
+        function seededRandom(seed) {
+            let t = seed >>> 0;
+            return function() {
+                t += 0x6D2B79F5;
+                let r = t;
+                r = Math.imul(r ^ (r >>> 15), r | 1);
+                r ^= r + Math.imul(r ^ (r >>> 7), r | 61);
+                return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+            };
+        }
+
+        function shuffleArrayWithSeed(items, seed) {
+            const arr = items.slice();
+            const rand = seededRandom(seed || 1);
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(rand() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
         }
 
         function disableLessonRowMode() {
@@ -735,6 +778,8 @@
                 studentCount: parseInt(document.getElementById('studentCount')?.value) || 1,
                 currentLessonName,
                 lessonRowMode,
+                transparentShuffleEnabled,
+                transparentShuffleSeed,
                 fillerWords: document.getElementById('fillerWords')?.value || '',
                 fillRemainingA: document.getElementById('fillRemainingA')?.checked !== false,
                 transparentFillerModes: getTransparentFillerModes(),
@@ -783,7 +828,10 @@
             try {
                 currentLessonName = state.currentLessonName || currentLessonName || '';
                 lessonRowMode = state.lessonRowMode === true;
+                transparentShuffleEnabled = state.transparentShuffleEnabled === true;
+                transparentShuffleSeed = Number(state.transparentShuffleSeed) || transparentShuffleSeed || 1;
                 updateRowModeBadge();
+                updateTransparentShuffleUI();
                 const batchCharNameEl = document.getElementById('batchCharName');
                 const queueQtyEl = document.getElementById('queueQty');
                 const studentCountEl = document.getElementById('studentCount');
@@ -2276,8 +2324,8 @@
         }
 
         function buildStudentRowPages(type, cols, rows, fillerItems = []) {
-            const oneStudent = getOneStudentSequence(type);
-            if (!oneStudent.length) return [];
+            const baseSequence = getOneStudentSequence(type);
+            if (!baseSequence.length) return [];
             const students = getStudentCount();
             const totalCells = cols * rows;
             const pages = [];
@@ -2305,6 +2353,9 @@
             };
 
             for (let s = 0; s < students; s++) {
+                const oneStudent = (type === 'B' && transparentShuffleEnabled)
+                    ? shuffleArrayWithSeed(baseSequence, transparentShuffleSeed + s * 1009)
+                    : baseSequence;
                 const requiredRows = Math.ceil(oneStudent.length / cols);
                 if (currentRow > 0 && requiredRows <= rows && currentRow + requiredRows > rows) {
                     fillRowsToEnd();
@@ -2482,6 +2533,9 @@
                     activeComps.forEach(c => drawList.push({kind:'comp', comp:c, wordName:currentDesignName || ''}));
                 }
                 if (drawList.length === 0 && !(fillerEnabled && fillerItems.length)) return [];
+                if (transparentShuffleEnabled && drawList.length > 1) {
+                    drawList = shuffleArrayWithSeed(drawList, transparentShuffleSeed);
+                }
                 const pageCount = Math.max(1, Math.ceil(drawList.length / totalCells));
                 let fillerCursor = 0;
                 for (let p = 0; p < pageCount; p++) {
@@ -3019,7 +3073,7 @@
                 if (action === 'download') {
                     urls.forEach((u, i) => { const link=document.createElement('a'); link.download=`透明貼紙_A4_第${i+1}頁_${Date.now()}.png`; link.href=u; link.click(); });
                 } else {
-                    if (!confirm(`即將列印：A4未切割透明貼紙\n\n共 ${urls.length} 頁。\n每個裁切區固定為 25 × 25 mm，完整淡色格線對齊。建議先直切成 2.5 cm 寬長條，再沿橫線半切。\n多人分行模式下，每位學生最後一行未用格會補 emoji／自訂素材，下一位學生從下一行開始；最後一頁剩餘格也會補滿。\n\n請確認：紙張 A4、縮放 100%（實際大小）、邊距 0。`)) return;
+                    if (!confirm(`即將列印：A4未切割透明貼紙\n\n共 ${urls.length} 頁。\n每個裁切區固定為 25 × 25 mm，完整淡色格線對齊。建議先直切成 2.5 cm 寬長條，再沿橫線半切。\n多人分行模式下，每位學生最後一行未用格會補 emoji／自訂素材，下一位學生從下一行開始；最後一頁剩餘格也會補滿。若已啟用「透明部件隨機排列」，透明部件會打散順序，但白底與學習單順序不變。\n\n請確認：紙張 A4、縮放 100%（實際大小）、邊距 0。`)) return;
                     buildMultiPagePrintIframe(urls, 'A4透明貼紙');
                 }
                 return;
@@ -3110,7 +3164,21 @@
         });
         const forceCenterBEl = document.getElementById('forceCenter_B');
         if (forceCenterBEl) forceCenterBEl.addEventListener('change', () => { scheduleWorkspaceSave(); updateTransparentFillerUI(); });
+        document.getElementById('btnShuffleTransparentParts')?.addEventListener('click', () => {
+            transparentShuffleEnabled = true;
+            transparentShuffleSeed = Math.floor(Math.random() * 2147483646) + 1;
+            updateTransparentShuffleUI();
+            renderQueueUI();
+            scheduleWorkspaceSave();
+        });
+        document.getElementById('btnResetTransparentOrder')?.addEventListener('click', () => {
+            transparentShuffleEnabled = false;
+            updateTransparentShuffleUI();
+            renderQueueUI();
+            scheduleWorkspaceSave();
+        });
         updateTransparentFillerUI();
+        updateTransparentShuffleUI();
 
 
         const worksheetChoiceMapEl = document.getElementById('worksheetChoiceMap');
