@@ -437,13 +437,12 @@
                             <button type="button" id="btnWordMode_choice" onclick="setWorksheetWordMode('choice')" class="py-1.5 px-1 text-[11px] font-bold rounded border border-emerald-300 bg-white text-emerald-700">🟡 選語詞</button>
                             <button type="button" id="btnWordMode_create" onclick="setWorksheetWordMode('create')" class="py-1.5 px-1 text-[11px] font-bold rounded border border-emerald-300 bg-white text-emerald-700">🔵 自己造詞</button>
                         </div>
-                        <textarea id="worksheetChoiceMap" rows="3" class="hidden w-full border border-amber-300 rounded p-2 text-[11px] bg-amber-50 resize-y" placeholder="可直接輸入 2～3 個語詞（每行一個），例如：
-獲得
-收穫
+                        <textarea id="worksheetChoiceMap" rows="4" class="hidden w-full border border-amber-300 rounded p-2 text-[11px] bg-amber-50 resize-y" placeholder="推薦格式：生字-語詞1-語詞2（每字一行）
+彷-彷彿-防彿
+換-還車-換車
+煮-煮飯-者飯
 
-若每個生字要不同選項，可輸入：
-季=四季|季節|冬季
-迎=歡迎|迎接|迎面"></textarea>
+第一個字只當關鍵字，不會印在選項框裡。"></textarea>
                         <p id="worksheetWordModeHint" class="text-[10px] text-emerald-700 leading-relaxed">🟢 語詞區保留完整長框，讓學生直接貼上老師準備的語詞貼紙。</p>
                     </div>
 
@@ -2710,12 +2709,25 @@
             raw.split(/\n+/).forEach(line => {
                 const trimmed = line.trim();
                 if (!trimmed) return;
+
+                // 推薦格式：生字-語詞1-語詞2，例如：彷-彷彿-防彿
+                // 第一段只當作「關鍵字」，不會印進語詞選項框。
+                const dashParts = trimmed.split(/[-－—]/).map(v => v.trim()).filter(Boolean);
+                if (dashParts.length >= 3) {
+                    const key = dashParts.shift();
+                    const values = dashParts.filter(Boolean).slice(0, 3);
+                    if (key && values.length) map[key] = values;
+                    return;
+                }
+
+                // 仍相容舊格式：生字=語詞1|語詞2|語詞3
                 const parts = trimmed.split(/[=＝]/);
                 if (parts.length >= 2) {
                     const key = parts.shift().trim();
                     const values = parts.join('=').split(/[|｜,，、;；]+/).map(v => v.trim()).filter(Boolean).slice(0, 3);
                     if (key && values.length) map[key] = values;
                 } else {
+                    // 沒有指定生字時，視為全體共用選項。
                     trimmed.split(/[|｜,，、;；]+/).map(v => v.trim()).filter(Boolean).forEach(v => globalItems.push(v));
                 }
             });
@@ -2736,7 +2748,7 @@
             const hint = document.getElementById('worksheetWordModeHint');
             if (hint) {
                 if (worksheetWordMode === 'sticker') hint.textContent = '🟢 語詞區保留完整長框，讓學生直接貼上老師準備的語詞貼紙。';
-                else if (worksheetWordMode === 'choice') hint.textContent = '🟡 可直接輸入 2～3 個語詞（每行一個）套用全部；也可用「生字=選項1|選項2|選項3」設定各字不同選項。';
+                else if (worksheetWordMode === 'choice') hint.textContent = '🟡 推薦輸入「生字-語詞1-語詞2」，第一段只當關鍵字；學習單只會印後面的語詞選項。舊的「生字=選項1|選項2」格式也可使用。';
                 else hint.textContent = '🔵 語詞區分成兩個等大書寫格，讓學生自己寫出一個語詞。';
             }
         }
