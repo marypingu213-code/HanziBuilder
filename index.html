@@ -3045,26 +3045,19 @@
                         '我還要再練習的字是：',
                         '老師念一個字，我自己寫：'
                     ];
-                    const usableTop = reviewTop + 95;
-                    const sectionGap = Math.max(118, Math.min(170, (reviewH - 120) / prompts.length));
-                    const boxX = 650;
-                    const boxW = 1560;
-                    const boxH = 68;
-
+                    const usableTop = reviewTop + 105;
+                    const promptGap = Math.max(150, Math.min(220, (reviewH - 135) / prompts.length));
                     prompts.forEach((prompt, i) => {
-                        const y = usableTop + i * sectionGap;
-                        if (y + boxH + 20 > reviewBottom) return;
-
+                        const y = usableTop + i * promptGap;
+                        if (y + 70 > reviewBottom) return;
                         oCtx.fillStyle = '#334155';
-                        oCtx.font = `34px ${FONT_FAMILY}`;
-                        oCtx.fillText(prompt, 160, y + 14);
-
-                        oCtx.fillStyle = '#ffffff';
+                        oCtx.font = `36px ${FONT_FAMILY}`;
+                        oCtx.fillText(prompt, 160, y);
                         oCtx.strokeStyle = '#94a3b8';
                         oCtx.lineWidth = 3;
                         oCtx.beginPath();
-                        oCtx.rect(boxX, y, boxW, boxH);
-                        oCtx.fill();
+                        oCtx.moveTo(760, y + 45);
+                        oCtx.lineTo(2220, y + 45);
                         oCtx.stroke();
                     });
                     oCtx.restore();
