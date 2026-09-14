@@ -431,6 +431,21 @@
                     </p>
 
                     <div class="bg-white border border-emerald-200 rounded-lg p-2 mb-2">
+                        <div class="text-[11px] font-bold text-emerald-800 mb-1.5">② 提示顯示選項</div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-emerald-800 font-bold">
+                            <label class="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded px-2 py-1.5 cursor-pointer">
+                                <input type="checkbox" id="worksheetShowTargetChar" class="w-4 h-4 accent-emerald-600" checked>
+                                顯示目標字提示
+                            </label>
+                            <label class="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded px-2 py-1.5 cursor-pointer">
+                                <input type="checkbox" id="worksheetShowGhostChar" class="w-4 h-4 accent-emerald-600" checked>
+                                顯示仿寫淡字提示
+                            </label>
+                        </div>
+                        <p class="text-[10px] text-emerald-700 mt-1 leading-relaxed">可依學生程度自由切換：可保留目標字、關閉仿寫，或兩者都關閉。</p>
+                    </div>
+
+                    <div class="bg-white border border-emerald-200 rounded-lg p-2 mb-2">
                         <div class="text-[11px] font-bold text-emerald-800 mb-1.5">③ 語詞學習層次</div>
                         <div class="grid grid-cols-3 gap-1.5 mb-2">
                             <button type="button" id="btnWordMode_sticker" onclick="setWorksheetWordMode('sticker')" class="py-1.5 px-1 text-[11px] font-bold rounded border border-emerald-300 bg-emerald-600 text-white">🟢 貼語詞貼紙</button>
@@ -857,6 +872,8 @@
                 fillRemainingB: document.getElementById('fillRemainingB')?.checked !== false,
                 worksheetMode,
                 worksheetWordMode,
+                worksheetShowTargetChar: document.getElementById('worksheetShowTargetChar')?.checked !== false,
+                worksheetShowGhostChar: document.getElementById('worksheetShowGhostChar')?.checked !== false,
                 worksheetChoiceMap: document.getElementById('worksheetChoiceMap')?.value || '',
                 worksheetPaginationMode: document.getElementById('worksheetPaginationMode')?.value || 'balanced_review',
                 margins: getMarginDataSnapshot(),
@@ -923,6 +940,10 @@
                 if (fillRemainingBEl) fillRemainingBEl.checked = state.fillRemainingB !== false;
                 if (state.worksheetMode === 'high' || state.worksheetMode === 'low') setWorksheetMode(state.worksheetMode);
                 setWorksheetWordMode(state.worksheetWordMode || 'sticker');
+                const worksheetShowTargetCharEl = document.getElementById('worksheetShowTargetChar');
+                const worksheetShowGhostCharEl = document.getElementById('worksheetShowGhostChar');
+                if (worksheetShowTargetCharEl) worksheetShowTargetCharEl.checked = state.worksheetShowTargetChar !== false;
+                if (worksheetShowGhostCharEl) worksheetShowGhostCharEl.checked = state.worksheetShowGhostChar !== false;
                 const worksheetChoiceMapEl = document.getElementById('worksheetChoiceMap');
                 if (worksheetChoiceMapEl) worksheetChoiceMapEl.value = state.worksheetChoiceMap || '';
                 const worksheetPaginationModeEl = document.getElementById('worksheetPaginationMode');
@@ -2747,6 +2768,13 @@
             }
         };
 
+        function getWorksheetPromptOptions() {
+            return {
+                showTargetChar: document.getElementById('worksheetShowTargetChar')?.checked !== false,
+                showGhostChar: document.getElementById('worksheetShowGhostChar')?.checked !== false
+            };
+        }
+
         let worksheetWordMode = 'sticker'; // sticker | choice | create
 
         function parseWorksheetChoiceMap() {
@@ -2970,6 +2998,7 @@
 
         function renderWorksheetPage(oCtx, items, pageIndex, pageCount, options = {}) {
             const isHigh = worksheetMode === 'high';
+            const promptOptions = getWorksheetPromptOptions();
             oCtx.fillStyle = '#FFFFFF';
             oCtx.fillRect(0, 0, 2480, 3508);
 
@@ -3023,7 +3052,8 @@
                 const writeY = rowY + (rowHeight - writeSize) / 2 + 20;
                 const stickerY = rowY + (rowHeight - stickerSize) / 2 + 20;
                 const displayName = item.name && item.name.length > 4 ? item.name.substring(0, 3) + '…' : item.name;
-                const ghost = (!isHigh && item.name && item.name.length === 1 && !String(item.name).includes('+')) ? item.name : null;
+                const targetChar = promptOptions.showTargetChar ? (displayName || '字') : '';
+                const ghost = (!isHigh && promptOptions.showGhostChar && item.name && item.name.length === 1 && !String(item.name).includes('+')) ? item.name : null;
 
                 oCtx.fillStyle = '#f8fafc';
                 oCtx.strokeStyle = '#e2e8f0';
@@ -3031,14 +3061,16 @@
                 oCtx.fillRect(40, rowY + 20, 2400, rowHeight - 10);
                 oCtx.strokeRect(40, rowY + 20, 2400, rowHeight - 10);
 
-                oCtx.fillStyle = '#1e293b';
-                oCtx.font = `bold 92px ${FONT_FAMILY}`;
-                oCtx.textAlign = 'center';
-                oCtx.textBaseline = 'middle';
-                oCtx.fillText(displayName || '字', leftX + 50, boxMidY + 15);
-                oCtx.fillStyle = '#94a3b8';
-                oCtx.font = `30px ${FONT_FAMILY}`;
-                oCtx.fillText('目標字', leftX + 50, boxMidY - 72);
+                if (promptOptions.showTargetChar) {
+                    oCtx.fillStyle = '#1e293b';
+                    oCtx.font = `bold 92px ${FONT_FAMILY}`;
+                    oCtx.textAlign = 'center';
+                    oCtx.textBaseline = 'middle';
+                    oCtx.fillText(targetChar, leftX + 50, boxMidY + 15);
+                    oCtx.fillStyle = '#94a3b8';
+                    oCtx.font = `30px ${FONT_FAMILY}`;
+                    oCtx.fillText('目標字', leftX + 50, boxMidY - 72);
+                }
 
                 drawPasteBox(oCtx, pasteX, pasteY, pasteSize);
                 oCtx.fillStyle = '#0f766e';
@@ -3440,6 +3472,10 @@
         updateTransparentShuffleUI();
 
 
+        const worksheetShowTargetCharEl = document.getElementById('worksheetShowTargetChar');
+        const worksheetShowGhostCharEl = document.getElementById('worksheetShowGhostChar');
+        if (worksheetShowTargetCharEl) worksheetShowTargetCharEl.addEventListener('change', scheduleWorkspaceSave);
+        if (worksheetShowGhostCharEl) worksheetShowGhostCharEl.addEventListener('change', scheduleWorkspaceSave);
         const worksheetChoiceMapEl = document.getElementById('worksheetChoiceMap');
         if (worksheetChoiceMapEl) worksheetChoiceMapEl.addEventListener('input', scheduleWorkspaceSave);
         const worksheetPaginationModeEl = document.getElementById('worksheetPaginationMode');
