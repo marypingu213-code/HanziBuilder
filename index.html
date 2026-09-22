@@ -445,6 +445,16 @@
                         <p class="text-[10px] text-emerald-700 mt-1 leading-relaxed">可依學生程度自由切換：可保留目標字、關閉仿寫，或兩者都關閉。</p>
                     </div>
 
+                    <div class="bg-white border border-teal-200 rounded-lg p-2 mb-2">
+                        <div class="text-[11px] font-bold text-teal-800 mb-1.5">🧩 部件完成方式</div>
+                        <div class="grid grid-cols-2 gap-1.5 mb-1.5">
+                            <button type="button" id="btnAssembly_full" onclick="setWorksheetAssemblyMode('full')" class="py-1.5 px-1 text-[11px] font-bold rounded border border-teal-300 bg-teal-600 text-white">全部自己貼</button>
+                            <button type="button" id="btnAssembly_missing" onclick="setWorksheetAssemblyMode('missing')" class="py-1.5 px-1 text-[11px] font-bold rounded border border-teal-300 bg-white text-teal-700">缺件補字</button>
+                        </div>
+                        <p id="worksheetAssemblyHint" class="text-[10px] text-teal-700 leading-relaxed">學生使用全部部件完成國字。</p>
+                        <button type="button" id="btnRandomMissingPart" class="hidden mt-2 w-full bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 py-1.5 rounded font-bold text-[11px]">🎲 隨機保留 1 個缺件</button>
+                    </div>
+
                     <div class="bg-white border border-emerald-200 rounded-lg p-2 mb-2">
                         <div class="text-[11px] font-bold text-emerald-800 mb-1.5">③ 語詞學習層次</div>
                         <div class="grid grid-cols-3 gap-1.5 mb-2">
@@ -821,6 +831,7 @@
                     target: document.getElementById(`target${id}`)?.value || 'B',
                     center: !!document.getElementById(`center${id}`)?.checked,
                     active: !!document.getElementById(`active${id}`)?.checked,
+                    worksheetPrefill: !!document.getElementById(`prefill${id}`)?.checked,
                     fileName: panel.dataset.fileName || ''
                 };
                 if (type === 'image') {
@@ -874,6 +885,7 @@
                 worksheetWordMode,
                 worksheetShowTargetChar: document.getElementById('worksheetShowTargetChar')?.checked !== false,
                 worksheetShowGhostChar: document.getElementById('worksheetShowGhostChar')?.checked !== false,
+                worksheetAssemblyMode,
                 worksheetChoiceMap: document.getElementById('worksheetChoiceMap')?.value || '',
                 worksheetPaginationMode: document.getElementById('worksheetPaginationMode')?.value || 'balanced_review',
                 margins: getMarginDataSnapshot(),
@@ -944,6 +956,7 @@
                 const worksheetShowGhostCharEl = document.getElementById('worksheetShowGhostChar');
                 if (worksheetShowTargetCharEl) worksheetShowTargetCharEl.checked = state.worksheetShowTargetChar !== false;
                 if (worksheetShowGhostCharEl) worksheetShowGhostCharEl.checked = state.worksheetShowGhostChar !== false;
+                setWorksheetAssemblyMode(state.worksheetAssemblyMode || 'full');
                 const worksheetChoiceMapEl = document.getElementById('worksheetChoiceMap');
                 if (worksheetChoiceMapEl) worksheetChoiceMapEl.value = state.worksheetChoiceMap || '';
                 const worksheetPaginationModeEl = document.getElementById('worksheetPaginationMode');
@@ -1067,7 +1080,7 @@
             // 舊版自訂範本或圖片部件可能缺少 color／active 等欄位，先補齊安全預設值。
             const data = {
                 type: 'text', char: '', color: '#4AAEEA', size: 160,
-                x: 0, y: 0, target: 'B', center: true, active: true,
+                x: 0, y: 0, target: 'B', center: true, active: true, worksheetPrefill: false,
                 ...(compData || {})
             };
             const safeFileName = escapeHtml(data.fileName || '');
@@ -1118,6 +1131,10 @@
                 </div>
 
                 <div class="space-y-2 text-xs" id="controls${id}" style="opacity: ${data.active ? '1' : '0.3'}">
+                    <label class="flex items-center gap-2 bg-teal-50 border border-teal-200 text-teal-800 px-2 py-1.5 rounded cursor-pointer font-bold" title="缺件補字模式時，將這個部件直接印在學習單拼字格內">
+                        <input type="checkbox" id="prefill${id}" class="w-4 h-4 accent-teal-600" ${data.worksheetPrefill ? 'checked' : ''}>
+                        🧩 缺件模式：預先顯示此部件
+                    </label>
                     <div class="flex gap-2">
                         <select id="target${id}" class="flex-1 border rounded p-1.5 font-bold transition-colors ${selectClass}">
                             <option value="A" class="text-pink-700" ${data.target === 'A' ? 'selected' : ''}>🖨️ 底紙 (A大格)</option>
@@ -1214,7 +1231,7 @@
                 }
             });
 
-            ['active', 'char', 'color', 'size', 'x', 'y', 'target', 'center'].forEach(prop => {
+            ['active', 'char', 'color', 'size', 'x', 'y', 'target', 'center', 'prefill'].forEach(prop => {
                 const el = document.getElementById(`${prop}${id}`);
                 if(el) {
                     el.addEventListener('input', updateAndDraw);
@@ -1764,13 +1781,14 @@
                     const y = parseInt(document.getElementById(`y${id}`).value);
                     const target = document.getElementById(`target${id}`).value;
                     const center = document.getElementById(`center${id}`).checked;
+                    const worksheetPrefill = document.getElementById(`prefill${id}`)?.checked === true;
 
                     if (type === 'text' && document.getElementById(`char${id}`).value.trim() !== '') {
                         comps.push({
                             type: 'text',
                             char: document.getElementById(`char${id}`).value,
                             color: document.getElementById(`color${id}`).value,
-                            size, x, y, target, center
+                            size, x, y, target, center, worksheetPrefill
                         });
                     } else if (type === 'image' && loadedImages[id]) {
                         comps.push({
@@ -1778,7 +1796,7 @@
                             char: '🖼️圖',
                             fileName: panel.dataset.fileName || '',
                             imgObj: loadedImages[id],
-                            size, x, y, target, center
+                            size, x, y, target, center, worksheetPrefill
                         });
                     }
                 }
@@ -1951,8 +1969,8 @@
                 let htmlStr = '';
                 printQueue.forEach(item => {
                     // 清單項目顯示「單份」數量，用量欄顯示「乘以學生數」後的結果
-                    const aBase = item.comps.filter(c => c.target === 'A').length * item.qty;
-                    const bBase = item.comps.filter(c => c.target === 'B').length * item.qty;
+                    const aBase = item.comps.filter(c => c.target === 'A' && shouldPrintStickerComponent(c)).length * item.qty;
+                    const bBase = item.comps.filter(c => c.target === 'B' && shouldPrintTransparentComponent(c)).length * item.qty;
                     const aTotal = aBase * students;
                     const bTotal = bBase * students;
                     usedA += aTotal;
@@ -2026,11 +2044,11 @@
             const students = getStudentCount();
             if (printQueue.length > 0) {
                 return printQueue.reduce((sum, item) => {
-                    const countA = item.comps.filter(c => c.target === 'A').length;
+                    const countA = item.comps.filter(c => c.target === 'A' && shouldPrintStickerComponent(c)).length;
                     return sum + countA * item.qty * students;
                 }, 0);
             }
-            const activeA = getActiveComponents().filter(c => c.target === 'A');
+            const activeA = getActiveComponents().filter(c => c.target === 'A' && shouldPrintStickerComponent(c));
             return activeA.length ? 70 : 0;
         }
 
@@ -2183,11 +2201,11 @@
             const students = getStudentCount();
             if (printQueue.length > 0) {
                 return printQueue.reduce((sum, item) => {
-                    const countB = item.comps.filter(c => c.target === 'B').length;
+                    const countB = item.comps.filter(c => c.target === 'B' && shouldPrintTransparentComponent(c)).length;
                     return sum + countB * item.qty * students;
                 }, 0);
             }
-            return getActiveComponents().filter(c => c.target === 'B').length;
+            return getActiveComponents().filter(c => c.target === 'B' && shouldPrintTransparentComponent(c)).length;
         }
 
         function updateTransparentFillerUI() {
@@ -2387,7 +2405,7 @@
 
             if (printQueue.length > 0) {
                 printQueue.forEach(item => {
-                    const validComps = item.comps.filter(c => c.target === type);
+                    const validComps = item.comps.filter(c => c.target === type && shouldPrintStickerComponent(c));
                     // ✅ 每個項目的數量乘以學生人數
                     const effectiveQty = item.qty * students;
                     for (let i = 0; i < effectiveQty; i++) {
@@ -2398,7 +2416,7 @@
                     if (!(type === 'A' && getFillerWords().length > 0 && document.getElementById('fillRemainingA')?.checked !== false)) return null;
                 }
             } else {
-                const activeComps = getActiveComponents().filter(c => c.target === type);
+                const activeComps = getActiveComponents().filter(c => c.target === type && shouldPrintStickerComponent(c));
                 if (activeComps.length === 0) {
                     if (!(type === 'A' && getFillerWords().length > 0 && document.getElementById('fillRemainingA')?.checked !== false)) return null;
                 } else {
@@ -2458,7 +2476,7 @@
             const sequence = [];
             if (!printQueue.length) return sequence;
             printQueue.forEach(item => {
-                const validComps = (item.comps || []).filter(c => c.target === type);
+                const validComps = (item.comps || []).filter(c => c.target === type && shouldPrintStickerComponent(c));
                 const qty = Math.max(1, parseInt(item.qty) || 1);
                 for (let q = 0; q < qty; q++) {
                     validComps.forEach(comp => sequence.push({ kind: 'comp', comp, wordName: item.name }));
@@ -2543,12 +2561,12 @@
             const drawList = [];
             if (printQueue.length > 0) {
                 printQueue.forEach(item => {
-                    const validComps = item.comps.filter(c => c.target === 'A');
+                    const validComps = item.comps.filter(c => c.target === 'A' && shouldPrintStickerComponent(c));
                     const effectiveQty = item.qty * students;
                     for (let i = 0; i < effectiveQty; i++) validComps.forEach(comp => drawList.push(comp));
                 });
             } else {
-                const activeComps = getActiveComponents().filter(c => c.target === 'A');
+                const activeComps = getActiveComponents().filter(c => c.target === 'A' && shouldPrintStickerComponent(c));
                 // 保留舊版「直接列印目前字形」的行為：沒有清單時，會填滿一整張底紙。
                 if (activeComps.length) {
                     const cellsPerComp = Math.floor(70 / activeComps.length);
@@ -2672,7 +2690,7 @@
                 if (printQueue.length > 0) {
                     const oneStudent = [];
                     printQueue.forEach(item => {
-                        const validComps = item.comps.filter(c => c.target === 'B');
+                        const validComps = item.comps.filter(c => c.target === 'B' && shouldPrintTransparentComponent(c));
                         const qty = Math.max(1, parseInt(item.qty) || 1);
                         for (let q = 0; q < qty; q++) validComps.forEach(comp => oneStudent.push({kind:'comp', comp, wordName:item.name}));
                     });
@@ -2685,7 +2703,7 @@
                         seq.forEach(cell => drawList.push({...cell, studentIndex:s}));
                     }
                 } else {
-                    const activeComps = getActiveComponents().filter(c => c.target === 'B');
+                    const activeComps = getActiveComponents().filter(c => c.target === 'B' && shouldPrintTransparentComponent(c));
                     activeComps.forEach(c => drawList.push({kind:'comp', comp:c, wordName:currentDesignName || ''}));
                 }
                 if (drawList.length === 0 && !(fillerEnabled && fillerItems.length)) return [];
@@ -2751,6 +2769,36 @@
 
         // ✅ 學習單模式切換
         let worksheetMode = 'low'; // 'low' 低組 | 'high' 高組
+        let worksheetAssemblyMode = 'full'; // full | missing
+
+        function updateWorksheetAssemblyUI() {
+            const isMissing = worksheetAssemblyMode === 'missing';
+            const fullBtn = document.getElementById('btnAssembly_full');
+            const missingBtn = document.getElementById('btnAssembly_missing');
+            const hint = document.getElementById('worksheetAssemblyHint');
+            const randomBtn = document.getElementById('btnRandomMissingPart');
+            if (fullBtn) fullBtn.className = `py-1.5 px-1 text-[11px] font-bold rounded border border-teal-300 ${!isMissing ? 'bg-teal-600 text-white' : 'bg-white text-teal-700'}`;
+            if (missingBtn) missingBtn.className = `py-1.5 px-1 text-[11px] font-bold rounded border border-teal-300 ${isMissing ? 'bg-teal-600 text-white' : 'bg-white text-teal-700'}`;
+            if (hint) hint.textContent = isMissing
+                ? '勾選「預先顯示」的部件會直接印在拼字格；其餘部件才讓學生尋找並貼上。'
+                : '學生使用全部部件完成國字。';
+            if (randomBtn) randomBtn.classList.toggle('hidden', !isMissing);
+        }
+
+        window.setWorksheetAssemblyMode = function(mode) {
+            worksheetAssemblyMode = mode === 'missing' ? 'missing' : 'full';
+            updateWorksheetAssemblyUI();
+            renderQueueUI();
+            scheduleWorkspaceSave();
+        };
+
+        function shouldPrintTransparentComponent(comp) {
+            return !(worksheetAssemblyMode === 'missing' && comp?.worksheetPrefill === true);
+        }
+
+        function shouldPrintStickerComponent(comp) {
+            return !(worksheetAssemblyMode === 'missing' && comp?.worksheetPrefill === true);
+        }
 
         window.setWorksheetMode = function(mode) {
             worksheetMode = mode;
@@ -2843,6 +2891,22 @@
             oCtx.moveTo(x + size/2, y);    oCtx.lineTo(x + size/2, y + size);
             oCtx.moveTo(x, y + size/2);    oCtx.lineTo(x + size, y + size/2);
             oCtx.stroke(); oCtx.setLineDash([]);
+        }
+
+        function drawWorksheetPrefilledParts(oCtx, item, x, y, size) {
+            if (worksheetAssemblyMode !== 'missing') return 0;
+            const comps = (item?.comps || []).filter(c => c.worksheetPrefill === true);
+            if (!comps.length) return 0;
+            const scale = size / 600;
+            oCtx.save();
+            oCtx.beginPath();
+            oCtx.rect(x + 5, y + 5, size - 10, size - 10);
+            oCtx.clip();
+            oCtx.translate(x, y);
+            oCtx.scale(scale, scale);
+            comps.forEach(comp => drawComponent(oCtx, comp, 300 + (Number(comp.x) || 0), 300 + (Number(comp.y) || 0)));
+            oCtx.restore();
+            return comps.length;
         }
 
         // 共用：畫寫字格（含淡字）
@@ -3011,9 +3075,10 @@
             oCtx.font = `40px ${FONT_FAMILY}`;
             oCtx.fillStyle = '#64748b';
             const wordModeInstruction = worksheetWordMode === 'sticker' ? '貼上語詞貼紙' : (worksheetWordMode === 'choice' ? '選出正確語詞' : '自己寫一個語詞');
+            const assemblyInstruction = worksheetAssemblyMode === 'missing' ? '找出缺少的部件完成字形' : '貼上全部部件完成字形';
             oCtx.fillText(isHigh
-                ? `請先貼部件，再完成兩次書寫，最後${wordModeInstruction}。`
-                : `請先貼部件，再依提示完成兩次書寫，最後${wordModeInstruction}。`, 1240, 245);
+                ? `請${assemblyInstruction}，再完成兩次書寫，最後${wordModeInstruction}。`
+                : `請${assemblyInstruction}，再依提示完成兩次書寫，最後${wordModeInstruction}。`, 1240, 245);
 
             if (pageCount > 1) {
                 oCtx.fillStyle = '#94a3b8';
@@ -3073,9 +3138,18 @@
                 }
 
                 drawPasteBox(oCtx, pasteX, pasteY, pasteSize);
+                const prefilledCount = drawWorksheetPrefilledParts(oCtx, item, pasteX, pasteY, pasteSize);
                 oCtx.fillStyle = '#0f766e';
                 oCtx.font = `bold 36px ${FONT_FAMILY}`;
-                oCtx.fillText('① 貼部件', pasteX + pasteSize/2, pasteY - 36);
+                oCtx.fillText(worksheetAssemblyMode === 'missing' ? '① 找缺件完成字' : '① 貼部件', pasteX + pasteSize/2, pasteY - 36);
+                if (worksheetAssemblyMode === 'missing' && prefilledCount === 0) {
+                    oCtx.save();
+                    oCtx.fillStyle = '#f59e0b';
+                    oCtx.font = `bold 25px ${FONT_FAMILY}`;
+                    oCtx.textAlign = 'center';
+                    oCtx.fillText('尚未設定預先顯示部件', pasteX + pasteSize/2, pasteY + pasteSize - 18);
+                    oCtx.restore();
+                }
 
                 drawWriteBox(oCtx, writeX, writeY, writeSize, ghost, '');
 
@@ -3476,12 +3550,27 @@
         const worksheetShowGhostCharEl = document.getElementById('worksheetShowGhostChar');
         if (worksheetShowTargetCharEl) worksheetShowTargetCharEl.addEventListener('change', scheduleWorkspaceSave);
         if (worksheetShowGhostCharEl) worksheetShowGhostCharEl.addEventListener('change', scheduleWorkspaceSave);
+        document.getElementById('btnRandomMissingPart')?.addEventListener('click', () => {
+            const panels = Array.from(document.querySelectorAll('.comp-panel')).filter(panel => {
+                const id = panel.dataset.id;
+                return document.getElementById(`active${id}`)?.checked === true;
+            });
+            if (panels.length < 2) return alert('至少需要 2 個已啟用部件，才能隨機保留 1 個缺件。');
+            const missingIndex = Math.floor(Math.random() * panels.length);
+            panels.forEach((panel, index) => {
+                const cb = document.getElementById(`prefill${panel.dataset.id}`);
+                if (cb) cb.checked = index !== missingIndex;
+            });
+            updateAndDraw();
+            alert('✅ 已隨機保留 1 個缺件；其他部件會預先顯示在學習單。儲存生字範本後，此設定會跟著生字保存。');
+        });
         const worksheetChoiceMapEl = document.getElementById('worksheetChoiceMap');
         if (worksheetChoiceMapEl) worksheetChoiceMapEl.addEventListener('input', scheduleWorkspaceSave);
         const worksheetPaginationModeEl = document.getElementById('worksheetPaginationMode');
         if (worksheetPaginationModeEl) worksheetPaginationModeEl.addEventListener('change', () => { updateWorksheetPaginationHint(); scheduleWorkspaceSave(); });
         updateWorksheetWordModeUI();
         updateWorksheetPaginationHint();
+        updateWorksheetAssemblyUI();
 
         const btnToggleOutputPanel = document.getElementById('btnToggleOutputPanel');
         const outputPanelBody = document.getElementById('outputPanelBody');
