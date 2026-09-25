@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>國字部件標籤產生器 - 網頁直印精準版</title>
+    <title>HanziBuilder - 國字部件標籤產生器 - 多選補空白・新版學習單（語詞三層次・輸入修正版）</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap');
@@ -19,7 +19,7 @@
 <body class="bg-slate-100 h-screen overflow-hidden flex flex-col md:flex-row">
 
     <!-- 左側：控制面板 -->
-    <div class="w-full md:w-[45%] lg:w-[35%] bg-white shadow-xl flex flex-col h-full z-10">
+    <div class="w-full md:w-[62%] lg:w-[60%] bg-white shadow-xl flex flex-col h-full z-10">
         <div class="p-4 bg-indigo-700 text-white shadow-md z-20 flex justify-between items-center">
             <div>
                 <h1 class="text-xl font-bold tracking-wider">國字部件標籤產生器</h1>
@@ -44,47 +44,128 @@
                         🗑️ 刪除
                     </button>
                 </div>
+                <div class="grid grid-cols-3 gap-2 mt-2">
+                    <button type="button" id="btnExportBackup" class="bg-white hover:bg-amber-100 text-amber-800 border border-amber-300 text-xs font-bold py-2 rounded shadow-sm">⬇ 匯出備份</button>
+                    <label class="bg-white hover:bg-amber-100 text-amber-800 border border-amber-300 text-xs font-bold py-2 rounded shadow-sm text-center cursor-pointer">⬆ 匯入備份<input type="file" id="backupFileInput" accept="application/json,.json" class="hidden"></label>
+                    <button type="button" id="btnClearWorkspace" class="bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 text-xs font-bold py-2 rounded shadow-sm">🧹 清空暫存</button>
+                </div>
+                <div class="mt-2 flex items-center justify-between gap-2">
+                    <p class="text-[10px] text-amber-700 leading-relaxed">現在會自動保存目前畫面、課次、列印清單與已上傳部件圖片。建議仍定期匯出備份，避免更換瀏覽器或清除網站資料時遺失。</p>
+                    <span id="autosaveStatus" class="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-full whitespace-nowrap">💾 自動保存已啟用</span>
+                </div>
             </div>
 
-            <hr class="border-gray-200">
-
-            <!-- 🖼️ 批次上傳區 -->
-            <div class="bg-teal-50 p-3 rounded-lg border border-teal-200 shadow-sm">
-                <label class="block text-sm font-bold text-teal-900 mb-2">🖼️ 一次上傳一個生字的所有部件</label>
-
-                <!-- 生字名稱 -->
+            <!-- 📚 課次生字收藏庫 -->
+            <div class="bg-violet-50 p-3 rounded-lg border border-violet-200 shadow-sm">
+                <div class="flex items-center justify-between gap-2 mb-2">
+                    <label class="block text-sm font-bold text-violet-900">📚 課次生字收藏庫</label>
+                    <span class="text-[10px] text-violet-500">自動保存在此瀏覽器，可另行匯出備份</span>
+                </div>
                 <div class="flex gap-2 mb-2">
-                    <input type="text" id="batchCharName" maxlength="10"
-                        placeholder="請輸入生字名稱（例如：海）"
-                        class="flex-1 border border-teal-300 rounded-md p-2 text-sm font-bold focus:ring-teal-400 bg-white">
+                    <input type="text" id="lessonNameInput" class="flex-1 min-w-0 p-2 border border-violet-300 rounded bg-white text-sm font-bold" placeholder="例如：第1課">
+                    <button type="button" id="btnCreateLesson" class="bg-violet-600 hover:bg-violet-700 text-white px-3 rounded font-bold text-xs whitespace-nowrap">＋ 建立課次</button>
+                </div>
+                <div class="flex gap-2 mb-2">
+                    <select id="lessonSelect" class="flex-1 min-w-0 p-2 border border-violet-300 rounded bg-white text-sm font-bold"></select>
+                    <button type="button" id="btnAddCurrentToLesson" class="bg-amber-500 hover:bg-amber-600 text-white px-3 rounded font-bold text-xs whitespace-nowrap">⭐ 收藏目前生字</button>
+                </div>
+                <div id="lessonWordList" class="grid grid-cols-5 lg:grid-cols-7 xl:grid-cols-9 gap-1.5 max-h-40 overflow-y-auto bg-white border border-violet-200 rounded p-2 mb-2"></div>
+
+                <div class="grid grid-cols-[1fr_auto] gap-2 mb-2 sticky top-0 z-10 bg-violet-50 py-1">
+                    <button type="button" id="btnQuickAddSelectedLessonWords" class="bg-violet-600 hover:bg-violet-700 text-white py-2.5 px-3 rounded font-bold text-sm shadow">➕ 勾選完成，直接加入列印／學習單清單</button>
+                    <span id="lessonCheckedCount" class="self-center bg-white border border-violet-200 text-violet-700 rounded px-3 py-2 text-xs font-bold whitespace-nowrap">已勾 0 字</span>
+                </div>
+                <div class="mb-2 p-2 bg-emerald-50 border border-emerald-200 rounded-lg">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <button type="button" id="btnBuildOneStudentLesson" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 px-3 rounded font-bold text-sm shadow">✂️ 建立「勾選生字・多人分行」</button>
+                        <button type="button" id="btnBuildFullLesson" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white py-2.5 px-3 rounded font-bold text-sm shadow">📚 建立「全課生字・多人分行」</button>
+                    </div>
+                    <div class="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-lg">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
+                            <div class="grid grid-cols-[auto_1fr] gap-2 items-center bg-white border border-violet-200 rounded-lg px-2 py-1.5">
+                                <label class="text-xs font-bold text-violet-800 whitespace-nowrap">🧑‍🎓 學生總數</label>
+                                <div class="flex items-center gap-1.5 justify-end">
+                                    <button type="button" id="btnTopStudentsMinus" class="w-7 h-7 rounded-full bg-violet-100 hover:bg-violet-200 text-violet-900 font-bold">−</button>
+                                    <input type="number" id="topStudentCount" min="1" max="20" value="1" class="w-16 p-1.5 border border-violet-300 rounded bg-white text-sm font-bold text-center">
+                                    <button type="button" id="btnTopStudentsPlus" class="w-7 h-7 rounded-full bg-violet-100 hover:bg-violet-200 text-violet-900 font-bold">＋</button>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-[auto_1fr] gap-2 items-center bg-white border border-amber-200 rounded-lg px-2 py-1.5">
+                                <label class="text-xs font-bold text-amber-800 whitespace-nowrap">🎲 隨機學生數</label>
+                                <input type="number" id="transparentShuffleStudentCount" min="0" value="0" class="w-full p-1.5 border border-amber-300 rounded bg-white text-sm font-bold text-center">
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between gap-2 mb-2 px-1">
+                            <span class="text-[10px] text-amber-700">可在這裡直接設定總人數，不必再往下找「學生人數」。</span>
+                            <span id="shuffleStudentSummary" class="text-[11px] font-bold text-amber-800 whitespace-nowrap">正常 1 人＋隨機 0 人</span>
+                        </div>
+                        <div class="grid grid-cols-[1fr_auto] gap-2 mt-2">
+                            <button type="button" id="btnShuffleTransparentParts" class="w-full bg-amber-500 hover:bg-amber-600 text-white py-2 px-3 rounded font-bold text-xs shadow">🎲 套用／重新隨機排列</button>
+                            <button type="button" id="btnResetTransparentOrder" class="bg-white hover:bg-amber-50 text-amber-700 border border-amber-300 py-2 px-3 rounded font-bold text-xs whitespace-nowrap">↩ 全部原順序</button>
+                        </div>
+                        <div class="mt-1.5 flex items-center justify-between gap-2 text-[10px]">
+                            <span class="text-amber-700">例如：學生總數 4、隨機學生數 2 → 前 2 位正常順序，後 2 位透明部件各自隨機；白底與學習單順序不變。</span>
+                            <span id="shufflePartsBadge" class="bg-slate-100 border border-slate-300 text-slate-600 font-bold px-2 py-1 rounded-full whitespace-nowrap">全部順序排列</span>
+                        </div>
+                    </div>
+                    <div class="mt-1.5 flex items-center justify-between gap-2 text-[10px]">
+                        <span class="text-emerald-700">左：只用目前勾選的生字；右：使用本課收藏的全部生字。兩種模式都會依學生分行排列。</span>
+                        <span id="rowModeBadge" class="hidden bg-emerald-100 border border-emerald-300 text-emerald-800 font-bold px-2 py-1 rounded-full whitespace-nowrap">✓ 多人分行模式</span>
+                    </div>
                 </div>
 
-                <!-- 多張圖片選擇 -->
-                <label class="flex items-center justify-center gap-2 w-full cursor-pointer bg-teal-600 hover:bg-teal-700 text-white font-bold py-2.5 rounded-lg shadow transition-colors mb-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586A2 2 0 0111.414 11H13a2 2 0 011.414.586L19 16M14 10a2 2 0 11-4 0 2 2 0 014 0z"/>
-                    </svg>
-                    選擇多張部件圖片
-                    <input type="file" id="batchFileInput" accept="image/*" multiple class="hidden">
-                </label>
+                <details class="mb-2 bg-white border border-amber-200 rounded-lg">
+                    <summary class="cursor-pointer px-2.5 py-2 text-xs font-bold text-amber-800 bg-amber-50 rounded-lg">📥 從所有已儲存生字加入本課</summary>
+                    <div class="p-2 space-y-2">
+                        <input type="text" id="allWordSearch" class="w-full p-1.5 border border-amber-300 rounded text-xs" placeholder="搜尋生字…">
+                        <div id="allSavedWordList" class="grid grid-cols-5 sm:grid-cols-7 gap-1.5 max-h-36 overflow-y-auto bg-white border border-amber-100 rounded p-2"></div>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button type="button" id="btnSelectAllSaved" class="bg-white hover:bg-amber-50 text-amber-700 border border-amber-300 py-1.5 rounded font-bold text-xs">☑ 全選顯示</button>
+                            <button type="button" id="btnClearSavedChecks" class="bg-white hover:bg-gray-100 text-gray-600 border border-gray-300 py-1.5 rounded font-bold text-xs">□ 取消勾選</button>
+                            <button type="button" id="btnAddSavedToLesson" class="bg-amber-500 hover:bg-amber-600 text-white py-1.5 rounded font-bold text-xs">＋ 加入本課</button>
+                        </div>
+                        <p class="text-[10px] text-amber-700">可直接勾選以前已儲存的生字加入目前課次，不必逐字載入。生字可同時收藏在不同課次。</p>
+                    </div>
+                </details>
 
-                <!-- 預覽列 -->
-                <div id="batchPreviewRow" class="hidden">
-                    <div id="batchPreviews" class="flex flex-wrap gap-1.5 mb-2"></div>
-                    <p class="text-[11px] text-teal-700 mb-2">
-                        ↑ 依檔名排序：<strong>第一張 → 白色底紙(A)</strong>，其餘 → 透明貼紙(B)。可拖曳縮圖調整順序。
-                    </p>
-                    <button type="button" id="btnBatchCreate"
-                        class="w-full bg-teal-500 hover:bg-teal-600 text-white font-bold py-2 rounded-lg shadow transition-colors text-sm">
-                        ✅ 建立所有部件面板
-                    </button>
+                <div class="grid grid-cols-3 gap-2">
+                    <button type="button" id="btnSelectAllLesson" class="bg-white hover:bg-violet-100 text-violet-700 border border-violet-300 py-1.5 rounded font-bold text-xs">☑ 全選本課</button>
+                    <button type="button" id="btnClearLessonChecks" class="bg-white hover:bg-gray-100 text-gray-600 border border-gray-300 py-1.5 rounded font-bold text-xs">□ 取消勾選</button>
+                    <button type="button" id="btnDeleteLesson" class="bg-white hover:bg-red-50 text-red-600 border border-red-200 py-1.5 rounded font-bold text-xs">🗑 刪除課次</button>
                 </div>
+                <button type="button" id="btnAddSelectedLessonWords" class="w-full mt-2 bg-violet-100 hover:bg-violet-200 text-violet-800 border border-violet-300 py-2 rounded font-bold text-xs">➕ 將勾選生字一次加入列印／學習單清單</button>
+                <p class="text-[10px] text-violet-600 mt-2 leading-relaxed">提示：點生字名稱可立即載入修改；勾選多個字後可一次加入清單。既有範本會自動放進「未分類」。</p>
             </div>
 
             <hr class="border-gray-200">
+
+            <!-- 📦 批次上傳部件 -->
+            <div class="bg-cyan-50 p-3 rounded-lg border border-cyan-200 shadow-sm">
+                <label class="block text-sm font-bold text-cyan-900 mb-2">📦 一次上傳一個生字的所有部件</label>
+                <input type="text" id="batchCharName"
+                    class="w-full p-2 mb-2 border border-cyan-300 rounded-md bg-white text-sm font-bold focus:ring-cyan-500"
+                    placeholder="先輸入生字名稱，例如：海">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2 text-xs">
+                    <label class="flex items-center gap-1.5 bg-white px-2 py-1.5 rounded border border-cyan-200 cursor-pointer">
+                        <input type="checkbox" id="batchClearExisting" checked class="accent-cyan-600">
+                        上傳前清空目前部件
+                    </label>
+                    <label class="flex items-center gap-1.5 bg-white px-2 py-1.5 rounded border border-cyan-200 cursor-pointer">
+                        <input type="checkbox" id="batchFirstAsBase" checked class="accent-cyan-600">
+                        第一張設為底紙，其餘透明紙
+                    </label>
+                </div>
+                <label class="block w-full bg-cyan-600 hover:bg-cyan-700 text-white text-center font-bold py-2.5 rounded-lg shadow cursor-pointer transition-colors">
+                    🖼️ 選擇多張部件圖片
+                    <input type="file" id="batchFiles" accept="image/*" multiple class="hidden">
+                </label>
+                <p id="batchUploadStatus" class="text-[10px] text-cyan-700 mt-2 leading-relaxed">
+                    可一次選取多張圖片。系統會依檔名排序，建議命名為 01_底.png、02_部件.png、03_部件.png；圖片以透明背景 PNG 效果最佳。
+                </p>
+            </div>
 
             <!-- 部件控制區 -->
-            <div id="componentsContainer" class="space-y-3">
+            <div id="componentsContainer" class="grid grid-cols-1 xl:grid-cols-2 gap-3">
                 <!-- 動態部件會插入這裡 -->
             </div>
             
@@ -92,20 +173,6 @@
             <button type="button" id="btnAddComp" class="w-full mt-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold py-2.5 rounded-lg border-2 border-indigo-300 border-dashed transition-colors flex justify-center items-center gap-1">
                 ➕ 新增一個部件
             </button>
-
-            <!-- 🔧 同步工具列 -->
-            <div class="flex gap-2 mt-1">
-                <button type="button" id="btnSyncSize"
-                    class="flex-1 bg-violet-50 hover:bg-violet-100 text-violet-700 border border-violet-300 font-bold text-xs py-2 rounded-lg transition-colors"
-                    onclick="syncAllSizes()">
-                    ↕️ 同步所有部件大小
-                </button>
-                <button type="button" id="btnLockCoord"
-                    class="flex-1 bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-300 font-bold text-xs py-2 rounded-lg transition-colors"
-                    onclick="toggleCoordLock()">
-                    🔓 鎖定共同座標
-                </button>
-            </div>
 
             <hr class="border-gray-200">
 
@@ -146,7 +213,7 @@
                 <div class="space-y-2 pt-2 border-t border-indigo-200">
                     <div>
                         <div class="flex justify-between text-xs font-bold mb-1">
-                            <span class="text-pink-700">底紙用量 (70格)</span>
+                            <span class="text-pink-700">底紙用量（每頁70格・自動換頁）</span>
                             <span id="statusA" class="text-pink-700">0 / 70</span>
                         </div>
                         <div class="w-full bg-gray-200 rounded-full h-1.5">
@@ -155,14 +222,71 @@
                     </div>
                     <div>
                         <div class="flex justify-between text-xs font-bold mb-1">
-                            <span id="statusBLabel" class="text-blue-700">透明紙用量 (70格)</span>
-                            <span id="statusB" class="text-blue-700">0 / 153</span>
+                            <span class="text-blue-700">透明紙用量 (A4自由排版)</span>
+                            <span id="statusB" class="text-blue-700">0 張</span>
                         </div>
                         <div class="w-full bg-gray-200 rounded-full h-1.5">
                             <div id="barB" class="bg-blue-500 h-1.5 rounded-full transition-all" style="width: 0%"></div>
                         </div>
                     </div>
-                    <p id="queueWarning" class="text-xs text-red-600 font-bold hidden mt-1">⚠️ 警告：超過紙張格數限制，請刪除部分項目。</p>
+                    <p id="queueWarning" class="text-xs text-red-600 font-bold hidden mt-1">⚠️ 警告：白色底貼超過單張 70 格會自動換頁；透明紙也會依安全邊界後的每頁容量自動換頁。</p>
+                </div>
+
+                <!-- 📝 白色底紙剩餘格補印語詞 -->
+                <div class="mt-3 pt-3 border-t border-indigo-200">
+                    <div class="flex items-center justify-between gap-2 mb-2">
+                        <label for="fillerWords" class="text-sm font-bold text-amber-800">📝 空白格補印語詞</label>
+                        <span id="fillerStatus" class="text-[10px] font-bold text-amber-700 bg-amber-100 px-2 py-1 rounded-full">剩餘 70 格</span>
+                    </div>
+                    <textarea id="fillerWords" rows="3" placeholder="每行輸入一個語詞，例如：
+早安
+加油
+好棒" class="w-full border border-amber-300 rounded-lg p-2 text-sm bg-amber-50 focus:ring-amber-400 resize-y"></textarea>
+                    <div class="flex items-center gap-2 mt-2">
+                        <label class="flex items-center text-xs font-bold text-amber-800 cursor-pointer">
+                            <input type="checkbox" id="fillRemainingA" class="mr-1.5 w-4 h-4 accent-amber-600" checked>
+                            自動循環填滿白色底紙剩餘格
+                        </label>
+                    </div>
+                    <p class="text-[10px] text-amber-700 mt-1 leading-relaxed">可用換行、逗號、頓號或分號分隔。系統會先排生字底貼，再用語詞填剩餘格；語詞會自動縮放到標籤內。</p>
+                </div>
+
+                <!-- 💦 透明紙智慧補空白 -->
+                <div class="mt-3 pt-3 border-t border-indigo-200">
+                    <div class="flex items-center justify-between gap-2 mb-2">
+                        <label class="text-sm font-bold text-sky-800">💦 透明紙智慧補空白</label>
+                        <span id="transparentFillerStatus" class="text-[10px] font-bold text-sky-700 bg-sky-100 px-2 py-1 rounded-full">剩餘 0 格</span>
+                    </div>
+                    <div class="grid grid-cols-1 gap-2">
+                        <div class="border border-sky-300 rounded-lg p-2 bg-sky-50">
+                            <div class="text-[11px] font-bold text-sky-800 mb-2">可多選補空白素材（會混合輪流出現）</div>
+                            <div id="transparentFillerOptions" class="grid grid-cols-2 gap-2 text-[12px] text-sky-800 font-bold">
+                                <label class="flex items-center gap-1.5 bg-white border border-sky-200 rounded px-2 py-1 cursor-pointer"><input type="checkbox" class="transparent-filler-option w-4 h-4 accent-sky-600" value="radicals">高頻部件</label>
+                                <label class="flex items-center gap-1.5 bg-white border border-sky-200 rounded px-2 py-1 cursor-pointer"><input type="checkbox" class="transparent-filler-option w-4 h-4 accent-sky-600" value="rewards">鼓勵語</label>
+                                <label class="flex items-center gap-1.5 bg-white border border-sky-200 rounded px-2 py-1 cursor-pointer"><input type="checkbox" class="transparent-filler-option w-4 h-4 accent-sky-600" value="cuteEmoji">可愛 emoji</label>
+                                <label class="flex items-center gap-1.5 bg-white border border-sky-200 rounded px-2 py-1 cursor-pointer"><input type="checkbox" class="transparent-filler-option w-4 h-4 accent-sky-600" value="animalEmoji">小動物 emoji</label>
+                                <label class="flex items-center gap-1.5 bg-white border border-sky-200 rounded px-2 py-1 cursor-pointer"><input type="checkbox" class="transparent-filler-option w-4 h-4 accent-sky-600" value="emojiRewards">emoji＋獎勵語</label>
+                                <label class="flex items-center gap-1.5 bg-white border border-sky-200 rounded px-2 py-1 cursor-pointer"><input type="checkbox" class="transparent-filler-option w-4 h-4 accent-sky-600" value="animalEmojiRewards">小動物＋獎勵語</label>
+                                <label class="flex items-center gap-1.5 bg-white border border-sky-200 rounded px-2 py-1 cursor-pointer"><input type="checkbox" class="transparent-filler-option w-4 h-4 accent-sky-600" value="symbols">常用符號</label>
+                                <label class="flex items-center gap-1.5 bg-white border border-sky-200 rounded px-2 py-1 cursor-pointer"><input type="checkbox" class="transparent-filler-option w-4 h-4 accent-sky-600" value="custom">自訂素材</label>
+                            </div>
+                            <div class="flex gap-2 mt-2">
+                                <button type="button" id="btnTransparentFillerQuickCute" class="flex-1 bg-white hover:bg-sky-100 text-sky-800 border border-sky-200 rounded px-2 py-1 text-[11px] font-bold">快速勾選：可愛獎勵</button>
+                                <button type="button" id="btnTransparentFillerClear" class="bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded px-2 py-1 text-[11px] font-bold">清空選項</button>
+                            </div>
+                        </div>
+                        <label class="flex items-center justify-center text-xs font-bold text-sky-800 cursor-pointer border border-sky-200 rounded-lg bg-white px-2 py-2">
+                            <input type="checkbox" id="fillRemainingB" class="mr-1.5 w-4 h-4 accent-sky-600" checked>
+                            循環補滿最後一頁
+                        </label>
+                    </div>
+                    <textarea id="transparentCustomItems" rows="2" placeholder="自訂素材：每行一個，例如：
+🐻
+🐰好棒
+已完成
+→" class="w-full mt-2 border border-sky-300 rounded-lg p-2 text-sm bg-sky-50 focus:ring-sky-400 resize-y hidden"></textarea>
+                    <div id="transparentPresetPreview" class="mt-2 text-[11px] text-sky-700 bg-white border border-sky-100 rounded-lg p-2 leading-relaxed">可勾選多種素材一起補空白；系統會交錯輪流排列，不會整頁都印成同一種圖案。也可加入自訂 emoji、獎勵語或常用符號。</div>
+                    <p class="text-[10px] text-sky-700 mt-1 leading-relaxed">系統會先排真正需要的透明部件，只利用最後一頁剩餘裁切格補素材，不會多開一張透明紙。每格仍維持 30 × 29.7 mm 與四角裁切記號；自訂素材也可直接輸入 emoji 或 emoji＋文字。</p>
                 </div>
             </div>
 
@@ -178,7 +302,7 @@
                         <!-- A紙張設定 -->
                         <div class="space-y-2 pb-3 border-b border-gray-100">
                             <div class="flex justify-between items-center mb-1">
-                                <p class="font-bold text-pink-700">🌸 底字紙張 (70格)</p>
+                                <div><p class="font-bold text-pink-700">🌸 底字紙張：LD-8119（70格／30×29.7mm／無邊）</p><p class="text-[10px] text-pink-500 mt-0.5">網格固定貼齊 A4 邊緣；用「內容安全位移」避開印表機不可列印區。</p></div>
                                 <button type="button" onclick="printCalibration('A')" class="bg-pink-100 hover:bg-pink-200 text-pink-700 px-2 py-1 rounded font-bold border border-pink-300">🖨️ 印製校正網格</button>
                             </div>
                             <div class="grid grid-cols-2 gap-2">
@@ -186,20 +310,31 @@
                                 <div><label class="text-gray-500 block">上邊距 (mm)</label> <input type="number" id="mT_A" value="0" step="0.5" class="w-full border p-1 rounded bg-gray-50"></div>
                                 <div><label class="text-gray-500 block">水平間距 (Gap X)</label> <input type="number" id="gX_A" value="0" step="0.1" class="w-full border p-1 rounded bg-gray-50"></div>
                                 <div><label class="text-gray-500 block">垂直間距 (Gap Y)</label> <input type="number" id="gY_A" value="0" step="0.1" class="w-full border p-1 rounded bg-gray-50"></div>
+                                <div><label class="text-pink-700 font-bold block">內容向右位移 (mm)</label> <input type="number" id="contentX_A" value="2" step="0.5" class="w-full border border-pink-300 p-1 rounded bg-pink-50"></div>
+                                <div><label class="text-pink-700 font-bold block">內容向下位移 (mm)</label> <input type="number" id="contentY_A" value="2" step="0.5" class="w-full border border-pink-300 p-1 rounded bg-pink-50"></div>
+                                <div class="col-span-2"><label class="text-pink-700 font-bold block">每格內容安全內縮 (mm)</label> <input type="number" id="safeInset_A" value="4" step="0.5" class="w-full border border-pink-300 p-1 rounded bg-pink-50"></div>
                             </div>
+                            <p class="text-[10px] text-pink-600 leading-relaxed">建議先用：右移 2mm、下移 2mm、內容安全內縮 4mm。LD-8119 的格線仍固定貼齊紙張邊緣，但會把字／圖自動縮進安全區，避免上下左右都被印表機吃掉。</p>
                         </div>
 
                         <!-- B紙張設定 -->
                         <div class="space-y-2 pb-2">
                             <div class="flex justify-between items-center mb-1">
-                                <p class="font-bold text-blue-700">💦 透明紙張 (153格)</p>
+                                <div><p class="font-bold text-blue-700">💦 透明紙張 (A4未切割)</p><p class="text-[10px] text-blue-600 mt-0.5">半切剪刀模式：每格固定 25×25 mm、整齊成直條，不再上下錯位。先把 A4 切成 2.5 cm 寬長條，再沿橫線半切。</p></div>
                                 <button type="button" onclick="printCalibration('B')" class="bg-blue-100 hover:bg-blue-200 text-blue-700 px-2 py-1 rounded font-bold border border-blue-300">🖨️ 印製校正網格</button>
                             </div>
                             <div class="grid grid-cols-2 gap-2">
-                                <div><label class="text-gray-500 block font-bold text-blue-600">左邊距 (已還原6mm)</label> <input type="number" id="mL_B" value="6" step="0.5" class="w-full border p-1 rounded bg-blue-50"></div>
-                                <div><label class="text-gray-500 block">上邊距 (mm)</label> <input type="number" id="mT_B" value="11" step="0.5" class="w-full border p-1 rounded bg-gray-50"></div>
+                                <div><label class="text-gray-500 block font-bold text-blue-600">額外左移/右移微調 (mm)</label> <input type="number" id="mL_B" value="0" step="0.5" class="w-full border p-1 rounded bg-blue-50"></div>
+                                <div><label class="text-gray-500 block">額外上移/下移微調 (mm)</label> <input type="number" id="mT_B" value="0" step="0.5" class="w-full border p-1 rounded bg-gray-50"></div>
                                 <div><label class="text-gray-500 block">水平間距 (Gap X)</label> <input type="number" id="gX_B" value="0" step="0.1" class="w-full border p-1 rounded bg-gray-50"></div>
                                 <div><label class="text-gray-500 block">垂直間距 (Gap Y)</label> <input type="number" id="gY_B" value="0" step="0.1" class="w-full border p-1 rounded bg-gray-50"></div>
+                                <div><label class="text-blue-700 font-bold block">整頁安全邊界 (mm)</label> <input type="number" id="safeBorder_B" value="5" step="0.5" class="w-full border border-blue-300 p-1 rounded bg-blue-50"></div>
+                                <div><label class="text-blue-700 font-bold block">每格內容安全內縮 (mm)</label> <input type="number" id="contentInset_B" value="2" step="0.5" class="w-full border border-blue-300 p-1 rounded bg-blue-50"></div>
+                                <label class="col-span-2 flex items-center gap-2 bg-emerald-50 border border-emerald-300 rounded p-2 text-xs text-emerald-800 font-bold cursor-pointer">
+                                    <input type="checkbox" id="forceCenter_B" class="w-4 h-4 accent-emerald-600" checked>
+                                    🎯 透明部件全部置中每一格（建議開啟，裁切最整齊）
+                                </label>
+                                <div class="col-span-2 bg-blue-50 border border-blue-200 rounded p-2 text-[10px] text-blue-700 font-bold">✂️ 透明貼紙裁切尺寸固定：25 × 25 mm（2.5 × 2.5 cm）・直條對齊・完整淡色裁切線</div>
                             </div>
                         </div>
 
@@ -230,36 +365,27 @@
 
         <!-- 列印與下載輸出區 -->
         <div class="p-3 bg-slate-100 border-t border-slate-300 z-20 shadow-[0_-4px_10px_-1px_rgba(0,0,0,0.1)]">
-            <div class="flex items-center justify-between mb-2 px-1">
-                <h3 class="text-sm font-bold text-slate-800">輸出操作區 (強烈建議使用直接列印)</h3>
-                <span id="outputStudentBadge" class="text-xs bg-violet-100 text-violet-800 font-bold px-2 py-0.5 rounded-full border border-violet-200">👤 1 位學生</span>
+            <div class="flex items-center justify-between gap-2 px-1">
+                <div class="flex items-center gap-2 min-w-0">
+                    <h3 class="text-sm font-bold text-slate-800 whitespace-nowrap">輸出操作區</h3>
+                    <span id="outputStudentBadge" class="text-xs bg-violet-100 text-violet-800 font-bold px-2 py-0.5 rounded-full border border-violet-200 whitespace-nowrap">👤 1 位學生</span>
+                </div>
+                <button type="button" id="btnToggleOutputPanel" class="bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 text-xs font-bold px-3 py-1.5 rounded shadow-sm whitespace-nowrap">⬇ 展開列印區</button>
             </div>
-
-            <!-- 🖨️ 列印模式切換 -->
-            <div class="mb-2 bg-white border border-slate-200 rounded-lg overflow-hidden shadow-inner flex">
-                <button type="button" id="btnModeOverlay"
-                    onclick="setPrintMode('overlay')"
-                    class="flex-1 py-1.5 text-[11px] font-bold transition-colors bg-indigo-600 text-white leading-tight px-1">
-                    🔲 同尺寸疊貼<br><span class="font-normal opacity-80">底＋透明各70格</span>
-                </button>
-                <button type="button" id="btnModeEconomy"
-                    onclick="setPrintMode('economy')"
-                    class="flex-1 py-1.5 text-[11px] font-bold transition-colors bg-white text-slate-500 leading-tight px-1">
-                    🗜️ 省材料模式<br><span class="font-normal opacity-70">透明153小格</span>
-                </button>
-            </div>
+            <p id="outputCollapsedHint" class="text-[10px] text-slate-500 mt-1 px-1">排版時可收合此區，列印或存圖前再展開即可。</p>
+            <div id="outputPanelBody" class="hidden mt-2">
             
             <!-- ✅ 修法新增：列印提示橫幅 -->
             <div class="mb-2 bg-yellow-50 border border-yellow-300 rounded-lg px-3 py-2 text-[11px] text-yellow-800 font-bold flex items-start gap-2">
                 <span class="text-base leading-none mt-0.5">⚠️</span>
-                <span>列印時請確認對話框中的縮放比例為 <span class="text-red-600">100%（實際大小）</span>，否則透明貼紙位置會跑掉！</span>
+                <span>列印時請確認縮放比例為 <span class="text-red-600">100%（實際大小）</span>。透明紙改為整張 A4 未切割，列印後依四角裁切記號裁切即可。</span>
             </div>
 
             <div class="space-y-2">
                 
                 <!-- 貼紙 A 輸出 -->
                 <div class="bg-pink-50 p-2 rounded-lg border border-pink-200">
-                    <div class="text-pink-800 font-bold text-[13px] mb-1.5 px-1">🌸 底字大格貼紙 (70格)</div>
+                    <div class="text-pink-800 font-bold text-[13px] mb-1.5 px-1">🌸 LD-8119 白色底貼（70格／頁・自動換頁）</div>
                     <div class="flex gap-2">
                         <button type="button" onclick="executeOutput('A', 'print')" id="btnPrintA" class="flex-[2] bg-pink-600 hover:bg-pink-700 disabled:bg-gray-400 text-white font-bold py-2 px-2 rounded shadow transition-colors text-sm">
                             🖨️ 網頁直接列印
@@ -272,7 +398,7 @@
 
                 <!-- 貼紙 B 輸出 -->
                 <div class="bg-blue-50 p-2 rounded-lg border border-blue-200">
-                    <div id="labelB" class="text-blue-800 font-bold text-[13px] mb-1.5 px-1">🔲 透明疊貼貼紙 (70格)</div>
+                    <div class="text-blue-800 font-bold text-[13px] mb-1.5 px-1">💦 透明貼紙 (A4未切割)</div><div class="text-[10px] text-blue-600 px-1 mb-1">每格固定 25 × 25 mm，直條對齊、自動換頁；可先直切成 2.5 cm 寬長條，再沿淡色橫線半切。</div>
                     <div class="flex gap-2">
                         <button type="button" onclick="executeOutput('B', 'print')" id="btnPrintB" class="flex-[2] bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-bold py-2 px-2 rounded shadow transition-colors text-sm">
                             🖨️ 網頁直接列印
@@ -297,23 +423,52 @@
                         <button type="button" id="btnModeC_high"
                             onclick="setWorksheetMode('high')"
                             class="flex-1 py-1.5 text-[12px] font-bold transition-colors bg-white text-emerald-700">
-                            🌟 高組（無提示＋造詞）
+                            🌟 高組（無提示）
                         </button>
                     </div>
                     <p id="worksheetModeHint" class="text-[10px] text-emerald-600 mb-2 px-1">
-                        🌱 低組：顯示部件示意圖 → 貼一貼 → 寫一寫
+                        🌱 有提示：貼部件 → 大格寫一次（淡字提示） → 貼貼紙／寫語詞
                     </p>
 
-                    <!-- ⑤ 部件提示設定 -->
                     <div class="bg-white border border-emerald-200 rounded-lg p-2 mb-2">
-                        <div class="text-[11px] font-bold text-emerald-800 mb-1.5">⑤ 部件提示設定（讓學生思考缺少哪個部件）</div>
-                        <div class="flex gap-1.5 mb-1.5 flex-wrap">
-                            <button type="button" id="btnPartMode_all" onclick="setPartRevealMode('all')" class="flex-1 py-1.5 text-[11px] font-bold rounded border border-emerald-300 bg-emerald-600 text-white leading-tight">🟢 全部提供</button>
-                            <button type="button" id="btnPartMode_baseOnly" onclick="setPartRevealMode('baseOnly')" class="flex-1 py-1.5 text-[11px] font-bold rounded border border-emerald-300 bg-white text-emerald-700 leading-tight">🌸 只給底字A<br>透明讓學生找</button>
-                            <button type="button" id="btnPartMode_transOnly" onclick="setPartRevealMode('transOnly')" class="flex-1 py-1.5 text-[11px] font-bold rounded border border-emerald-300 bg-white text-emerald-700 leading-tight">💦 只給透明B<br>底字讓學生找</button>
-                            <button type="button" id="btnPartMode_none" onclick="setPartRevealMode('none')" class="flex-1 py-1.5 text-[11px] font-bold rounded border border-emerald-300 bg-white text-emerald-700 leading-tight">❓ 全部學生自己找</button>
+                        <div class="text-[11px] font-bold text-emerald-800 mb-1.5">② 提示顯示選項</div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-emerald-800 font-bold">
+                            <label class="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded px-2 py-1.5 cursor-pointer">
+                                <input type="checkbox" id="worksheetShowTargetChar" class="w-4 h-4 accent-emerald-600" checked>
+                                顯示目標字提示
+                            </label>
+                            <label class="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded px-2 py-1.5 cursor-pointer">
+                                <input type="checkbox" id="worksheetShowGhostChar" class="w-4 h-4 accent-emerald-600" checked>
+                                顯示仿寫淡字提示
+                            </label>
                         </div>
-                        <p id="partRevealModeHint" class="text-[10px] text-emerald-700 leading-relaxed">🟢 全部提供：學生拿到所有部件，依示意圖拼貼完成國字。</p>
+                        <p class="text-[10px] text-emerald-700 mt-1 leading-relaxed">可依學生程度自由切換：可保留目標字、關閉仿寫，或兩者都關閉。</p>
+                    </div>
+
+                    <div class="bg-white border border-emerald-200 rounded-lg p-2 mb-2">
+                        <div class="text-[11px] font-bold text-emerald-800 mb-1.5">③ 語詞學習層次</div>
+                        <div class="grid grid-cols-3 gap-1.5 mb-2">
+                            <button type="button" id="btnWordMode_sticker" onclick="setWorksheetWordMode('sticker')" class="py-1.5 px-1 text-[11px] font-bold rounded border border-emerald-300 bg-emerald-600 text-white">🟢 貼語詞貼紙</button>
+                            <button type="button" id="btnWordMode_choice" onclick="setWorksheetWordMode('choice')" class="py-1.5 px-1 text-[11px] font-bold rounded border border-emerald-300 bg-white text-emerald-700">🟡 選語詞</button>
+                            <button type="button" id="btnWordMode_create" onclick="setWorksheetWordMode('create')" class="py-1.5 px-1 text-[11px] font-bold rounded border border-emerald-300 bg-white text-emerald-700">🔵 自己造詞</button>
+                        </div>
+                        <textarea id="worksheetChoiceMap" rows="4" class="hidden w-full border border-amber-300 rounded p-2 text-[11px] bg-amber-50 resize-y" placeholder="推薦格式：生字-語詞1-語詞2（每字一行）
+彷-彷彿-防彿
+換-還車-換車
+煮-煮飯-者飯
+
+第一個字只當關鍵字，不會印在選項框裡。"></textarea>
+                        <p id="worksheetWordModeHint" class="text-[10px] text-emerald-700 leading-relaxed">🟢 語詞區保留完整長框，讓學生直接貼上老師準備的語詞貼紙。</p>
+                    </div>
+
+                    <div class="bg-white border border-emerald-200 rounded-lg p-2 mb-2">
+                        <div class="text-[11px] font-bold text-emerald-800 mb-1.5">④ 學習單分頁方式</div>
+                        <select id="worksheetPaginationMode" class="w-full border border-emerald-300 rounded p-2 text-[11px] bg-white text-emerald-800 font-bold">
+                            <option value="standard">標準：每頁最多 5 字</option>
+                            <option value="balanced">⚖️ 智慧均衡分頁</option>
+                            <option value="balanced_review" selected>📝 均衡分頁＋最後一頁複習挑戰區（推薦）</option>
+                        </select>
+                        <p id="worksheetPaginationHint" class="text-[10px] text-emerald-700 mt-1 leading-relaxed">7 個字會自動排成 4＋3；最後一頁剩餘空間會加入複習挑戰區。</p>
                     </div>
 
                     <div class="flex gap-2">
@@ -327,11 +482,12 @@
                 </div>
 
             </div>
+            </div><!-- /outputPanelBody -->
         </div>
     </div>
 
     <!-- 右側：Canvas 預覽區 -->
-    <div id="canvasWrapper" class="w-full md:w-[55%] lg:w-[65%] p-4 flex justify-center items-center overflow-auto bg-slate-200 relative inset-0">
+    <div id="canvasWrapper" class="w-full md:w-[38%] lg:w-[40%] p-3 flex justify-center items-start overflow-auto bg-slate-200 relative inset-0">
         <div class="absolute top-4 left-4 z-10 flex gap-2">
             <label class="bg-white p-2 rounded shadow text-sm font-bold text-slate-800 cursor-pointer flex items-center gap-2 border border-slate-300 hover:bg-slate-50">
                 <input type="checkbox" id="showBorders" class="w-4 h-4 cursor-pointer" checked> 顯示畫布輔助線
@@ -350,27 +506,19 @@
         // 紙張基礎規格
         const A_COLS = 7, A_ROWS = 10;
         const A_W = 30 * PX_PER_MM, A_H = 29.7 * PX_PER_MM;
-        // 省材料模式（原始小格）
-        const B_COLS_ECO = 9, B_ROWS_ECO = 17;
-        const B_W_ECO = 22 * PX_PER_MM, B_H_ECO = 16 * PX_PER_MM;
-        // 同尺寸疊貼模式：B 格與 A 格完全相同
-        const B_COLS_OVL = 7, B_ROWS_OVL = 10;
-        const B_W_OVL = 30 * PX_PER_MM, B_H_OVL = 29.7 * PX_PER_MM;
-        // 目前使用的 B 規格（由 printMode 決定）
-        let B_COLS = B_COLS_OVL, B_ROWS = B_ROWS_OVL;
-        let B_W = B_W_OVL, B_H = B_H_OVL;
-
-        // 列印模式：'overlay' 同尺寸疊貼（預設）| 'economy' 省材料小格
-        let printMode = 'overlay';
-
-        // 鎖定共同座標旗標
-        let coordLocked = false;
-
+        const B_COLS = 8, B_ROWS = 11;
+        const B_W = 25 * PX_PER_MM, B_H = 25 * PX_PER_MM;
+        
         const FONT_FAMILY = '"BiauKai", "DFKai-SB", "TW-Kai", "KaiTi", sans-serif';
 
         let printQueue = [];
+        let lessonRowMode = false;
+        let transparentShuffleEnabled = false;
+        let transparentShuffleStudentCount = 0;
+        let transparentShuffleSeed = Math.floor(Date.now() % 2147483647) || 1;
         let compIdCounter = 0;
-        let loadedImages = {}; 
+        let loadedImages = {};
+        let currentDesignName = ''; // 目前正在編輯的生字名稱（批次上傳／範本共用）
 
         const defaultTemplates = {
             '老': [
@@ -407,6 +555,125 @@
         };
 
         let customTemplates = JSON.parse(localStorage.getItem('myCustomStickers')) || {};
+        let lessonCollections = JSON.parse(localStorage.getItem('myLessonCollections')) || {};
+        let currentLessonName = localStorage.getItem('myCurrentLesson') || '';
+
+        const WORKSPACE_STORAGE_KEY = 'myWorkspaceState';
+        let isRestoringWorkspace = false;
+        let autosaveTimer = null;
+
+        function setAutosaveStatus(message, tone = 'emerald') {
+            const el = document.getElementById('autosaveStatus');
+            if (!el) return;
+            el.textContent = message;
+            el.className = 'text-[10px] font-bold px-2 py-1 rounded-full whitespace-nowrap border';
+            if (tone === 'red') el.className += ' text-red-700 bg-red-50 border-red-200';
+            else if (tone === 'amber') el.className += ' text-amber-700 bg-amber-50 border-amber-200';
+            else if (tone === 'slate') el.className += ' text-slate-700 bg-slate-50 border-slate-200';
+            else el.className += ' text-emerald-700 bg-emerald-50 border-emerald-200';
+        }
+
+        function saveLessonCollections() {
+            localStorage.setItem('myLessonCollections', JSON.stringify(lessonCollections));
+            if (typeof scheduleWorkspaceSave === 'function') scheduleWorkspaceSave();
+        }
+
+        function updateRowModeBadge() {
+            const badge = document.getElementById('rowModeBadge');
+            if (!badge) return;
+            badge.classList.toggle('hidden', !lessonRowMode);
+        }
+
+        function getTransparentShuffleStudentCount() {
+            const students = Math.max(1, getStudentCount());
+            const el = document.getElementById('transparentShuffleStudentCount');
+            let n = el ? parseInt(el.value) || 0 : transparentShuffleStudentCount || 0;
+            n = Math.max(0, Math.min(students, n));
+            transparentShuffleStudentCount = n;
+            if (el && Number(el.value) !== n) el.value = n;
+            return n;
+        }
+
+        function syncTopStudentCountFromMain() {
+            const main = document.getElementById('studentCount');
+            const top = document.getElementById('topStudentCount');
+            if (!main || !top) return;
+            const val = Math.max(1, Math.min(20, parseInt(main.value) || 1));
+            if (String(top.value) !== String(val)) top.value = val;
+        }
+
+        function setStudentCountEverywhere(value) {
+            const val = Math.max(1, Math.min(20, parseInt(value) || 1));
+            const main = document.getElementById('studentCount');
+            const top = document.getElementById('topStudentCount');
+            if (main) main.value = val;
+            if (top) top.value = val;
+            renderQueueUI();
+            updateTransparentShuffleUI();
+            scheduleWorkspaceSave();
+        }
+
+        function updateTransparentShuffleUI() {
+            syncTopStudentCountFromMain();
+            const students = Math.max(1, getStudentCount());
+            const randomCount = getTransparentShuffleStudentCount();
+            const normalCount = Math.max(0, students - randomCount);
+            transparentShuffleEnabled = randomCount > 0;
+            const badge = document.getElementById('shufflePartsBadge');
+            const btn = document.getElementById('btnShuffleTransparentParts');
+            const summary = document.getElementById('shuffleStudentSummary');
+            const input = document.getElementById('transparentShuffleStudentCount');
+            if (input) input.max = students;
+            if (summary) summary.textContent = `正常 ${normalCount} 人＋隨機 ${randomCount} 人`;
+            if (badge) {
+                badge.textContent = randomCount > 0 ? `🎲 ${randomCount} 人隨機` : '全部順序排列';
+                badge.className = randomCount > 0
+                    ? 'bg-amber-100 border border-amber-300 text-amber-800 font-bold px-2 py-1 rounded-full whitespace-nowrap'
+                    : 'bg-slate-100 border border-slate-300 text-slate-600 font-bold px-2 py-1 rounded-full whitespace-nowrap';
+            }
+            if (btn) btn.textContent = randomCount > 0 ? '🎲 套用／重新隨機排列' : '🎲 設定隨機學生後套用';
+        }
+
+        function seededRandom(seed) {
+            let t = seed >>> 0;
+            return function() {
+                t += 0x6D2B79F5;
+                let r = t;
+                r = Math.imul(r ^ (r >>> 15), r | 1);
+                r ^= r + Math.imul(r ^ (r >>> 7), r | 61);
+                return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+            };
+        }
+
+        function shuffleArrayWithSeed(items, seed) {
+            const arr = items.slice();
+            const rand = seededRandom(seed || 1);
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(rand() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        function disableLessonRowMode() {
+            if (!lessonRowMode) return;
+            lessonRowMode = false;
+            updateRowModeBadge();
+            if (typeof scheduleWorkspaceSave === 'function') scheduleWorkspaceSave();
+        }
+
+        function ensureUncategorizedTemplates() {
+            const assigned = new Set(Object.values(lessonCollections).flat());
+            const unassigned = Object.keys(customTemplates).filter(k => !assigned.has(k));
+            if (unassigned.length) {
+                lessonCollections['未分類'] = Array.from(new Set([...(lessonCollections['未分類'] || []), ...unassigned]));
+                saveLessonCollections();
+            }
+            if (!currentLessonName || !lessonCollections[currentLessonName]) {
+                currentLessonName = Object.keys(lessonCollections)[0] || '';
+            }
+        }
+
 
         // ✅ 修法四：邊距快速儲存/還原
         window.saveMarginPreset = function() {
@@ -415,10 +682,16 @@
                 mT_A: getSafeValue('mT_A', 0),
                 gX_A: getSafeValue('gX_A', 0),
                 gY_A: getSafeValue('gY_A', 0),
-                mL_B: getSafeValue('mL_B', 6),
-                mT_B: getSafeValue('mT_B', 11),
+                contentX_A: getSafeValue('contentX_A', 2),
+                contentY_A: getSafeValue('contentY_A', 2),
+                safeInset_A: getSafeValue('safeInset_A', 4),
+                mL_B: getSafeValue('mL_B', 0),
+                mT_B: getSafeValue('mT_B', 0),
                 gX_B: getSafeValue('gX_B', 0),
                 gY_B: getSafeValue('gY_B', 0),
+                safeBorder_B: getSafeValue('safeBorder_B', 5),
+                contentInset_B: getSafeValue('contentInset_B', 2),
+                forceCenter_B: document.getElementById('forceCenter_B')?.checked !== false,
             };
             localStorage.setItem('myMarginPreset', JSON.stringify(preset));
             alert('✅ 邊距設定已儲存！下次按「還原上次儲存的邊距」即可快速套用。');
@@ -430,8 +703,12 @@
             const preset = JSON.parse(saved);
             Object.keys(preset).forEach(k => {
                 const el = document.getElementById(k);
-                if (el) el.value = preset[k];
+                if (el) {
+                    if (el.type === 'checkbox') el.checked = !!preset[k];
+                    else el.value = preset[k];
+                }
             });
+            if (typeof scheduleWorkspaceSave === 'function') scheduleWorkspaceSave();
             alert('✅ 已還原上次儲存的邊距設定！');
         };
 
@@ -445,22 +722,24 @@
             Object.keys(defaultTemplates).forEach(k => {
                 const opt = document.createElement('option');
                 opt.value = `default_${k}`;
-                opt.text = k === '自訂' ? '✨ 清空畫面 (我要自己設定 / 上傳圖)' : `🔹 ${k}`;
+                opt.text = k === '自訂' ? '✨ 自訂字形（手動／批次上傳）' : `🔹 ${k}`;
                 group1.appendChild(opt);
             });
             select.appendChild(group1);
 
-            const customKeys = Object.keys(customTemplates);
-            if (customKeys.length > 0) {
-                const group2 = document.createElement('optgroup');
-                group2.label = "⭐ 我的自訂範本";
-                customKeys.forEach(k => {
+            // 自訂生字改由「課次生字收藏庫」管理，避免下拉選單愈來愈長。
+            // 若目前正在編輯某個自訂字，只暫時顯示該字，方便維持既有流程。
+            if (currentVal && currentVal.startsWith('custom_')) {
+                const key = currentVal.replace('custom_', '');
+                if (customTemplates[key]) {
+                    const group2 = document.createElement('optgroup');
+                    group2.label = "⭐ 目前載入的收藏字";
                     const opt = document.createElement('option');
-                    opt.value = `custom_${k}`;
-                    opt.text = `⭐ ${k}`;
+                    opt.value = currentVal;
+                    opt.text = `⭐ ${key}`;
                     group2.appendChild(opt);
-                });
-                select.appendChild(group2);
+                    select.appendChild(group2);
+                }
             }
 
             if (select.querySelector(`option[value="${currentVal}"]`)) {
@@ -496,14 +775,302 @@
             return tempCanvas.toDataURL('image/png', 0.8);
         }
 
+
+        function getMarginDataSnapshot() {
+            return {
+                mL_A: getSafeValue('mL_A', 0), mT_A: getSafeValue('mT_A', 0), gX_A: getSafeValue('gX_A', 0), gY_A: getSafeValue('gY_A', 0),
+                contentX_A: getSafeValue('contentX_A', 2), contentY_A: getSafeValue('contentY_A', 2), safeInset_A: getSafeValue('safeInset_A', 4),
+                mL_B: getSafeValue('mL_B', 0), mT_B: getSafeValue('mT_B', 0), gX_B: getSafeValue('gX_B', 0), gY_B: getSafeValue('gY_B', 0),
+                safeBorder_B: getSafeValue('safeBorder_B', 5), contentInset_B: getSafeValue('contentInset_B', 2),
+                forceCenter_B: document.getElementById('forceCenter_B')?.checked !== false
+            };
+        }
+
+        function applyMarginDataSnapshot(margins = {}) {
+            Object.keys(margins || {}).forEach(k => {
+                const el = document.getElementById(k);
+                if (el != null && margins[k] != null) {
+                    if (el.type === 'checkbox') el.checked = !!margins[k];
+                    else el.value = margins[k];
+                }
+            });
+        }
+
+        function serializeComponentForStorage(comp) {
+            const copy = { ...comp };
+            if (copy.type === 'image') {
+                if (!copy.imgBase64 && copy.imgObj) copy.imgBase64 = getBase64Image(copy.imgObj);
+                delete copy.imgObj;
+            }
+            return copy;
+        }
+
+        function serializePanelComponents() {
+            const panels = document.querySelectorAll('.comp-panel');
+            const comps = [];
+            panels.forEach(panel => {
+                const id = panel.dataset.id;
+                const type = document.querySelector(`input[name="type${id}"]:checked`)?.value || 'text';
+                const data = {
+                    type,
+                    char: document.getElementById(`char${id}`)?.value || '',
+                    color: document.getElementById(`color${id}`)?.value || '#4AAEEA',
+                    size: parseInt(document.getElementById(`size${id}`)?.value) || 160,
+                    x: parseInt(document.getElementById(`x${id}`)?.value) || 0,
+                    y: parseInt(document.getElementById(`y${id}`)?.value) || 0,
+                    target: document.getElementById(`target${id}`)?.value || 'B',
+                    center: !!document.getElementById(`center${id}`)?.checked,
+                    active: !!document.getElementById(`active${id}`)?.checked,
+                    fileName: panel.dataset.fileName || ''
+                };
+                if (type === 'image') {
+                    if (loadedImages[id]) data.imgBase64 = getBase64Image(loadedImages[id]);
+                    else {
+                        const previewSrc = document.getElementById(`previewImg${id}`)?.src || '';
+                        if (previewSrc.startsWith('data:image/')) data.imgBase64 = previewSrc;
+                    }
+                }
+                comps.push(data);
+            });
+            return comps;
+        }
+
+        async function hydrateComponentsForStorage(source = []) {
+            const comps = [];
+            for (const c of (source || [])) {
+                const copy = { ...c };
+                if (copy.type === 'image' && copy.imgBase64) {
+                    const img = new Image();
+                    await new Promise(resolve => { img.onload = resolve; img.onerror = resolve; img.src = copy.imgBase64; });
+                    if (img.complete && img.naturalWidth) copy.imgObj = img;
+                }
+                comps.push(copy);
+            }
+            return comps;
+        }
+
+        function getWorkspaceSnapshot() {
+            const templateSelect = document.getElementById('templateSelect');
+            return {
+                version: 2,
+                savedAt: new Date().toISOString(),
+                currentDesignName,
+                selectedTemplate: templateSelect ? templateSelect.value : 'default_自訂',
+                batchCharName: document.getElementById('batchCharName')?.value || '',
+                queueQty: parseInt(document.getElementById('queueQty')?.value) || 1,
+                studentCount: parseInt(document.getElementById('studentCount')?.value) || 1,
+                currentLessonName,
+                lessonRowMode,
+                transparentShuffleEnabled,
+                transparentShuffleStudentCount: getTransparentShuffleStudentCount(),
+                transparentShuffleSeed,
+                fillerWords: document.getElementById('fillerWords')?.value || '',
+                fillRemainingA: document.getElementById('fillRemainingA')?.checked !== false,
+                transparentFillerModes: getTransparentFillerModes(),
+                transparentFillerMode: getTransparentFillerModes()[0] || 'none',
+                transparentCustomItems: document.getElementById('transparentCustomItems')?.value || '',
+                fillRemainingB: document.getElementById('fillRemainingB')?.checked !== false,
+                worksheetMode,
+                worksheetWordMode,
+                worksheetShowTargetChar: document.getElementById('worksheetShowTargetChar')?.checked !== false,
+                worksheetShowGhostChar: document.getElementById('worksheetShowGhostChar')?.checked !== false,
+                worksheetChoiceMap: document.getElementById('worksheetChoiceMap')?.value || '',
+                worksheetPaginationMode: document.getElementById('worksheetPaginationMode')?.value || 'balanced_review',
+                margins: getMarginDataSnapshot(),
+                components: serializePanelComponents(),
+                printQueue: printQueue.map(item => ({
+                    id: item.id,
+                    name: item.name,
+                    qty: item.qty,
+                    comps: (item.comps || []).map(serializeComponentForStorage)
+                }))
+            };
+        }
+
+        function saveWorkspaceNow() {
+            if (isRestoringWorkspace) return;
+            try {
+                localStorage.setItem(WORKSPACE_STORAGE_KEY, JSON.stringify(getWorkspaceSnapshot()));
+                setAutosaveStatus('💾 已自動保存', 'emerald');
+            } catch (error) {
+                console.error('workspace save failed', error);
+                setAutosaveStatus('⚠️ 自動保存失敗', 'red');
+            }
+        }
+
+        function scheduleWorkspaceSave() {
+            if (isRestoringWorkspace) return;
+            setAutosaveStatus('💾 正在自動保存…', 'amber');
+            clearTimeout(autosaveTimer);
+            autosaveTimer = setTimeout(saveWorkspaceNow, 350);
+        }
+
+        async function restoreWorkspaceState() {
+            const raw = localStorage.getItem(WORKSPACE_STORAGE_KEY);
+            if (!raw) return false;
+            let state = null;
+            try { state = JSON.parse(raw); } catch (error) { console.error(error); return false; }
+            if (!state) return false;
+            isRestoringWorkspace = true;
+            try {
+                currentLessonName = state.currentLessonName || currentLessonName || '';
+                lessonRowMode = state.lessonRowMode === true;
+                transparentShuffleStudentCount = Math.max(0, parseInt(state.transparentShuffleStudentCount) || (state.transparentShuffleEnabled ? getStudentCount() : 0));
+                const shuffleCountEl = document.getElementById('transparentShuffleStudentCount');
+                if (shuffleCountEl) shuffleCountEl.value = transparentShuffleStudentCount;
+                transparentShuffleEnabled = transparentShuffleStudentCount > 0;
+                transparentShuffleSeed = Number(state.transparentShuffleSeed) || transparentShuffleSeed || 1;
+                updateRowModeBadge();
+                updateTransparentShuffleUI();
+                const batchCharNameEl = document.getElementById('batchCharName');
+                const queueQtyEl = document.getElementById('queueQty');
+                const studentCountEl = document.getElementById('studentCount');
+                const fillerWordsEl = document.getElementById('fillerWords');
+                const fillRemainingAEl = document.getElementById('fillRemainingA');
+                const transparentCustomEl = document.getElementById('transparentCustomItems');
+                const fillRemainingBEl = document.getElementById('fillRemainingB');
+                if (batchCharNameEl) batchCharNameEl.value = state.batchCharName || '';
+                if (queueQtyEl && state.queueQty != null) queueQtyEl.value = state.queueQty;
+                if (studentCountEl && state.studentCount != null) studentCountEl.value = state.studentCount;
+                syncTopStudentCountFromMain();
+                if (fillerWordsEl) fillerWordsEl.value = state.fillerWords || '';
+                if (fillRemainingAEl) fillRemainingAEl.checked = state.fillRemainingA !== false;
+                setTransparentFillerModes(state.transparentFillerModes || state.transparentFillerMode || []);
+                if (transparentCustomEl) transparentCustomEl.value = state.transparentCustomItems || '';
+                if (fillRemainingBEl) fillRemainingBEl.checked = state.fillRemainingB !== false;
+                if (state.worksheetMode === 'high' || state.worksheetMode === 'low') setWorksheetMode(state.worksheetMode);
+                setWorksheetWordMode(state.worksheetWordMode || 'sticker');
+                const worksheetShowTargetCharEl = document.getElementById('worksheetShowTargetChar');
+                const worksheetShowGhostCharEl = document.getElementById('worksheetShowGhostChar');
+                if (worksheetShowTargetCharEl) worksheetShowTargetCharEl.checked = state.worksheetShowTargetChar !== false;
+                if (worksheetShowGhostCharEl) worksheetShowGhostCharEl.checked = state.worksheetShowGhostChar !== false;
+                const worksheetChoiceMapEl = document.getElementById('worksheetChoiceMap');
+                if (worksheetChoiceMapEl) worksheetChoiceMapEl.value = state.worksheetChoiceMap || '';
+                const worksheetPaginationModeEl = document.getElementById('worksheetPaginationMode');
+                if (worksheetPaginationModeEl) worksheetPaginationModeEl.value = state.worksheetPaginationMode || 'balanced_review';
+                updateWorksheetWordModeUI();
+                updateWorksheetPaginationHint();
+                applyMarginDataSnapshot(state.margins || {});
+                currentDesignName = state.currentDesignName || (state.batchCharName || '');
+                updateTemplateDropdown(state.selectedTemplate || 'default_自訂');
+                const select = document.getElementById('templateSelect');
+                if (select && state.selectedTemplate && select.querySelector(`option[value="${state.selectedTemplate}"]`)) {
+                    select.value = state.selectedTemplate;
+                    toggleDeleteBtn();
+                }
+
+                const container = document.getElementById('componentsContainer');
+                if (container) container.innerHTML = '';
+                loadedImages = {};
+                compIdCounter = 0;
+                const componentList = Array.isArray(state.components) ? state.components : [];
+                if (componentList.length) {
+                    componentList.forEach(comp => createComponentPanel(comp));
+                } else if (select && select.value) {
+                    loadTemplate(select.value);
+                }
+
+                printQueue = [];
+                for (const item of (state.printQueue || [])) {
+                    const comps = await hydrateComponentsForStorage(item.comps || []);
+                    printQueue.push({
+                        id: item.id || (Date.now().toString() + Math.floor(Math.random() * 100000)),
+                        name: item.name || '未命名',
+                        qty: parseInt(item.qty) || 1,
+                        comps
+                    });
+                }
+                renderLessonLibrary();
+                if (currentLessonName && lessonCollections[currentLessonName]) {
+                    const lessonSelect = document.getElementById('lessonSelect');
+                    if (lessonSelect) lessonSelect.value = currentLessonName;
+                }
+                updateUI();
+                drawPreview();
+                renderQueueUI();
+                updateFillerStatus();
+                updateTransparentFillerUI();
+                setAutosaveStatus('✅ 已自動載入上次內容', 'emerald');
+                return true;
+            } catch (error) {
+                console.error('workspace restore failed', error);
+                setAutosaveStatus('⚠️ 還原暫存失敗', 'red');
+                return false;
+            } finally {
+                isRestoringWorkspace = false;
+            }
+        }
+
+        function downloadTextFile(filename, textContent, mime = 'application/json') {
+            const blob = new Blob([textContent], { type: mime });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 500);
+        }
+
+        function exportBackupData() {
+            const data = {
+                version: 2,
+                exportedAt: new Date().toISOString(),
+                customTemplates,
+                lessonCollections,
+                currentLessonName,
+                marginPreset: JSON.parse(localStorage.getItem('myMarginPreset') || 'null'),
+                workspaceState: getWorkspaceSnapshot()
+            };
+            const stamp = new Date().toISOString().slice(0,19).replace(/[T:]/g,'-');
+            downloadTextFile(`國字部件標籤備份_${stamp}.json`, JSON.stringify(data, null, 2));
+            setAutosaveStatus('⬇ 已匯出備份', 'emerald');
+        }
+
+        async function importBackupFile(file) {
+            if (!file) return;
+            const text = await file.text();
+            const data = JSON.parse(text);
+            if (!data || (!data.customTemplates && !data.workspaceState)) {
+                throw new Error('這不是可辨識的備份檔。');
+            }
+            customTemplates = data.customTemplates || {};
+            lessonCollections = data.lessonCollections || {};
+            currentLessonName = data.currentLessonName || '';
+            localStorage.setItem('myCustomStickers', JSON.stringify(customTemplates));
+            localStorage.setItem('myLessonCollections', JSON.stringify(lessonCollections));
+            localStorage.setItem('myCurrentLesson', currentLessonName);
+            if (data.marginPreset) localStorage.setItem('myMarginPreset', JSON.stringify(data.marginPreset));
+            if (data.workspaceState) localStorage.setItem(WORKSPACE_STORAGE_KEY, JSON.stringify(data.workspaceState));
+            ensureUncategorizedTemplates();
+            updateTemplateDropdown('default_老');
+            renderLessonLibrary();
+            const ok = await restoreWorkspaceState();
+            if (!ok) {
+                loadTemplate('default_老');
+                renderQueueUI();
+            }
+            setAutosaveStatus('⬆ 已匯入備份', 'emerald');
+        }
+
+        function escapeHtml(value = '') {
+            return String(value).replace(/[&<>'"]/g, ch => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+            })[ch]);
+        }
+
         function createComponentPanel(compData) {
             compIdCounter++;
             const id = compIdCounter;
             
-            // 自動決定預設 target：面板中已有部件→B（透明），否則→A（底紙）
-            const existingPanels = document.querySelectorAll('.comp-panel').length;
-            const autoTarget = compData ? compData.target : (existingPanels === 0 ? 'A' : 'B');
-            const data = compData || { type: 'text', char: '', color: '#4AAEEA', size: 280, x: 0, y: 0, target: autoTarget, center: true, active: true };
+            // 舊版自訂範本或圖片部件可能缺少 color／active 等欄位，先補齊安全預設值。
+            const data = {
+                type: 'text', char: '', color: '#4AAEEA', size: 160,
+                x: 0, y: 0, target: 'B', center: true, active: true,
+                ...(compData || {})
+            };
+            const safeFileName = escapeHtml(data.fileName || '');
             const isA = data.target === 'A';
             const panelClass = isA ? 'bg-pink-50 border-pink-300' : 'bg-blue-50 border-blue-300';
             const selectClass = isA ? 'text-pink-700 border-pink-300' : 'text-blue-700 border-blue-300';
@@ -512,15 +1079,19 @@
             div.className = `comp-panel p-3 rounded-lg border shadow-sm transition-all ${panelClass}`;
             div.id = `panel${id}`;
             div.dataset.id = id;
+            div.dataset.fileName = data.fileName || '';
 
             div.innerHTML = `
                 <div class="flex flex-col gap-2 mb-2 border-b pb-2">
-                    <div class="flex items-center justify-between">
-                        <label class="flex items-center font-bold text-gray-700 cursor-pointer">
-                            <input type="checkbox" id="active${id}" class="mr-2 w-4 h-4 accent-indigo-600" ${data.active ? 'checked' : ''}>
-                            部件 ${id}
-                        </label>
-                        <div class="flex items-center gap-2">
+                    <div class="flex items-center justify-between gap-2">
+                        <div class="min-w-0 flex-1">
+                            <label class="flex items-center font-bold text-gray-700 cursor-pointer">
+                                <input type="checkbox" id="active${id}" class="mr-2 w-4 h-4 accent-indigo-600" ${data.active ? 'checked' : ''}>
+                                部件 ${id}
+                            </label>
+                            <p id="fileName${id}" class="${safeFileName ? '' : 'hidden'} text-[10px] text-slate-500 truncate mt-0.5" title="${safeFileName}">${safeFileName}</p>
+                        </div>
+                        <div class="flex items-center gap-2 flex-shrink-0">
                             <div class="flex bg-gray-100 rounded p-0.5 shadow-inner border border-gray-200">
                                 <label class="cursor-pointer px-1.5 py-0.5 rounded text-[11px] font-bold transition-colors ${data.type === 'text' ? 'bg-white shadow text-indigo-600' : 'text-gray-500'}">
                                     <input type="radio" name="type${id}" value="text" class="hidden" ${data.type === 'text' ? 'checked' : ''}> 📝文字
@@ -549,8 +1120,8 @@
                 <div class="space-y-2 text-xs" id="controls${id}" style="opacity: ${data.active ? '1' : '0.3'}">
                     <div class="flex gap-2">
                         <select id="target${id}" class="flex-1 border rounded p-1.5 font-bold transition-colors ${selectClass}">
-                            <option value="A" class="text-pink-700" ${data.target === 'A' ? 'selected' : ''}>🌸 白色底紙 (A)</option>
-                            <option value="B" class="text-blue-700" ${data.target === 'B' ? 'selected' : ''}>🔲 透明貼紙 (B)</option>
+                            <option value="A" class="text-pink-700" ${data.target === 'A' ? 'selected' : ''}>🖨️ 底紙 (A大格)</option>
+                            <option value="B" class="text-blue-700" ${data.target === 'B' ? 'selected' : ''}>🖨️ 透明 (A4自由排版)</option>
                         </select>
                         <label class="flex items-center bg-gray-100 px-2 rounded border whitespace-nowrap cursor-pointer hover:bg-gray-200">
                             <input type="checkbox" id="center${id}" class="mr-1 w-3 h-3" ${data.center ? 'checked' : ''}> 置中印
@@ -623,7 +1194,15 @@
                     reader.onload = function(event) {
                         const img = new Image();
                         img.onload = function() {
-                            loadedImages[id] = img; 
+                            loadedImages[id] = img;
+                            const panel = document.getElementById(`panel${id}`);
+                            if (panel) panel.dataset.fileName = file.name;
+                            const fileNameEl = document.getElementById(`fileName${id}`);
+                            if (fileNameEl) {
+                                fileNameEl.textContent = file.name;
+                                fileNameEl.title = file.name;
+                                fileNameEl.classList.remove('hidden');
+                            }
                             const preview = document.getElementById(`previewImg${id}`);
                             preview.src = event.target.result;
                             preview.classList.remove('hidden');
@@ -635,227 +1214,379 @@
                 }
             });
 
-            ['active', 'char', 'color', 'target', 'center'].forEach(prop => {
+            ['active', 'char', 'color', 'size', 'x', 'y', 'target', 'center'].forEach(prop => {
                 const el = document.getElementById(`${prop}${id}`);
                 if(el) {
                     el.addEventListener('input', updateAndDraw);
                     el.addEventListener('change', updateAndDraw);
                 }
             });
-
-            // size / x / y：若啟用鎖定，同步到其他部件
-            ['size', 'x', 'y'].forEach(prop => {
-                const el = document.getElementById(`${prop}${id}`);
-                if (!el) return;
-                el.addEventListener('input', () => {
-                    if (prop === 'size' || coordLocked) {
-                        propagateValue(id, prop, el.value);
-                    }
-                    updateAndDraw();
-                });
-                el.addEventListener('change', updateAndDraw);
-            });
         }
 
-        // 將 size 或座標值傳播到其他所有部件
-        function propagateValue(sourceId, prop, value) {
-            const shouldSync = prop === 'size'
-                ? document.getElementById('btnSyncSize')?.dataset.active === 'true'
-                : coordLocked;
-            if (!shouldSync) return;
-
-            document.querySelectorAll('.comp-panel').forEach(panel => {
-                const pid = panel.dataset.id;
-                if (pid === String(sourceId)) return;
-                const el = document.getElementById(`${prop}${pid}`);
-                if (el) {
-                    el.value = value;
-                    const valEl = document.getElementById(`val${prop.charAt(0).toUpperCase()}${pid}`);
-                    if (valEl) valEl.innerText = value;
-                }
-            });
-        }
-
-        // ==========================================
-        // 🖼️ 批次上傳功能
-        // ==========================================
-
-        // 暫存已排序的 File 物件
-        let batchFiles = [];
-
-        document.getElementById('batchFileInput').addEventListener('change', function(e) {
-            // 依檔名排序
-            batchFiles = Array.from(e.target.files).sort((a, b) =>
-                a.name.localeCompare(b.name, 'zh-TW', { numeric: true })
-            );
-            renderBatchPreviews();
-        });
-
-        function renderBatchPreviews() {
-            const row = document.getElementById('batchPreviewRow');
-            const container = document.getElementById('batchPreviews');
-            container.innerHTML = '';
-
-            if (batchFiles.length === 0) {
-                row.classList.add('hidden');
-                return;
-            }
-            row.classList.remove('hidden');
-
-            batchFiles.forEach((file, idx) => {
-                const url = URL.createObjectURL(file);
-                const wrapper = document.createElement('div');
-                wrapper.className = 'relative cursor-grab';
-                wrapper.draggable = true;
-                wrapper.dataset.idx = idx;
-
-                const badge = idx === 0
-                    ? '<span class="absolute top-0 left-0 bg-pink-500 text-white text-[9px] font-bold px-1 rounded-br">底紙</span>'
-                    : '<span class="absolute top-0 left-0 bg-blue-400 text-white text-[9px] font-bold px-1 rounded-br">透明</span>';
-
-                wrapper.innerHTML = `
-                    ${badge}
-                    <img src="${url}" class="w-12 h-12 object-contain rounded border-2 ${idx === 0 ? 'border-pink-400' : 'border-blue-300'} bg-white shadow-sm" title="${file.name}">
-                    <p class="text-[9px] text-center text-gray-500 mt-0.5 w-12 truncate">${file.name}</p>
-                `;
-
-                // 拖曳排序
-                wrapper.addEventListener('dragstart', (e) => {
-                    e.dataTransfer.setData('text/plain', idx);
-                });
-                wrapper.addEventListener('dragover', (e) => e.preventDefault());
-                wrapper.addEventListener('drop', (e) => {
-                    e.preventDefault();
-                    const fromIdx = parseInt(e.dataTransfer.getData('text/plain'));
-                    const toIdx = parseInt(wrapper.dataset.idx);
-                    if (fromIdx !== toIdx) {
-                        const moved = batchFiles.splice(fromIdx, 1)[0];
-                        batchFiles.splice(toIdx, 0, moved);
-                        renderBatchPreviews();
-                    }
-                });
-
-                container.appendChild(wrapper);
-            });
-        }
-
-        document.getElementById('btnBatchCreate').addEventListener('click', () => {
-            if (batchFiles.length === 0) return;
-
-            const charName = document.getElementById('batchCharName').value.trim();
-            if (!charName) {
-                alert('請先輸入生字名稱！');
-                document.getElementById('batchCharName').focus();
-                return;
-            }
-
-            // 清空現有部件
-            document.getElementById('componentsContainer').innerHTML = '';
-            Object.keys(loadedImages).forEach(k => delete loadedImages[k]);
-
-            let loaded = 0;
-            batchFiles.forEach((file, idx) => {
+        function fileToDataUrl(file) {
+            return new Promise((resolve, reject) => {
                 const reader = new FileReader();
-                reader.onload = function(event) {
-                    const img = new Image();
-                    img.onload = function() {
-                        // 建立部件資料
-                        const compData = {
-                            type: 'image',
-                            char: charName,
-                            imgBase64: event.target.result,
-                            size: 280,
-                            x: 0,
-                            y: 0,
-                            target: idx === 0 ? 'A' : 'B',
-                            center: true,
-                            active: true
-                        };
-                        createComponentPanel(compData);
-                        loaded++;
-                        if (loaded === batchFiles.length) {
-                            // 全部建立完成
-                            updateAndDraw();
-                            // 捲動到部件區
-                            document.getElementById('componentsContainer')
-                                .scrollIntoView({ behavior: 'smooth', block: 'start' });
-                        }
-                    };
-                    img.src = event.target.result;
-                };
+                reader.onload = event => resolve(event.target.result);
+                reader.onerror = () => reject(new Error(`無法讀取圖片：${file.name}`));
                 reader.readAsDataURL(file);
             });
+        }
 
-            // 清空預覽區
-            batchFiles = [];
-            document.getElementById('batchFileInput').value = '';
-            document.getElementById('batchPreviewRow').classList.add('hidden');
-            document.getElementById('batchPreviews').innerHTML = '';
+        async function importBatchComponents(fileList) {
+            const statusEl = document.getElementById('batchUploadStatus');
+            const inputEl = document.getElementById('batchFiles');
+            const files = Array.from(fileList || [])
+                .filter(file => file.type.startsWith('image/'))
+                .sort((a, b) => a.name.localeCompare(b.name, 'zh-Hant', { numeric: true, sensitivity: 'base' }));
 
-            // 把生字名稱更新到範本名稱欄位提示
-            document.getElementById('batchCharName').placeholder = `上次：${charName}`;
+            if (files.length === 0) {
+                statusEl.textContent = '⚠️ 沒有找到可用的圖片檔。';
+                return;
+            }
+
+            statusEl.textContent = `正在載入 ${files.length} 張部件圖片……`;
+
+            try {
+                const imageDataList = await Promise.all(files.map(file => fileToDataUrl(file)));
+                const clearExisting = document.getElementById('batchClearExisting').checked;
+                const firstAsBase = document.getElementById('batchFirstAsBase').checked;
+
+                if (clearExisting) {
+                    document.getElementById('componentsContainer').innerHTML = '';
+                    loadedImages = {};
+                }
+
+                files.forEach((file, index) => {
+                    const isBase = firstAsBase && index === 0;
+                    createComponentPanel({
+                        type: 'image',
+                        char: '',
+                        fileName: file.name,
+                        imgBase64: imageDataList[index],
+                        color: '#4AAEEA',
+                        size: isBase ? 300 : 160,
+                        x: 0,
+                        y: 0,
+                        target: isBase ? 'A' : 'B',
+                        // 批次上傳預設不鎖定置中，讓 X／Y 微調在正式列印時也會生效。
+                        center: false,
+                        active: true
+                    });
+                });
+
+                currentDesignName = document.getElementById('batchCharName').value.trim();
+                const select = document.getElementById('templateSelect');
+                if (select.querySelector('option[value="default_自訂"]')) {
+                    select.value = 'default_自訂';
+                    toggleDeleteBtn();
+                }
+
+                const baseHint = firstAsBase
+                    ? `第一張「${files[0].name}」已設為底紙，其餘設為透明紙。`
+                    : '全部圖片已設為透明紙。';
+                statusEl.textContent = `✅ 已加入 ${files.length} 個部件。${baseHint} 現在可逐一微調大小與位置。`;
+            } catch (error) {
+                console.error(error);
+                statusEl.textContent = `❌ 批次上傳失敗：${error.message}`;
+            } finally {
+                // 允許再次選取相同的一組檔案。
+                inputEl.value = '';
+            }
+        }
+
+        document.getElementById('batchFiles').addEventListener('change', event => {
+            importBatchComponents(event.target.files);
         });
 
-        // ✅ 同步所有部件大小（取第一個部件的 size 為基準）
-        window.syncAllSizes = function() {
-            const panels = document.querySelectorAll('.comp-panel');
-            if (panels.length === 0) return;
-            const firstId = panels[0].dataset.id;
-            const baseSize = document.getElementById(`size${firstId}`)?.value || 280;
-            panels.forEach(panel => {
-                const pid = panel.dataset.id;
-                const el = document.getElementById(`size${pid}`);
-                if (el) {
-                    el.value = baseSize;
-                    const valEl = document.getElementById(`valS${pid}`);
-                    if (valEl) valEl.innerText = baseSize;
+        document.getElementById('batchCharName').addEventListener('input', event => {
+            currentDesignName = event.target.value.trim();
+            scheduleWorkspaceSave();
+        });
+
+        function renderLessonLibrary() {
+            ensureUncategorizedTemplates();
+            const select = document.getElementById('lessonSelect');
+            const list = document.getElementById('lessonWordList');
+            if (!select || !list) return;
+
+            const lessons = Object.keys(lessonCollections);
+            select.innerHTML = '';
+            if (lessons.length === 0) {
+                const opt = document.createElement('option');
+                opt.value = ''; opt.textContent = '尚未建立課次';
+                select.appendChild(opt);
+                list.innerHTML = '<div class="col-span-full text-center text-xs text-gray-400 py-2">先建立「第1課」之類的課次，再收藏生字。</div>';
+                currentLessonName = '';
+                renderAllSavedWords();
+                return;
+            }
+
+            lessons.forEach(name => {
+                const opt = document.createElement('option');
+                opt.value = name;
+                opt.textContent = `${name}（${(lessonCollections[name] || []).length}字）`;
+                select.appendChild(opt);
+            });
+            if (!lessonCollections[currentLessonName]) currentLessonName = lessons[0];
+            select.value = currentLessonName;
+            localStorage.setItem('myCurrentLesson', currentLessonName);
+
+            const words = (lessonCollections[currentLessonName] || []).filter(name => customTemplates[name]);
+            lessonCollections[currentLessonName] = words;
+            saveLessonCollections();
+            if (words.length === 0) {
+                list.innerHTML = '<div class="col-span-full text-center text-xs text-gray-400 py-2">這一課還沒有收藏生字。</div>';
+                renderAllSavedWords();
+                return;
+            }
+            list.innerHTML = words.map(name => `
+                <div class="flex items-center gap-1 bg-violet-50 border border-violet-100 rounded px-1.5 py-1 min-w-0">
+                    <input type="checkbox" class="lesson-word-check accent-violet-600 flex-shrink-0" value="${escapeHtml(name)}">
+                    <button type="button" class="lesson-word-load flex-1 min-w-0 text-left font-bold text-violet-800 hover:text-violet-950 truncate" data-name="${escapeHtml(name)}" title="點一下載入 ${escapeHtml(name)}">${escapeHtml(name)}</button>
+                </div>`).join('');
+
+            updateLessonCheckedCount();
+            list.querySelectorAll('.lesson-word-load').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const name = btn.dataset.name;
+                    updateTemplateDropdown(`custom_${name}`);
+                    document.getElementById('templateSelect').value = `custom_${name}`;
+                    loadTemplate(`custom_${name}`);
+                    toggleDeleteBtn();
+                });
+            });
+            renderAllSavedWords();
+        }
+
+        function addTemplateToLesson(templateName, lessonName) {
+            if (!templateName || !customTemplates[templateName]) return false;
+            lessonName = (lessonName || '').trim();
+            if (!lessonName) return false;
+            if (!lessonCollections[lessonName]) lessonCollections[lessonName] = [];
+            if (!lessonCollections[lessonName].includes(templateName)) lessonCollections[lessonName].push(templateName);
+            // 生字可以同時收藏在多個課次；只有「未分類」會在正式歸類後移除。
+            if (lessonName !== '未分類' && lessonCollections['未分類']) {
+                lessonCollections['未分類'] = lessonCollections['未分類'].filter(x => x !== templateName);
+            }
+            currentLessonName = lessonName;
+            saveLessonCollections();
+            localStorage.setItem('myCurrentLesson', currentLessonName);
+            renderLessonLibrary();
+            return true;
+        }
+
+        function renderAllSavedWords() {
+            const list = document.getElementById('allSavedWordList');
+            if (!list) return;
+            const query = (document.getElementById('allWordSearch')?.value || '').trim();
+            const currentWords = new Set(lessonCollections[currentLessonName] || []);
+            let names = Object.keys(customTemplates).sort((a,b) => a.localeCompare(b, 'zh-Hant'));
+            if (query) names = names.filter(name => name.includes(query));
+            if (!names.length) {
+                list.innerHTML = '<div class="col-span-full text-center text-xs text-gray-400 py-2">找不到符合的生字。</div>';
+                return;
+            }
+            list.innerHTML = names.map(name => {
+                const inLesson = currentWords.has(name);
+                return `
+                <label class="flex items-center gap-1 rounded px-1.5 py-1 border ${inLesson ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-100'} cursor-pointer min-w-0" title="${inLesson ? '已在本課' : '加入本課'}">
+                    <input type="checkbox" class="all-saved-word-check accent-amber-600 flex-shrink-0" value="${escapeHtml(name)}" ${inLesson ? 'checked' : ''}>
+                    <span class="font-bold text-slate-700 truncate">${escapeHtml(name)}</span>
+                    ${inLesson ? '<span class="text-[9px] text-emerald-600 ml-auto">✓</span>' : ''}
+                </label>`;
+            }).join('');
+        }
+
+        function hydrateStoredComponents(templateName) {
+            return new Promise(async (resolve) => {
+                const stored = customTemplates[templateName];
+                const source = Array.isArray(stored) ? stored : (stored?.comps || []);
+                const comps = [];
+                for (const c of source) {
+                    const copy = {...c};
+                    if (copy.type === 'image' && copy.imgBase64) {
+                        const img = new Image();
+                        await new Promise(r => { img.onload = r; img.onerror = r; img.src = copy.imgBase64; });
+                        if (img.complete && img.naturalWidth) copy.imgObj = img;
+                    }
+                    comps.push(copy);
+                }
+                resolve(comps);
+            });
+        }
+
+        document.getElementById('btnCreateLesson').addEventListener('click', () => {
+            const input = document.getElementById('lessonNameInput');
+            const name = input.value.trim();
+            if (!name) return alert('請先輸入課次名稱，例如「第1課」。');
+            if (!lessonCollections[name]) lessonCollections[name] = [];
+            currentLessonName = name;
+            saveLessonCollections();
+            input.value = '';
+            renderLessonLibrary();
+        });
+
+        document.getElementById('lessonSelect').addEventListener('change', (e) => {
+            currentLessonName = e.target.value;
+            localStorage.setItem('myCurrentLesson', currentLessonName);
+            renderLessonLibrary();
+        });
+
+        document.getElementById('allWordSearch').addEventListener('input', renderAllSavedWords);
+        document.getElementById('btnSelectAllSaved').addEventListener('click', () => {
+            document.querySelectorAll('.all-saved-word-check').forEach(cb => cb.checked = true);
+        });
+        document.getElementById('btnClearSavedChecks').addEventListener('click', () => {
+            document.querySelectorAll('.all-saved-word-check').forEach(cb => cb.checked = false);
+        });
+        document.getElementById('btnAddSavedToLesson').addEventListener('click', () => {
+            if (!currentLessonName) return alert('請先建立或選擇一個課次。');
+            const names = Array.from(document.querySelectorAll('.all-saved-word-check:checked')).map(cb => cb.value);
+            if (!names.length) return alert('請先勾選要加入本課的生字。');
+            let added = 0;
+            names.forEach(name => {
+                if (!lessonCollections[currentLessonName]) lessonCollections[currentLessonName] = [];
+                if (!lessonCollections[currentLessonName].includes(name) && customTemplates[name]) {
+                    lessonCollections[currentLessonName].push(name);
+                    added++;
+                }
+                if (currentLessonName !== '未分類' && lessonCollections['未分類']) {
+                    lessonCollections['未分類'] = lessonCollections['未分類'].filter(x => x !== name);
                 }
             });
-            updateAndDraw();
-            alert(`✅ 所有部件大小已同步為 ${baseSize}`);
-        };
+            saveLessonCollections();
+            renderLessonLibrary();
+            alert(added ? `✅ 已加入 ${added} 個生字到「${currentLessonName}」。` : `這些生字原本就已經在「${currentLessonName}」裡了。`);
+        });
 
-        // ✅ 切換鎖定共同座標
-        window.toggleCoordLock = function() {
-            coordLocked = !coordLocked;
-            const btn = document.getElementById('btnLockCoord');
-            if (coordLocked) {
-                btn.textContent = '🔒 已鎖定共同座標';
-                btn.className = 'flex-1 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 border border-indigo-400 font-bold text-xs py-2 rounded-lg transition-colors';
-            } else {
-                btn.textContent = '🔓 鎖定共同座標';
-                btn.className = 'flex-1 bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-300 font-bold text-xs py-2 rounded-lg transition-colors';
-            }
-        };
+        document.getElementById('btnAddCurrentToLesson').addEventListener('click', () => {
+            let name = currentDesignName.trim();
+            if (!name || !customTemplates[name]) return alert('請先載入或儲存一個「我的範本」生字，再收藏到課次。');
+            if (!currentLessonName) return alert('請先建立一個課次。');
+            addTemplateToLesson(name, currentLessonName);
+        });
 
-        // ✅ 切換列印模式
-        window.setPrintMode = function(mode) {
-            printMode = mode;
-            const isOverlay = mode === 'overlay';
-            // 更新 B 規格
-            if (isOverlay) {
-                B_COLS = B_COLS_OVL; B_ROWS = B_ROWS_OVL;
-                B_W = B_W_OVL; B_H = B_H_OVL;
-            } else {
-                B_COLS = B_COLS_ECO; B_ROWS = B_ROWS_ECO;
-                B_W = B_W_ECO; B_H = B_H_ECO;
+        document.getElementById('btnSelectAllLesson').addEventListener('click', () => {
+            document.querySelectorAll('.lesson-word-check').forEach(cb => cb.checked = true);
+            updateLessonCheckedCount();
+        });
+        document.getElementById('btnClearLessonChecks').addEventListener('click', () => {
+            document.querySelectorAll('.lesson-word-check').forEach(cb => cb.checked = false);
+            updateLessonCheckedCount();
+        });
+
+        function updateLessonCheckedCount() {
+            const el = document.getElementById('lessonCheckedCount');
+            if (!el) return;
+            const n = document.querySelectorAll('.lesson-word-check:checked').length;
+            el.textContent = `已勾 ${n} 字`;
+        }
+        document.getElementById('lessonWordList').addEventListener('change', (e) => {
+            if (e.target.classList.contains('lesson-word-check')) updateLessonCheckedCount();
+        });
+        document.getElementById('btnQuickAddSelectedLessonWords').addEventListener('click', () => {
+            document.getElementById('btnAddSelectedLessonWords').click();
+        });
+
+        document.getElementById('btnBuildOneStudentLesson')?.addEventListener('click', async () => {
+            if (!currentLessonName || !lessonCollections[currentLessonName]) return alert('請先建立或選擇一個課次。');
+            const names = Array.from(document.querySelectorAll('.lesson-word-check:checked'))
+                .map(cb => cb.value)
+                .filter(name => customTemplates[name]);
+            if (!names.length) return alert('請先勾選要建立多人分行清單的生字。');
+            const students = getStudentCount();
+            if (printQueue.length && !confirm(`這會清空目前列印清單，改成「${currentLessonName}」已勾選的 ${names.length} 個生字，共 ${students} 人份的多人分行裁切清單。確定繼續嗎？`)) return;
+            const btn = document.getElementById('btnBuildOneStudentLesson');
+            const old = btn.textContent;
+            btn.disabled = true; btn.textContent = '⏳ 正在建立勾選生字的多人分行清單…';
+            try {
+                printQueue = [];
+                for (const name of names) {
+                    const comps = await hydrateStoredComponents(name);
+                    if (!comps.length) continue;
+                    printQueue.push({
+                        id: Date.now().toString() + Math.floor(Math.random() * 1000000),
+                        name,
+                        comps,
+                        qty: 1
+                    });
+                }
+                lessonRowMode = true;
+                updateRowModeBadge();
+                const qtyEl = document.getElementById('queueQty');
+                if (qtyEl) qtyEl.value = 1;
+                renderQueueUI();
+                scheduleWorkspaceSave();
+                alert(`✅ 已建立「${currentLessonName}」勾選的 ${names.length} 個生字，共 ${students} 人份多人分行清單。
+每位學生完成這 ${names.length} 個生字後會補滿最後一行，下一位從下一行開始。`);
+            } finally {
+                btn.disabled = false; btn.textContent = old;
             }
-            // 更新按鈕樣式
-            document.getElementById('btnModeOverlay').className =
-                `flex-1 py-1.5 text-[11px] font-bold transition-colors leading-tight px-1 ${isOverlay ? 'bg-indigo-600 text-white' : 'bg-white text-slate-500'}`;
-            document.getElementById('btnModeEconomy').className =
-                `flex-1 py-1.5 text-[11px] font-bold transition-colors leading-tight px-1 ${!isOverlay ? 'bg-indigo-600 text-white' : 'bg-white text-slate-500'}`;
-            // 更新 B 標籤
-            const labelB = document.getElementById('labelB');
-            if (labelB) labelB.textContent = isOverlay ? '🔲 透明疊貼貼紙 (70格)' : '💦 透明小格貼紙 (153格)';
-            // 更新用量上限顯示
-            const statusB = document.getElementById('statusBLabel');
-            if (statusB) statusB.textContent = isOverlay ? '透明紙用量 (70格)' : '透明紙用量 (153格)';
+        });
+        document.getElementById('btnBuildFullLesson')?.addEventListener('click', async () => {
+            if (!currentLessonName || !lessonCollections[currentLessonName]) return alert('請先建立或選擇一個課次。');
+            const names = (lessonCollections[currentLessonName] || []).filter(name => customTemplates[name]);
+            if (!names.length) return alert(`「${currentLessonName}」目前沒有已收藏的生字。`);
+            const students = getStudentCount();
+            if (printQueue.length && !confirm(`這會清空目前列印清單，改成「${currentLessonName}」全部 ${names.length} 個生字，共 ${students} 人份的多人分行裁切清單。確定繼續嗎？`)) return;
+            const btn = document.getElementById('btnBuildFullLesson');
+            const old = btn.textContent;
+            btn.disabled = true; btn.textContent = '⏳ 正在建立全課多人分行清單…';
+            try {
+                printQueue = [];
+                for (const name of names) {
+                    const comps = await hydrateStoredComponents(name);
+                    if (!comps.length) continue;
+                    printQueue.push({
+                        id: Date.now().toString() + Math.floor(Math.random() * 1000000),
+                        name,
+                        comps,
+                        qty: 1
+                    });
+                }
+                lessonRowMode = true;
+                updateRowModeBadge();
+                const qtyEl = document.getElementById('queueQty');
+                if (qtyEl) qtyEl.value = 1;
+                renderQueueUI();
+                scheduleWorkspaceSave();
+                alert(`✅ 已建立「${currentLessonName}」全課 ${names.length} 個生字，共 ${students} 人份多人分行清單。
+每位學生完成全課生字後會補滿最後一行，下一位從下一行開始。`);
+            } finally {
+                btn.disabled = false; btn.textContent = old;
+            }
+        });
+
+        document.getElementById('btnDeleteLesson').addEventListener('click', () => {
+            if (!currentLessonName) return;
+            if (!confirm(`確定刪除課次「${currentLessonName}」嗎？\n生字範本本身不會刪除，會回到「未分類」。`)) return;
+            delete lessonCollections[currentLessonName];
+            currentLessonName = '';
+            saveLessonCollections();
+            ensureUncategorizedTemplates();
+            renderLessonLibrary();
+        });
+
+        document.getElementById('btnAddSelectedLessonWords').addEventListener('click', async () => {
+            disableLessonRowMode();
+            const names = Array.from(document.querySelectorAll('.lesson-word-check:checked')).map(cb => cb.value);
+            if (!names.length) return alert('請先勾選要加入的生字。');
+            const qty = parseInt(document.getElementById('queueQty').value) || 1;
+            const btn = document.getElementById('btnAddSelectedLessonWords');
+            const oldText = btn.textContent;
+            btn.disabled = true; btn.textContent = '⏳ 正在加入…';
+            for (const name of names) {
+                const comps = await hydrateStoredComponents(name);
+                if (!comps.length) continue;
+                const uniqueId = Date.now().toString() + Math.floor(Math.random() * 1000000);
+                printQueue.push({ id: uniqueId, name, comps, qty });
+            }
             renderQueueUI();
-            drawPreview();
-        };
+            btn.disabled = false; btn.textContent = oldText;
+            alert(`✅ 已將 ${names.length} 個生字一次加入列印／學習單清單。`);
+        });
 
-        const updateAndDraw = () => { updateUI(); drawPreview(); };
+        const updateAndDraw = () => { updateUI(); drawPreview(); scheduleWorkspaceSave(); };
         
         document.getElementById('showBorders').addEventListener('change', drawPreview);
         
@@ -902,17 +1633,28 @@
                 mT_A: getSafeValue('mT_A', 0),
                 gX_A: getSafeValue('gX_A', 0),
                 gY_A: getSafeValue('gY_A', 0),
-                mL_B: getSafeValue('mL_B', 6),
-                mT_B: getSafeValue('mT_B', 11),
+                contentX_A: getSafeValue('contentX_A', 2),
+                contentY_A: getSafeValue('contentY_A', 2),
+                safeInset_A: getSafeValue('safeInset_A', 4),
+                mL_B: getSafeValue('mL_B', 0),
+                mT_B: getSafeValue('mT_B', 0),
                 gX_B: getSafeValue('gX_B', 0),
                 gY_B: getSafeValue('gY_B', 0),
+                safeBorder_B: getSafeValue('safeBorder_B', 5),
+                contentInset_B: getSafeValue('contentInset_B', 2),
+                forceCenter_B: document.getElementById('forceCenter_B')?.checked !== false,
             };
 
             customTemplates[name.trim()] = { comps: compsToSave, margins: marginData };
             localStorage.setItem('myCustomStickers', JSON.stringify(customTemplates));
             
+            currentDesignName = name.trim();
+            const batchNameEl = document.getElementById('batchCharName');
+            if (batchNameEl) batchNameEl.value = currentDesignName;
             updateTemplateDropdown(`custom_${name.trim()}`);
-            alert(`✅ 成功！「${name.trim()}」已經永遠儲存到您的選單中了。\n（邊距設定也一起儲存了）`);
+            if (currentLessonName) addTemplateToLesson(name.trim(), currentLessonName);
+            else { ensureUncategorizedTemplates(); renderLessonLibrary(); }
+            alert(`✅ 成功！「${name.trim()}」已儲存。${currentLessonName ? `\n並已收藏到「${currentLessonName}」。` : '\n目前放在「未分類」。'}`);
         });
 
         document.getElementById('btnDelTemplate').addEventListener('click', () => {
@@ -922,8 +1664,12 @@
                 if (confirm(`確定要刪除自訂範本「${key}」嗎？`)) {
                     delete customTemplates[key];
                     localStorage.setItem('myCustomStickers', JSON.stringify(customTemplates));
+                    Object.keys(lessonCollections).forEach(k => lessonCollections[k] = lessonCollections[k].filter(x => x !== key));
+                    saveLessonCollections();
+                    renderLessonLibrary();
                     updateTemplateDropdown('default_老');
                     loadTemplate('default_老');
+                    scheduleWorkspaceSave();
                 }
             }
         });
@@ -932,9 +1678,11 @@
         function loadTemplate(val) {
             let data;
             let margins = null;
+            let designName = '';
 
             if (val.startsWith('custom_')) {
                 const key = val.replace('custom_', '');
+                designName = key;
                 const stored = customTemplates[key];
                 // 相容舊格式（只有 array）和新格式（含 margins）
                 if (Array.isArray(stored)) {
@@ -946,8 +1694,13 @@
             } else {
                 const key = val.replace('default_', '');
                 data = defaultTemplates[key];
+                designName = key === '自訂' ? '' : key;
             }
             if (!data) return;
+
+            currentDesignName = designName;
+            const batchNameEl = document.getElementById('batchCharName');
+            if (batchNameEl) batchNameEl.value = designName;
             
             document.getElementById('componentsContainer').innerHTML = '';
             loadedImages = {};
@@ -1022,7 +1775,8 @@
                     } else if (type === 'image' && loadedImages[id]) {
                         comps.push({
                             type: 'image',
-                            char: '🖼️圖', 
+                            char: '🖼️圖',
+                            fileName: panel.dataset.fileName || '',
                             imgObj: loadedImages[id],
                             size, x, y, target, center
                         });
@@ -1134,7 +1888,8 @@
         }
 
         document.getElementById('btnAddQueue').addEventListener('click', (e) => {
-            e.preventDefault(); 
+            e.preventDefault();
+            disableLessonRowMode(); 
             
             const comps = getActiveComponents();
             if(comps.length === 0) return alert('畫面中沒有啟用的部件，或是圖片尚未上傳完成。');
@@ -1142,10 +1897,10 @@
             const qty = parseInt(document.getElementById('queueQty').value) || 1;
             
             const selectEl = document.getElementById('templateSelect');
-            let name = selectEl.options[selectEl.selectedIndex].text.replace(/🔹 |⭐ |✨ | \(.*\)/g, '');
-            
-            if (selectEl.value.includes('自訂') || selectEl.value.includes('default_自訂')) {
-                name = comps.map(c => c.char).join('+');
+            let name = currentDesignName || selectEl.options[selectEl.selectedIndex].text.replace(/🔹 |⭐ |✨ | \(.*\)/g, '');
+
+            if (!currentDesignName && (selectEl.value.includes('自訂') || selectEl.value.includes('default_自訂'))) {
+                name = comps.map(c => c.type === 'text' ? c.char : (c.fileName || '圖')).join('+');
             }
 
             const uniqueId = Date.now().toString() + Math.floor(Math.random() * 1000);
@@ -1159,8 +1914,7 @@
         window.changeStudents = function(delta) {
             const el = document.getElementById('studentCount');
             const val = Math.min(20, Math.max(1, (parseInt(el.value) || 1) + delta));
-            el.value = val;
-            renderQueueUI();
+            setStudentCountEverywhere(val);
         };
 
         function getStudentCount() {
@@ -1233,24 +1987,307 @@
                 });
             }
 
-            document.getElementById('statusA').innerText = `${usedA} / 70`;
-            document.getElementById('barA').style.width = `${Math.min((usedA/70)*100, 100)}%`;
-            document.getElementById('barA').className = `h-1.5 rounded-full transition-all ${usedA > 70 ? 'bg-red-500' : 'bg-pink-500'}`;
-            document.getElementById('statusA').className = usedA > 70 ? 'text-red-600' : 'text-pink-700';
+            const aPages = lessonRowMode && printQueue.length ? getGroupedPageCount('A', A_COLS, A_ROWS) : Math.max(1, Math.ceil(usedA / 70));
+            document.getElementById('statusA').innerText = usedA > 0 ? `${usedA} 張 / ${aPages} 頁LD-8119${lessonRowMode ? '・分行' : ''}` : '0 張';
+            document.getElementById('barA').style.width = `${usedA > 0 ? ((usedA % 70 || 70) / 70) * 100 : 0}%`;
+            document.getElementById('barA').className = 'bg-pink-500 h-1.5 rounded-full transition-all';
+            document.getElementById('statusA').className = 'text-pink-700';
 
-            const bLimit = printMode === 'overlay' ? 70 : 153;
-            document.getElementById('statusB').innerText = `${usedB} / ${bLimit}`;
-            document.getElementById('barB').style.width = `${Math.min((usedB/bLimit)*100, 100)}%`;
-            document.getElementById('barB').className = `h-1.5 rounded-full transition-all ${usedB > bLimit ? 'bg-red-500' : 'bg-blue-500'}`;
-            document.getElementById('statusB').className = usedB > bLimit ? 'text-red-600' : 'text-blue-700';
+            const bLayout = getTransparentLayoutInfo();
+            const bCapacity = bLayout.totalCells;
+            const bPages = lessonRowMode && printQueue.length ? getGroupedPageCount('B', bLayout.cols, bLayout.rows) : Math.max(1, Math.ceil(usedB / bCapacity));
+            document.getElementById('statusB').innerText = usedB > 0 ? `${usedB} 張 / ${bPages} 頁A4（每頁${bCapacity}格${lessonRowMode ? '・分行' : ''}）` : '0 張';
+            document.getElementById('barB').style.width = `${usedB > 0 ? ((usedB % bCapacity || bCapacity) / bCapacity) * 100 : 0}%`;
+            document.getElementById('barB').className = 'bg-blue-500 h-1.5 rounded-full transition-all';
+            document.getElementById('statusB').className = 'text-blue-700';
 
-            const overLimit = usedA > 70 || usedB > bLimit;
-            if(warningEl) warningEl.style.display = overLimit ? 'block' : 'none';
-            
+            // A/B 都支援自動分頁，不再因超過單頁格數而停用輸出。
+            if (warningEl) warningEl.style.display = 'none';
+            updateFillerStatus();
+            updateTransparentFillerUI();
             ['btnPrintA', 'btnDownloadA', 'btnPrintB', 'btnDownloadB', 'btnPrintC', 'btnDownloadC'].forEach(id => {
                 const btn = document.getElementById(id);
-                if(btn) btn.disabled = overLimit;
+                if (btn) btn.disabled = false;
             });
+            scheduleWorkspaceSave();
+        }
+
+        function getFillerWords() {
+            const el = document.getElementById('fillerWords');
+            if (!el) return [];
+            return el.value
+                .split(/[\n,，、;；]+/)
+                .map(v => v.trim())
+                .filter(Boolean)
+                .slice(0, 200);
+        }
+
+        function getUsedACells() {
+            const students = getStudentCount();
+            if (printQueue.length > 0) {
+                return printQueue.reduce((sum, item) => {
+                    const countA = item.comps.filter(c => c.target === 'A').length;
+                    return sum + countA * item.qty * students;
+                }, 0);
+            }
+            const activeA = getActiveComponents().filter(c => c.target === 'A');
+            return activeA.length ? 70 : 0;
+        }
+
+        function updateFillerStatus() {
+            const status = document.getElementById('fillerStatus');
+            if (!status) return;
+            const used = getUsedACells();
+            const usedOnLastPage = used % 70;
+            const remaining = used === 0 ? 70 : (usedOnLastPage === 0 ? 0 : 70 - usedOnLastPage);
+            const words = getFillerWords();
+            const enabled = document.getElementById('fillRemainingA')?.checked !== false;
+            status.textContent = words.length && enabled
+                ? `剩餘 ${remaining} 格・將補 ${remaining} 格`
+                : `剩餘 ${remaining} 格`;
+            scheduleWorkspaceSave();
+        }
+
+        function drawFillerWord(ctx, text, cx, cy, cellW, cellH, offsetX = 0, offsetY = 0) {
+            const safeText = String(text || '').trim();
+            if (!safeText) return;
+            ctx.save();
+            ctx.fillStyle = '#334155';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            let fontSize = Math.min(150, cellH * 0.42);
+            const maxWidth = cellW * 0.82;
+            const maxHeight = cellH * 0.62;
+            while (fontSize > 38) {
+                ctx.font = `bold ${fontSize}px ${FONT_FAMILY}`;
+                const metrics = ctx.measureText(safeText);
+                const widthOK = metrics.width <= maxWidth;
+                const heightOK = fontSize <= maxHeight;
+                if (widthOK && heightOK) break;
+                fontSize -= 4;
+            }
+            ctx.font = `bold ${fontSize}px ${FONT_FAMILY}`;
+            ctx.fillText(safeText, cx + offsetX, cy + offsetY);
+            ctx.restore();
+        }
+
+
+
+        const TRANSPARENT_FILLER_PRESETS = {
+            radicals: ['氵','亻','口','木','艹','忄','扌','日','月','女','子','言','心','土','火','山','人','宀','辶','糸'],
+            rewards: ['很棒','加油','進步了','完成','我會了','再試試','好認真','讚','正確','請訂正'],
+            cuteEmoji: ['🌟','⭐','💖','🎉','🎈','🌈','🍀','🌸','🍎','🍓','🦄','😊','🥳','👍','💯','🎀','🫶','🌼'],
+            animalEmoji: ['🐻','🐰','🐱','🐶','🐼','🐯','🦊','🐷','🐸','🐵','🐥','🐨','🦄','🐹','🦁','🐮'],
+            emojiRewards: ['🌟好棒','🎉太棒了','💖加油','😊做到了','🥳完成','👍真厲害','🍀繼續加油','🌈進步了'],
+            animalEmojiRewards: ['🐻好棒','🐰加油','🐱做到了','🐶真厲害','🐼完成了','🦊進步了','🐯好認真','🐥繼續加油'],
+            symbols: ['★','☆','✓','○','△','？','！','→','←','↑','↓','①','②','③','④','⑤']
+        };
+
+        function getTransparentFillerModes() {
+            return Array.from(document.querySelectorAll('.transparent-filler-option:checked')).map(el => el.value);
+        }
+
+        function setTransparentFillerModes(modes) {
+            const list = Array.isArray(modes) ? modes : (modes && modes !== 'none' ? [modes] : []);
+            document.querySelectorAll('.transparent-filler-option').forEach(el => {
+                el.checked = list.includes(el.value);
+            });
+        }
+
+        function getTransparentCustomItems() {
+            const raw = document.getElementById('transparentCustomItems')?.value || '';
+            return raw.split(/[\n,，、;；]+/).map(v => v.trim()).filter(Boolean).slice(0, 200);
+        }
+
+        function getTransparentFillerItems() {
+            const modes = getTransparentFillerModes();
+            if (!modes.length) return [];
+            const groups = modes.map(mode => mode === 'custom' ? getTransparentCustomItems() : (TRANSPARENT_FILLER_PRESETS[mode] || []).slice()).filter(arr => arr.length);
+            const mixed = [];
+            const maxLen = Math.max(0, ...groups.map(arr => arr.length));
+            for (let i = 0; i < maxLen; i++) {
+                groups.forEach(arr => {
+                    if (arr[i]) mixed.push(arr[i]);
+                });
+            }
+            const deduped = [];
+            const seen = new Set();
+            mixed.forEach(item => {
+                const key = String(item);
+                if (seen.has(key)) return;
+                seen.add(key);
+                deduped.push(item);
+            });
+            return deduped.slice(0, 200);
+        }
+
+        function containsEmojiChar(text) {
+            const s = String(text || '');
+            return /[\u2600-\u27BF]/.test(s) || /\uD83C[\uDF00-\uDFFF]/.test(s) || /\uD83D[\uDC00-\uDEFF]/.test(s) || /\uD83E[\uDD00-\uDDFF]/.test(s);
+        }
+
+        function getTransparentLayoutInfo() {
+            const cellWmm = 25, cellHmm = 25;
+            const gapXmm = Math.max(0, getSafeValue('gX_B', 0));
+            const gapYmm = Math.max(0, getSafeValue('gY_B', 0));
+            const safeBorderMm = Math.max(3, getSafeValue('safeBorder_B', 5));
+            const extraLm = getSafeValue('mL_B', 0);
+            const extraTm = getSafeValue('mT_B', 0);
+            const usableW = 210 - safeBorderMm * 2;
+            const usableH = 297 - safeBorderMm * 2;
+            let cols = Math.floor((usableW + gapXmm) / (cellWmm + gapXmm));
+            let rows = Math.floor((usableH + gapYmm) / (cellHmm + gapYmm));
+            cols = Math.max(1, cols);
+            rows = Math.max(1, rows);
+            const contentWmm = cols * cellWmm + (cols - 1) * gapXmm;
+            const contentHmm = rows * cellHmm + (rows - 1) * gapYmm;
+            const marginLmm = Math.max(safeBorderMm, (210 - contentWmm) / 2 + extraLm);
+            const marginTmm = Math.max(safeBorderMm, (297 - contentHmm) / 2 + extraTm);
+            return {
+                cols, rows, totalCells: cols * rows,
+                cellW: B_W, cellH: B_H,
+                gapX: gapXmm * PX_PER_MM, gapY: gapYmm * PX_PER_MM,
+                marginL: marginLmm * PX_PER_MM, marginT: marginTmm * PX_PER_MM,
+                safeBorderMm, contentInsetPx: Math.max(0, getSafeValue('contentInset_B', 2) * PX_PER_MM)
+            };
+        }
+
+        function drawComponentWithinBox(ctx, comp, baseX, baseY, maxW, maxH) {
+            const safeW = Math.max(10, maxW);
+            const safeH = Math.max(10, maxH);
+            if (comp.type === 'text') {
+                ctx.save();
+                ctx.fillStyle = comp.color;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                let fontSize = comp.size;
+                while (fontSize > 16) {
+                    ctx.font = `${fontSize}px ${FONT_FAMILY}`;
+                    const metrics = ctx.measureText(comp.char || '');
+                    if (metrics.width <= safeW * 0.96 && fontSize <= safeH * 0.96) break;
+                    fontSize -= 4;
+                }
+                ctx.font = `${fontSize}px ${FONT_FAMILY}`;
+                ctx.fillText(comp.char, baseX, baseY);
+                ctx.restore();
+            } else if (comp.type === 'image' && comp.imgObj) {
+                let h = comp.size;
+                let w = (comp.imgObj.width / comp.imgObj.height) * h;
+                const scale = Math.min(1, safeW / w, safeH / h);
+                w *= scale; h *= scale;
+                ctx.drawImage(comp.imgObj, baseX - w / 2, baseY - h / 2, w, h);
+            }
+        }
+
+        function getUsedBCells() {
+            const students = getStudentCount();
+            if (printQueue.length > 0) {
+                return printQueue.reduce((sum, item) => {
+                    const countB = item.comps.filter(c => c.target === 'B').length;
+                    return sum + countB * item.qty * students;
+                }, 0);
+            }
+            return getActiveComponents().filter(c => c.target === 'B').length;
+        }
+
+        function updateTransparentFillerUI() {
+            const customEl = document.getElementById('transparentCustomItems');
+            const status = document.getElementById('transparentFillerStatus');
+            const preview = document.getElementById('transparentPresetPreview');
+            if (!status) return;
+            const modes = getTransparentFillerModes();
+            if (customEl) customEl.classList.toggle('hidden', !modes.includes('custom'));
+            const layout = getTransparentLayoutInfo();
+            const used = getUsedBCells();
+            const usedOnLastPage = used % layout.totalCells;
+            const remaining = used === 0 ? layout.totalCells : (usedOnLastPage === 0 ? 0 : layout.totalCells - usedOnLastPage);
+            const items = getTransparentFillerItems();
+            const enabled = document.getElementById('fillRemainingB')?.checked !== false && modes.length > 0;
+            status.textContent = enabled && items.length ? `每頁 ${layout.totalCells} 格・剩餘 ${remaining} 格・將補 ${remaining} 格` : `每頁 ${layout.totalCells} 格・剩餘 ${remaining} 格`;
+            if (preview) {
+                if (!modes.length) preview.textContent = `目前不補透明紙空白。25×25mm 半切格；安全邊界 ${layout.safeBorderMm} mm；本設定每頁可排 ${layout.totalCells} 格。`;
+                else if (!items.length) preview.textContent = '已勾選素材，但內容目前是空的；若勾選「自訂素材」，請先輸入內容。';
+                else {
+                    const labelMap = {
+                        radicals: '高頻部件', rewards: '鼓勵語', cuteEmoji: '可愛 emoji', animalEmoji: '小動物 emoji',
+                        emojiRewards: 'emoji＋獎勵語', animalEmojiRewards: '小動物＋獎勵語', symbols: '常用符號', custom: '自訂素材'
+                    };
+                    const labels = modes.map(m => labelMap[m] || m).join('、');
+                    preview.textContent = `25×25mm 半切格・已選 ${modes.length} 類：${labels}。將交錯輪流使用：${items.slice(0, 14).join('、')}${items.length > 14 ? '…' : ''}`;
+                }
+            }
+            scheduleWorkspaceSave();
+        }
+
+        function drawTransparentFiller(ctx, text, cx, cy, cellW, cellH, insetPx = 0) {
+            const safeText = String(text || '').trim();
+            if (!safeText) return;
+            const maxWidth = Math.max(20, cellW - insetPx * 2 - 8);
+            const maxHeight = Math.max(20, cellH - insetPx * 2 - 8);
+            ctx.save();
+            ctx.fillStyle = '#334155';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const isEmoji = containsEmojiChar(safeText);
+            const hasReadableText = /[㐀-鿿豈-﫿A-Za-z0-9]/.test(safeText);
+            const emojiFont = '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+            const fontFamily = isEmoji ? `${emojiFont}, ${FONT_FAMILY}` : FONT_FAMILY;
+
+            function wrapByCharacters(fontSize, maxLines) {
+                ctx.font = `bold ${fontSize}px ${fontFamily}`;
+                const chars = Array.from(safeText);
+                const lines = [];
+                let current = '';
+                chars.forEach(ch => {
+                    const test = current + ch;
+                    if (!current || ctx.measureText(test).width <= maxWidth * 0.96) current = test;
+                    else {
+                        lines.push(current);
+                        current = ch;
+                    }
+                });
+                if (current) lines.push(current);
+                return lines.length <= maxLines ? lines : null;
+            }
+
+            // 自訂語詞與較長的文字改用自動換行，避免字太小。
+            if (hasReadableText && safeText.length >= 5) {
+                let chosen = null;
+                let chosenSize = 30;
+                const maxLines = safeText.length >= 9 ? 3 : 2;
+                for (let fontSize = Math.min(92, Math.floor(maxHeight * 0.42)); fontSize >= 28; fontSize -= 2) {
+                    const lines = wrapByCharacters(fontSize, maxLines);
+                    if (!lines) continue;
+                    const lineHeight = Math.round(fontSize * 1.18);
+                    const totalHeight = lines.length * lineHeight;
+                    if (totalHeight <= maxHeight * 0.92) {
+                        chosen = lines;
+                        chosenSize = fontSize;
+                        break;
+                    }
+                }
+                if (chosen) {
+                    const lineHeight = Math.round(chosenSize * 1.18);
+                    const startY = cy - ((chosen.length - 1) * lineHeight) / 2;
+                    ctx.font = `bold ${chosenSize}px ${fontFamily}`;
+                    chosen.forEach((line, idx) => {
+                        ctx.fillText(line, cx, startY + idx * lineHeight);
+                    });
+                    ctx.restore();
+                    return;
+                }
+            }
+
+            let fontSize = isEmoji ? (safeText.length <= 2 ? 220 : (safeText.length <= 4 ? 160 : 118)) : (safeText.length <= 1 ? 180 : (safeText.length <= 3 ? 125 : 92));
+            while (fontSize > 30) {
+                ctx.font = `bold ${fontSize}px ${fontFamily}`;
+                const m = ctx.measureText(safeText);
+                if (m.width <= maxWidth * (isEmoji ? 0.98 : 0.96) && fontSize <= maxHeight * (isEmoji ? 0.98 : 0.9)) break;
+                fontSize -= 4;
+            }
+            ctx.font = `bold ${fontSize}px ${fontFamily}`;
+            ctx.fillText(safeText, cx, cy);
+            ctx.restore();
         }
 
         function getSafeValue(id, defaultVal = 0) {
@@ -1284,44 +2321,35 @@
                 gapX = getSafeValue('gX_A', 0) * PX_PER_MM;
                 gapY = getSafeValue('gY_A', 0) * PX_PER_MM;
             } else if (type === 'B') {
-                cols = B_COLS; rows = B_ROWS;
-                cellW = B_W; cellH = B_H;
-                if (printMode === 'overlay') {
-                    // 同尺寸疊貼模式：透明紙與底紙完全對齊，使用相同邊距
-                    marginL = getSafeValue('mL_A', 0) * PX_PER_MM;
-                    marginT = getSafeValue('mT_A', 0) * PX_PER_MM;
-                    gapX   = getSafeValue('gX_A', 0) * PX_PER_MM;
-                    gapY   = getSafeValue('gY_A', 0) * PX_PER_MM;
-                } else {
-                    // 省材料模式：使用原本的 B 邊距設定
-                    marginL = getSafeValue('mL_B', 6) * PX_PER_MM;
-                    marginT = getSafeValue('mT_B', 11) * PX_PER_MM;
-                    gapX   = getSafeValue('gX_B', 0) * PX_PER_MM;
-                    gapY   = getSafeValue('gY_B', 0) * PX_PER_MM;
-                }
+                const layout = getTransparentLayoutInfo();
+                cols = layout.cols; rows = layout.rows;
+                cellW = layout.cellW; cellH = layout.cellH;
+                marginL = layout.marginL;
+                marginT = layout.marginT;
+                gapX = layout.gapX;
+                gapY = layout.gapY;
             } else if (type === 'Calib_A' || type === 'Calib_B') {
                 const isA = type === 'Calib_A';
-                cols = isA ? A_COLS : B_COLS;
-                rows = isA ? A_ROWS : B_ROWS;
-                cellW = isA ? A_W : B_W;
-                cellH = isA ? A_H : B_H;
-                if (isA || printMode === 'overlay') {
-                    // A 校正紙，或同尺寸疊貼模式的 B 校正紙：都用 A 的邊距
+                if (isA) {
+                    cols = A_COLS; rows = A_ROWS;
+                    cellW = A_W; cellH = A_H;
                     marginL = getSafeValue('mL_A', 0) * PX_PER_MM;
                     marginT = getSafeValue('mT_A', 0) * PX_PER_MM;
-                    gapX   = getSafeValue('gX_A', 0) * PX_PER_MM;
-                    gapY   = getSafeValue('gY_A', 0) * PX_PER_MM;
+                    gapX = getSafeValue('gX_A', 0) * PX_PER_MM;
+                    gapY = getSafeValue('gY_A', 0) * PX_PER_MM;
                 } else {
-                    // 省材料模式的 B 校正紙：用 B 自己的邊距
-                    marginL = getSafeValue('mL_B', 6) * PX_PER_MM;
-                    marginT = getSafeValue('mT_B', 11) * PX_PER_MM;
-                    gapX   = getSafeValue('gX_B', 0) * PX_PER_MM;
-                    gapY   = getSafeValue('gY_B', 0) * PX_PER_MM;
+                    const layout = getTransparentLayoutInfo();
+                    cols = layout.cols; rows = layout.rows;
+                    cellW = layout.cellW; cellH = layout.cellH;
+                    marginL = layout.marginL;
+                    marginT = layout.marginT;
+                    gapX = layout.gapX;
+                    gapY = layout.gapY;
                 }
                 
                 oCtx.fillStyle = '#334155';
                 oCtx.font = `bold 60px ${FONT_FAMILY}`;
-                oCtx.fillText(`[印表機校正紙] 適用紙張: ${isA ? '大格底紙' : '小格透明紙'}`, 100, 100);
+                oCtx.fillText(`[印表機校正紙] 適用紙張: ${isA ? '大格底紙' : 'A4透明紙裁切區'}`, 100, 100);
                 oCtx.font = `40px ${FONT_FAMILY}`;
                 oCtx.fillText(`※ 請用一般A4紙列印後，疊在貼紙上對光檢查格線是否吻合。`, 100, 160);
 
@@ -1366,15 +2394,20 @@
                         validComps.forEach(comp => drawList.push(comp));
                     }
                 });
-                if (drawList.length === 0) return null;
+                if (drawList.length === 0) {
+                    if (!(type === 'A' && getFillerWords().length > 0 && document.getElementById('fillRemainingA')?.checked !== false)) return null;
+                }
             } else {
                 const activeComps = getActiveComponents().filter(c => c.target === type);
-                if (activeComps.length === 0) return null;
-                const cellsPerComp = Math.floor(totalCells / activeComps.length);
-                for(let i=0; i<totalCells; i++){
-                    let cIdx = Math.floor(i / cellsPerComp);
-                    if(cIdx >= activeComps.length) cIdx = activeComps.length - 1; 
-                    drawList.push(activeComps[cIdx]);
+                if (activeComps.length === 0) {
+                    if (!(type === 'A' && getFillerWords().length > 0 && document.getElementById('fillRemainingA')?.checked !== false)) return null;
+                } else {
+                    const cellsPerComp = Math.floor(totalCells / activeComps.length);
+                    for(let i=0; i<totalCells; i++){
+                        let cIdx = Math.floor(i / cellsPerComp);
+                        if(cIdx >= activeComps.length) cIdx = activeComps.length - 1; 
+                        drawList.push(activeComps[cIdx]);
+                    }
                 }
             }
 
@@ -1393,15 +2426,25 @@
                         oCtx.strokeRect(x, y, cellW, cellH);
                     }
 
+                    const contentOffsetX = type === 'A' ? getSafeValue('contentX_A', 2) * PX_PER_MM : 0;
+                    const contentOffsetY = type === 'A' ? getSafeValue('contentY_A', 2) * PX_PER_MM : 0;
+                    const safeInset = type === 'A' ? Math.max(0, getSafeValue('safeInset_A', 4) * PX_PER_MM) : getTransparentLayoutInfo().contentInsetPx;
+                    const cx = x + cellW / 2 + contentOffsetX;
+                    const cy = y + cellH / 2 + contentOffsetY;
+
                     if (index < drawList.length) {
                         const comp = drawList[index];
-                        const cx = x + cellW / 2;
-                        const cy = y + cellH / 2;
-
-                        if (comp.center) {
-                            drawComponent(oCtx, comp, cx, cy);
-                        } else {
-                            drawComponent(oCtx, comp, cx + comp.x, cy + comp.y);
+                        const forceCenter = type === 'B' && document.getElementById('forceCenter_B')?.checked !== false;
+                        const bx = forceCenter ? cx : (comp.center ? cx : cx + comp.x);
+                        const by = forceCenter ? cy : (comp.center ? cy : cy + comp.y);
+                        drawComponentWithinBox(oCtx, comp, bx, by, cellW - safeInset * 2, cellH - safeInset * 2);
+                    } else if (type === 'A') {
+                        const fillerEnabled = document.getElementById('fillRemainingA')?.checked !== false;
+                        const fillerWords = getFillerWords();
+                        if (fillerEnabled && fillerWords.length > 0) {
+                            const fillerIndex = index - drawList.length;
+                            const word = fillerWords[fillerIndex % fillerWords.length];
+                            drawFillerWord(oCtx, word, x + cellW / 2, y + cellH / 2, cellW - safeInset * 2, cellH - safeInset * 2, contentOffsetX, contentOffsetY);
                         }
                     }
                     index++;
@@ -1410,9 +2453,304 @@
             return offCanvas;
         }
 
+
+        function getOneStudentSequence(type) {
+            const sequence = [];
+            if (!printQueue.length) return sequence;
+            printQueue.forEach(item => {
+                const validComps = (item.comps || []).filter(c => c.target === type);
+                const qty = Math.max(1, parseInt(item.qty) || 1);
+                for (let q = 0; q < qty; q++) {
+                    validComps.forEach(comp => sequence.push({ kind: 'comp', comp, wordName: item.name }));
+                }
+            });
+            return sequence;
+        }
+
+        function buildStudentRowPages(type, cols, rows, fillerItems = []) {
+            const baseSequence = getOneStudentSequence(type);
+            if (!baseSequence.length) return [];
+            const students = getStudentCount();
+            const totalCells = cols * rows;
+            const pages = [];
+            let page = Array(totalCells).fill(null);
+            let currentRow = 0;
+            let fillerCursor = 0;
+
+            const fillerKind = type === 'A' ? 'wordFiller' : 'transparentFiller';
+            const nextFiller = () => {
+                if (!fillerItems.length) return null;
+                const value = fillerItems[fillerCursor % fillerItems.length];
+                fillerCursor++;
+                return { kind: fillerKind, value };
+            };
+            const fillRowsToEnd = () => {
+                if (!fillerItems.length) return;
+                for (let r = currentRow; r < rows; r++) {
+                    for (let c = 0; c < cols; c++) page[r * cols + c] = nextFiller();
+                }
+            };
+            const pushPage = () => {
+                pages.push(page);
+                page = Array(totalCells).fill(null);
+                currentRow = 0;
+            };
+
+            for (let s = 0; s < students; s++) {
+                const randomCount = type === 'B' ? getTransparentShuffleStudentCount() : 0;
+                const normalCount = Math.max(0, students - randomCount);
+                const shouldShuffleStudent = type === 'B' && randomCount > 0 && s >= normalCount;
+                const oneStudent = shouldShuffleStudent
+                    ? shuffleArrayWithSeed(baseSequence, transparentShuffleSeed + s * 1009)
+                    : baseSequence;
+                const requiredRows = Math.ceil(oneStudent.length / cols);
+                if (currentRow > 0 && requiredRows <= rows && currentRow + requiredRows > rows) {
+                    fillRowsToEnd();
+                    pushPage();
+                }
+
+                let sourceIndex = 0;
+                while (sourceIndex < oneStudent.length) {
+                    if (currentRow >= rows) pushPage();
+                    for (let col = 0; col < cols; col++) {
+                        const cellIndex = currentRow * cols + col;
+                        if (sourceIndex < oneStudent.length) {
+                            const source = oneStudent[sourceIndex++];
+                            page[cellIndex] = { ...source, studentIndex: s };
+                        } else {
+                            page[cellIndex] = nextFiller();
+                        }
+                    }
+                    currentRow++;
+                }
+                // 每位學生結束時已經剛好停在行尾；下一位自然從下一行第一格開始。
+            }
+
+            // 最後一位學生排完後，剩餘紙張也用既有補空白素材填滿。
+            fillRowsToEnd();
+            pages.push(page);
+            return pages;
+        }
+
+        function getGroupedPageCount(type, cols, rows) {
+            if (!lessonRowMode || !printQueue.length) return 0;
+            const fillers = type === 'A' ? getFillerWords() : getTransparentFillerItems();
+            return buildStudentRowPages(type, cols, rows, fillers).length;
+        }
+
+        function getBaseDrawList() {
+            const students = getStudentCount();
+            const drawList = [];
+            if (printQueue.length > 0) {
+                printQueue.forEach(item => {
+                    const validComps = item.comps.filter(c => c.target === 'A');
+                    const effectiveQty = item.qty * students;
+                    for (let i = 0; i < effectiveQty; i++) validComps.forEach(comp => drawList.push(comp));
+                });
+            } else {
+                const activeComps = getActiveComponents().filter(c => c.target === 'A');
+                // 保留舊版「直接列印目前字形」的行為：沒有清單時，會填滿一整張底紙。
+                if (activeComps.length) {
+                    const cellsPerComp = Math.floor(70 / activeComps.length);
+                    for (let i = 0; i < 70; i++) {
+                        let cIdx = Math.floor(i / cellsPerComp);
+                        if (cIdx >= activeComps.length) cIdx = activeComps.length - 1;
+                        drawList.push(activeComps[cIdx]);
+                    }
+                }
+            }
+            return drawList;
+        }
+
+        function generateBaseCanvases() {
+            const cols = A_COLS, rows = A_ROWS;
+            const cellW = A_W, cellH = A_H;
+            const marginL = getSafeValue('mL_A', 0) * PX_PER_MM;
+            const marginT = getSafeValue('mT_A', 0) * PX_PER_MM;
+            const gapX = getSafeValue('gX_A', 0) * PX_PER_MM;
+            const gapY = getSafeValue('gY_A', 0) * PX_PER_MM;
+            const contentOffsetX = getSafeValue('contentX_A', 2) * PX_PER_MM;
+            const contentOffsetY = getSafeValue('contentY_A', 2) * PX_PER_MM;
+            const safeInset = Math.max(0, getSafeValue('safeInset_A', 4) * PX_PER_MM);
+            const totalCells = cols * rows;
+            const fillerEnabled = document.getElementById('fillRemainingA')?.checked !== false;
+            const fillerWords = getFillerWords();
+
+            if (lessonRowMode && printQueue.length) {
+                const groupedPages = buildStudentRowPages('A', cols, rows, fillerEnabled ? fillerWords : []);
+                if (!groupedPages.length) return [];
+                const pages = [];
+                const printGrid = document.getElementById('printGridLines')?.checked === true;
+                groupedPages.forEach(pageCells => {
+                    const c = document.createElement('canvas');
+                    c.width = 2480; c.height = 3508;
+                    const xctx = c.getContext('2d');
+                    xctx.fillStyle = '#FFFFFF'; xctx.fillRect(0, 0, c.width, c.height);
+                    for (let i = 0; i < totalCells; i++) {
+                        const row = Math.floor(i / cols), col = i % cols;
+                        const x = marginL + col * (cellW + gapX);
+                        const y = marginT + row * (cellH + gapY);
+                        if (printGrid) {
+                            xctx.strokeStyle = '#e5e7eb'; xctx.lineWidth = 2; xctx.strokeRect(x, y, cellW, cellH);
+                        }
+                        const cell = pageCells[i];
+                        if (!cell) continue;
+                        const cx = x + cellW / 2 + contentOffsetX;
+                        const cy = y + cellH / 2 + contentOffsetY;
+                        if (cell.kind === 'comp') {
+                            const comp = cell.comp;
+                            drawComponentWithinBox(xctx, comp, comp.center ? cx : cx + comp.x, comp.center ? cy : cy + comp.y, cellW - safeInset * 2, cellH - safeInset * 2);
+                        } else if (cell.kind === 'wordFiller') {
+                            drawFillerWord(xctx, cell.value, x + cellW/2, y + cellH/2, cellW - safeInset * 2, cellH - safeInset * 2, contentOffsetX, contentOffsetY);
+                        }
+                    }
+                    pages.push(c);
+                });
+                return pages;
+            }
+
+            const drawList = getBaseDrawList();
+            if (!drawList.length && !(fillerEnabled && fillerWords.length)) return [];
+
+            // 有底貼時，頁數依底貼數量決定；語詞只補最後一頁剩餘格，不會額外產生新頁。
+            const pageCount = Math.max(1, Math.ceil(drawList.length / totalCells));
+            const pages = [];
+            const printGrid = document.getElementById('printGridLines')?.checked === true;
+
+            for (let p = 0; p < pageCount; p++) {
+                const c = document.createElement('canvas');
+                c.width = 2480; c.height = 3508;
+                const xctx = c.getContext('2d');
+                xctx.fillStyle = '#FFFFFF'; xctx.fillRect(0, 0, c.width, c.height);
+                const slice = drawList.slice(p * totalCells, (p + 1) * totalCells);
+                const isLastPage = p === pageCount - 1;
+
+                for (let i = 0; i < totalCells; i++) {
+                    const row = Math.floor(i / cols), col = i % cols;
+                    const x = marginL + col * (cellW + gapX);
+                    const y = marginT + row * (cellH + gapY);
+                    if (printGrid) {
+                        xctx.strokeStyle = '#e5e7eb';
+                        xctx.lineWidth = 2;
+                        xctx.strokeRect(x, y, cellW, cellH);
+                    }
+                    const cx = x + cellW / 2 + contentOffsetX;
+                    const cy = y + cellH / 2 + contentOffsetY;
+                    if (i < slice.length) {
+                        const comp = slice[i];
+                        drawComponentWithinBox(xctx, comp, comp.center ? cx : cx + comp.x, comp.center ? cy : cy + comp.y, cellW - safeInset * 2, cellH - safeInset * 2);
+                    } else if (isLastPage && fillerEnabled && fillerWords.length) {
+                        const fillerIndex = i - slice.length;
+                        drawFillerWord(xctx, fillerWords[fillerIndex % fillerWords.length], x + cellW/2, y + cellH/2, cellW - safeInset * 2, cellH - safeInset * 2, contentOffsetX, contentOffsetY);
+                    }
+                }
+                pages.push(c);
+            }
+            return pages;
+        }
+
+
+        function generateTransparentCanvases() {
+            const layout = getTransparentLayoutInfo();
+            const cols = layout.cols, rows = layout.rows;
+            const cellW = layout.cellW, cellH = layout.cellH;
+            const marginL = layout.marginL;
+            const marginT = layout.marginT;
+            const gapX = layout.gapX;
+            const gapY = layout.gapY;
+            const totalCells = layout.totalCells;
+            const contentInset = layout.contentInsetPx;
+            const students = getStudentCount();
+            const fillerEnabled = document.getElementById('fillRemainingB')?.checked !== false;
+            const fillerItems = getTransparentFillerItems();
+
+            let pageCellLists = [];
+            if (lessonRowMode && printQueue.length) {
+                pageCellLists = buildStudentRowPages('B', cols, rows, fillerEnabled ? fillerItems : []);
+            } else {
+                let drawList = [];
+                if (printQueue.length > 0) {
+                    const oneStudent = [];
+                    printQueue.forEach(item => {
+                        const validComps = item.comps.filter(c => c.target === 'B');
+                        const qty = Math.max(1, parseInt(item.qty) || 1);
+                        for (let q = 0; q < qty; q++) validComps.forEach(comp => oneStudent.push({kind:'comp', comp, wordName:item.name}));
+                    });
+                    const randomCount = getTransparentShuffleStudentCount();
+                    const normalCount = Math.max(0, students - randomCount);
+                    for (let s = 0; s < students; s++) {
+                        const seq = (randomCount > 0 && s >= normalCount)
+                            ? shuffleArrayWithSeed(oneStudent, transparentShuffleSeed + s * 1009)
+                            : oneStudent;
+                        seq.forEach(cell => drawList.push({...cell, studentIndex:s}));
+                    }
+                } else {
+                    const activeComps = getActiveComponents().filter(c => c.target === 'B');
+                    activeComps.forEach(c => drawList.push({kind:'comp', comp:c, wordName:currentDesignName || ''}));
+                }
+                if (drawList.length === 0 && !(fillerEnabled && fillerItems.length)) return [];
+                const pageCount = Math.max(1, Math.ceil(drawList.length / totalCells));
+                let fillerCursor = 0;
+                for (let p = 0; p < pageCount; p++) {
+                    const cells = Array(totalCells).fill(null);
+                    const slice = drawList.slice(p*totalCells, (p+1)*totalCells);
+                    for (let i=0;i<slice.length;i++) cells[i]=slice[i];
+                    if (p === pageCount-1 && fillerEnabled && fillerItems.length) {
+                        for (let i=slice.length;i<totalCells;i++) {
+                            cells[i] = {kind:'transparentFiller', value:fillerItems[fillerCursor++ % fillerItems.length]};
+                        }
+                    }
+                    pageCellLists.push(cells);
+                }
+            }
+            if (!pageCellLists.length) return [];
+
+            const pages = [];
+            pageCellLists.forEach(cells => {
+                const c = document.createElement('canvas');
+                c.width = 2480; c.height = 3508;
+                const xctx = c.getContext('2d');
+                xctx.fillStyle = '#FFFFFF'; xctx.fillRect(0,0,c.width,c.height);
+
+                // 25×25 mm 固定半切格。所有橫線／直線完全對齊。
+                xctx.save();
+                xctx.strokeStyle = '#cbd5e1';
+                xctx.lineWidth = 2;
+                for (let row = 0; row < rows; row++) {
+                    for (let col = 0; col < cols; col++) {
+                        const x = marginL + col * (cellW + gapX);
+                        const y = marginT + row * (cellH + gapY);
+                        xctx.strokeRect(x, y, cellW, cellH);
+                    }
+                }
+                xctx.restore();
+
+                // 改為「橫向一行一行」排列：同一位學生的整課連續，下一位從下一行開始。
+                for (let i = 0; i < totalCells; i++) {
+                    const cell = cells[i];
+                    if (!cell) continue;
+                    const row = Math.floor(i / cols);
+                    const col = i % cols;
+                    const x = marginL + col * (cellW + gapX);
+                    const y = marginT + row * (cellH + gapY);
+                    const cx = x + cellW/2, cy = y + cellH/2;
+                    if (cell.kind === 'comp') {
+                        const comp = cell.comp;
+                        const forceCenter = document.getElementById('forceCenter_B')?.checked !== false;
+                        const bx = forceCenter ? cx : (comp.center ? cx : cx + comp.x);
+                        const by = forceCenter ? cy : (comp.center ? cy : cy + comp.y);
+                        drawComponentWithinBox(xctx, comp, bx, by, cellW - contentInset * 2, cellH - contentInset * 2);
+                    } else if (cell.kind === 'transparentFiller') {
+                        drawTransparentFiller(xctx, cell.value, cx, cy, cellW, cellH, contentInset);
+                    }
+                }
+                pages.push(c);
+            });
+            return pages;
+        }
+
         // ✅ 學習單模式切換
         let worksheetMode = 'low'; // 'low' 低組 | 'high' 高組
-        let partRevealMode = 'all'; // 'all' | 'baseOnly' | 'transOnly' | 'none'
 
         window.setWorksheetMode = function(mode) {
             worksheetMode = mode;
@@ -1422,123 +2760,79 @@
             if (mode === 'low') {
                 btnLow.className  = 'flex-1 py-1.5 text-[12px] font-bold transition-colors bg-emerald-600 text-white';
                 btnHigh.className = 'flex-1 py-1.5 text-[12px] font-bold transition-colors bg-white text-emerald-700';
-                hint.textContent  = '🌱 低組：顯示部件示意圖 → 貼一貼 → 寫一寫';
+                hint.textContent  = '🌱 有提示：貼部件 → 大格寫一次（淡字提示） → 貼貼紙／寫語詞';
             } else {
                 btnLow.className  = 'flex-1 py-1.5 text-[12px] font-bold transition-colors bg-white text-emerald-700';
                 btnHigh.className = 'flex-1 py-1.5 text-[12px] font-bold transition-colors bg-emerald-600 text-white';
-                hint.textContent  = '🌟 高組：貼一貼 → 寫兩次 → 自行造詞（兩格）';
+                hint.textContent  = '🌟 無提示：貼部件 → 大格寫一次 → 貼貼紙／寫語詞';
             }
         };
 
-        // ✅ 部件提示模式切換
-        window.setPartRevealMode = function(mode) {
-            partRevealMode = ['all','baseOnly','transOnly','none'].includes(mode) ? mode : 'all';
-            updatePartRevealModeUI();
-            scheduleWorkspaceSave ? scheduleWorkspaceSave() : null;
-        };
-
-        function updatePartRevealModeUI() {
-            const hints = {
-                all:'🟢 全部提供：學生拿到所有部件，依示意圖拼貼完成國字。',
-                baseOnly:'🌸 只給底字(A)：學生拿到底字貼紙，自己從透明貼紙中找出缺少的部件，不顯示目標字。',
-                transOnly:'💦 只給透明(B)：學生拿到透明部件，自己找對應的底字貼紙，不顯示目標字。',
-                none:'❓ 全部讓學生自己找：完全不提供提示，學生自行判斷需要哪些部件。'
+        function getWorksheetPromptOptions() {
+            return {
+                showTargetChar: document.getElementById('worksheetShowTargetChar')?.checked !== false,
+                showGhostChar: document.getElementById('worksheetShowGhostChar')?.checked !== false
             };
-            ['all','baseOnly','transOnly','none'].forEach(m => {
-                const btn = document.getElementById(`btnPartMode_${m}`);
-                if (!btn) return;
-                const active = partRevealMode === m;
-                btn.className = `flex-1 py-1.5 text-[11px] font-bold rounded border border-emerald-300 leading-tight transition-colors ${active ? 'bg-emerald-600 text-white' : 'bg-white text-emerald-700'}`;
-            });
-            const el = document.getElementById('partRevealModeHint');
-            if (el) el.textContent = hints[partRevealMode] || '';
         }
 
-        // ✅ 繪製部件提示框（已給 ✓ 綠色 / 需找 ？ 橘色虛線）
-        function drawComponentHints(oCtx, item, areaX, areaY, areaW, areaH) {
-            const allComps = item.comps || [];
-            const compsA = allComps.filter(c => c.target === 'A');
-            const compsB = allComps.filter(c => c.target === 'B');
-            let givenComps, missingComps;
-            if (partRevealMode === 'baseOnly')       { givenComps = compsA; missingComps = compsB; }
-            else if (partRevealMode === 'transOnly') { givenComps = compsB; missingComps = compsA; }
-            else                                     { givenComps = []; missingComps = [...compsA, ...compsB]; }
+        let worksheetWordMode = 'sticker'; // sticker | choice | create
 
-            const totalBoxes = givenComps.length + missingComps.length;
-            if (totalBoxes === 0) { drawPasteBox(oCtx, areaX, areaY, Math.min(areaW, areaH)); return; }
+        function parseWorksheetChoiceMap() {
+            const raw = document.getElementById('worksheetChoiceMap')?.value || '';
+            const map = {};
+            const globalItems = [];
+            raw.split(/\n+/).forEach(line => {
+                const trimmed = line.trim();
+                if (!trimmed) return;
 
-            const hasSep = givenComps.length > 0 && missingComps.length > 0;
-            const sepW = hasSep ? 52 : 0;
-            const gap = 12;
-            const boxSize = Math.min(areaH * 0.84, Math.floor((areaW - sepW - gap * (totalBoxes - 1)) / totalBoxes));
-            const actualTotalW = totalBoxes * boxSize + (totalBoxes - 1) * gap + sepW;
-            let curX = areaX + Math.max(0, (areaW - actualTotalW) / 2);
-            const boxY = areaY + (areaH - boxSize) / 2;
-
-            oCtx.fillStyle = '#0f766e';
-            oCtx.font = `bold 32px ${FONT_FAMILY}`;
-            oCtx.textAlign = 'center';
-            oCtx.fillText('① 部件組合', areaX + areaW / 2, areaY - 36);
-
-            givenComps.forEach(comp => {
-                oCtx.strokeStyle = '#22c55e';
-                oCtx.lineWidth = 5;
-                oCtx.strokeRect(curX, boxY, boxSize, boxSize);
-                if (comp.type === 'text') {
-                    oCtx.fillStyle = comp.color || '#FF6699';
-                    let fs = comp.size || 200;
-                    while (fs > 20) {
-                        oCtx.font = `${fs}px ${FONT_FAMILY}`;
-                        if (oCtx.measureText(comp.char).width <= boxSize - 20 && fs <= boxSize - 20) break;
-                        fs -= 8;
-                    }
-                    oCtx.font = `${fs}px ${FONT_FAMILY}`;
-                    oCtx.textAlign = 'center';
-                    oCtx.textBaseline = 'middle';
-                    oCtx.fillText(comp.char, curX + boxSize / 2, boxY + boxSize / 2);
-                } else if (comp.type === 'image' && comp.imgObj) {
-                    const h = Math.min(boxSize - 20, comp.size || boxSize - 20);
-                    const w = (comp.imgObj.width / comp.imgObj.height) * h;
-                    oCtx.drawImage(comp.imgObj, curX + boxSize/2 - w/2, boxY + boxSize/2 - h/2, w, h);
+                // 推薦格式：生字-語詞1-語詞2，例如：彷-彷彿-防彿
+                // 第一段只當作「關鍵字」，不會印進語詞選項框。
+                const dashParts = trimmed.split(/[-－—]/).map(v => v.trim()).filter(Boolean);
+                if (dashParts.length >= 3) {
+                    const key = dashParts.shift();
+                    const values = dashParts.filter(Boolean).slice(0, 3);
+                    if (key && values.length) map[key] = values;
+                    return;
                 }
-                oCtx.textBaseline = 'alphabetic';
-                oCtx.fillStyle = '#15803d';
-                oCtx.font = `bold 26px ${FONT_FAMILY}`;
-                oCtx.textAlign = 'center';
-                oCtx.fillText('✓ 已給', curX + boxSize / 2, boxY + boxSize + 32);
-                curX += boxSize + gap;
-            });
 
-            if (hasSep) {
-                oCtx.fillStyle = '#94a3b8';
-                oCtx.font = `bold 56px sans-serif`;
-                oCtx.textAlign = 'center';
-                oCtx.textBaseline = 'middle';
-                oCtx.fillText('+', curX + sepW / 2 - gap/2, boxY + boxSize / 2);
-                oCtx.textBaseline = 'alphabetic';
-                curX += sepW;
-            }
-
-            missingComps.forEach(() => {
-                oCtx.strokeStyle = '#f59e0b';
-                oCtx.lineWidth = 5;
-                oCtx.setLineDash([18, 12]);
-                oCtx.strokeRect(curX, boxY, boxSize, boxSize);
-                oCtx.setLineDash([]);
-                oCtx.fillStyle = '#fef3c7';
-                oCtx.fillRect(curX + 2, boxY + 2, boxSize - 4, boxSize - 4);
-                oCtx.fillStyle = '#d97706';
-                oCtx.font = `bold ${Math.round(boxSize * 0.52)}px ${FONT_FAMILY}`;
-                oCtx.textAlign = 'center';
-                oCtx.textBaseline = 'middle';
-                oCtx.fillText('？', curX + boxSize / 2, boxY + boxSize / 2);
-                oCtx.textBaseline = 'alphabetic';
-                oCtx.fillStyle = '#b45309';
-                oCtx.font = `bold 26px ${FONT_FAMILY}`;
-                oCtx.fillText('自己找！', curX + boxSize / 2, boxY + boxSize + 32);
-                curX += boxSize + gap;
+                // 仍相容舊格式：生字=語詞1|語詞2|語詞3
+                const parts = trimmed.split(/[=＝]/);
+                if (parts.length >= 2) {
+                    const key = parts.shift().trim();
+                    const values = parts.join('=').split(/[|｜,，、;；]+/).map(v => v.trim()).filter(Boolean).slice(0, 3);
+                    if (key && values.length) map[key] = values;
+                } else {
+                    // 沒有指定生字時，視為全體共用選項。
+                    trimmed.split(/[|｜,，、;；]+/).map(v => v.trim()).filter(Boolean).forEach(v => globalItems.push(v));
+                }
             });
+            if (globalItems.length) map.__default = globalItems.slice(0, 3);
+            return map;
         }
+
+        function updateWorksheetWordModeUI() {
+            const modes = ['sticker', 'choice', 'create'];
+            modes.forEach(mode => {
+                const btn = document.getElementById(`btnWordMode_${mode}`);
+                if (!btn) return;
+                const active = worksheetWordMode === mode;
+                btn.className = `py-1.5 px-1 text-[11px] font-bold rounded border border-emerald-300 ${active ? 'bg-emerald-600 text-white' : 'bg-white text-emerald-700'}`;
+            });
+            const mapEl = document.getElementById('worksheetChoiceMap');
+            if (mapEl) mapEl.classList.toggle('hidden', worksheetWordMode !== 'choice');
+            const hint = document.getElementById('worksheetWordModeHint');
+            if (hint) {
+                if (worksheetWordMode === 'sticker') hint.textContent = '🟢 語詞區保留完整長框，讓學生直接貼上老師準備的語詞貼紙。';
+                else if (worksheetWordMode === 'choice') hint.textContent = '🟡 推薦輸入「生字-語詞1-語詞2」，第一段只當關鍵字；學習單只會印後面的語詞選項。舊的「生字=選項1|選項2」格式也可使用。';
+                else hint.textContent = '🔵 語詞區分成兩個等大書寫格，讓學生自己寫出一個語詞。';
+            }
+        }
+
+        window.setWorksheetWordMode = function(mode) {
+            worksheetWordMode = ['sticker','choice','create'].includes(mode) ? mode : 'sticker';
+            updateWorksheetWordModeUI();
+            scheduleWorkspaceSave();
+        };
 
         // 共用：畫貼一貼方框
         function drawPasteBox(oCtx, x, y, size) {
@@ -1597,161 +2891,317 @@
             }
         }
 
-        // 學習單渲染引擎（低組 / 高組 共用入口）
-        function renderWorksheet(oCtx, offCanvas) {
-            const isHigh = worksheetMode === 'high';
 
-            // ---- 標題 ----
-            oCtx.fillStyle = '#334155';
-            oCtx.font = `bold 110px ${FONT_FAMILY}`;
-            oCtx.textAlign = 'center';
-            oCtx.textBaseline = 'top';
-            oCtx.fillText('國字部件拼貼學習單', 1240, 100);
-
-            oCtx.font = `42px ${FONT_FAMILY}`;
-            oCtx.fillStyle = '#64748b';
-            if (isHigh) {
-                oCtx.fillText('請將部件貼紙疊合完成國字，再寫兩次，最後自行造詞填入空格。', 1240, 265);
-            } else {
-                oCtx.fillText('請找出對應的底貼與透明貼，疊合在「貼一貼」框內，並在「寫一寫」練習筆順。', 1240, 265);
-            }
-
-            // ---- 取得列印清單 ----
+        function getWorksheetItems() {
             let itemsToPrint = [];
             if (printQueue.length > 0) {
                 itemsToPrint = printQueue;
             } else {
                 const activeComps = getActiveComponents();
-                if (activeComps.length === 0) return null;
+                if (activeComps.length === 0) return [];
                 const selectEl = document.getElementById('templateSelect');
-                let name = selectEl.options[selectEl.selectedIndex].text.replace(/🔹 |⭐ |✨ | \(.*\)/g, '');
-                if (selectEl.value.includes('自訂') || selectEl.value.includes('default_自訂')) {
-                    name = activeComps.map(c => c.type === 'text' ? c.char : '圖').join('+');
+                let name = currentDesignName || selectEl.options[selectEl.selectedIndex].text.replace(/🔹 |⭐ |✨ | \(.*\)/g, '');
+                if (!currentDesignName && (selectEl.value.includes('自訂') || selectEl.value.includes('default_自訂'))) {
+                    name = activeComps.map(c => c.type === 'text' ? c.char : (c.fileName || '圖')).join('+');
                 }
                 itemsToPrint = [{ name: name, comps: activeComps }];
             }
+            return itemsToPrint;
+        }
 
-            // ---- 版面參數 ----
-            const pasteSize = 380;
-            const writeSize = 380;
-            const wordW = 380, wordH = 270; // 造詞格（高組）
-            const rowHeight = isHigh ? 520 : 430;
-            let currentY = 440;
+        function drawWorksheetArrow(oCtx, x, y) {
+            oCtx.save();
+            oCtx.fillStyle = '#60a5fa';
+            oCtx.font = `bold 74px ${FONT_FAMILY}`;
+            oCtx.textAlign = 'center';
+            oCtx.textBaseline = 'middle';
+            oCtx.fillText('→', x, y);
+            oCtx.restore();
+        }
 
-            itemsToPrint.forEach((item) => {
-                if (currentY + rowHeight > 3450) return;
+        function drawPhraseBox(oCtx, x, y, w, h, label, cells = 4) {
+            oCtx.strokeStyle = '#a5b4fc';
+            oCtx.lineWidth = 5;
+            oCtx.strokeRect(x, y, w, h);
+            oCtx.beginPath();
+            oCtx.strokeStyle = '#c7d2fe';
+            oCtx.lineWidth = 3;
+            oCtx.setLineDash([10, 8]);
+            for (let i = 1; i < cells; i++) {
+                const xx = x + (w / cells) * i;
+                oCtx.moveTo(xx, y);
+                oCtx.lineTo(xx, y + h);
+            }
+            oCtx.stroke();
+            oCtx.setLineDash([]);
+            if (label) {
+                oCtx.fillStyle = '#818cf8';
+                oCtx.font = `bold 35px ${FONT_FAMILY}`;
+                oCtx.textAlign = 'center';
+                oCtx.fillText(label, x + w/2, y - 30);
+            }
+        }
 
-                const name = item.name;
-                const compsA = item.comps.filter(c => c.target === 'A');
-                const compsB = item.comps.filter(c => c.target === 'B');
-                const midY   = currentY + rowHeight / 2;
 
-                // 字名稱標籤
-                oCtx.fillStyle = '#1e293b';
-                oCtx.font = `bold 95px ${FONT_FAMILY}`;
+        function drawStickerPhraseBox(oCtx, x, y, w, h) {
+            oCtx.strokeStyle = '#a5b4fc';
+            oCtx.lineWidth = 5;
+            oCtx.strokeRect(x, y, w, h);
+        }
+
+        function drawChoicePhraseBox(oCtx, x, y, w, h, options) {
+            oCtx.strokeStyle = '#a5b4fc';
+            oCtx.lineWidth = 5;
+            oCtx.strokeRect(x, y, w, h);
+            const list = (options || []).slice(0, 3);
+            if (!list.length) {
+                oCtx.save();
+                oCtx.fillStyle = '#cbd5e1';
+                oCtx.font = `34px ${FONT_FAMILY}`;
                 oCtx.textAlign = 'center';
                 oCtx.textBaseline = 'middle';
-                oCtx.fillText(name.length > 3 ? name.substring(0,2)+'..' : name, 130, midY);
+                oCtx.fillText('尚未設定語詞選項', x + w/2, y + h/2);
+                oCtx.restore();
+                return;
+            }
+            const segmentW = w / list.length;
+            list.forEach((word, i) => {
+                if (i > 0) {
+                    oCtx.beginPath();
+                    oCtx.strokeStyle = '#e2e8f0';
+                    oCtx.lineWidth = 3;
+                    oCtx.moveTo(x + segmentW * i, y);
+                    oCtx.lineTo(x + segmentW * i, y + h);
+                    oCtx.stroke();
+                }
+                oCtx.save();
+                oCtx.fillStyle = '#475569';
+                oCtx.textAlign = 'center';
+                oCtx.textBaseline = 'middle';
+                let fontSize = word.length <= 2 ? 62 : (word.length <= 4 ? 50 : 40);
+                oCtx.font = `bold ${fontSize}px ${FONT_FAMILY}`;
+                const maxW = segmentW - 40;
+                while (fontSize > 28 && oCtx.measureText(word).width > maxW) {
+                    fontSize -= 3;
+                    oCtx.font = `bold ${fontSize}px ${FONT_FAMILY}`;
+                }
+                const cx = x + segmentW * i + segmentW/2;
+                oCtx.beginPath();
+                oCtx.strokeStyle = '#94a3b8';
+                oCtx.lineWidth = 3;
+                oCtx.arc(cx, y + 44, 13, 0, Math.PI * 2);
+                oCtx.stroke();
+                oCtx.fillText(word, cx, y + h/2 + 25);
+                oCtx.restore();
+            });
+        }
 
-                let curX = 240;
+        function renderWorksheetPage(oCtx, items, pageIndex, pageCount, options = {}) {
+            const isHigh = worksheetMode === 'high';
+            const promptOptions = getWorksheetPromptOptions();
+            oCtx.fillStyle = '#FFFFFF';
+            oCtx.fillRect(0, 0, 2480, 3508);
 
-                if (!isHigh) {
-                    // ==== 低組：[底貼示意] + [透明貼示意] = [貼一貼] [寫一寫] ====
-                    const aY = currentY + (rowHeight - A_H) / 2;
-                    oCtx.strokeStyle = '#fbcfe8';
-                    oCtx.lineWidth = 6;
-                    oCtx.strokeRect(curX, aY, A_W, A_H);
-                    compsA.forEach(comp => {
-                        const cx = curX + A_W/2 + (comp.center ? 0 : comp.x);
-                        const cy = aY  + A_H/2 + (comp.center ? 0 : comp.y);
-                        drawComponent(oCtx, comp, cx, cy);
-                    });
-                    oCtx.fillStyle = '#64748b';
-                    oCtx.font = `35px ${FONT_FAMILY}`;
+            oCtx.fillStyle = '#334155';
+            oCtx.font = `bold 108px ${FONT_FAMILY}`;
+            oCtx.textAlign = 'center';
+            oCtx.textBaseline = 'top';
+            oCtx.fillText('國字部件拼貼學習單', 1240, 90);
+
+            oCtx.font = `40px ${FONT_FAMILY}`;
+            oCtx.fillStyle = '#64748b';
+            const wordModeInstruction = worksheetWordMode === 'sticker' ? '貼上語詞貼紙' : (worksheetWordMode === 'choice' ? '選出正確語詞' : '自己寫一個語詞');
+            oCtx.fillText(isHigh
+                ? `請先貼部件，再完成兩次書寫，最後${wordModeInstruction}。`
+                : `請先貼部件，再依提示完成兩次書寫，最後${wordModeInstruction}。`, 1240, 245);
+
+            if (pageCount > 1) {
+                oCtx.fillStyle = '#94a3b8';
+                oCtx.font = `bold 32px ${FONT_FAMILY}`;
+                oCtx.textAlign = 'right';
+                oCtx.fillText(`第 ${pageIndex} / ${pageCount} 頁`, 2340, 110);
+            }
+
+            const rowHeight = 540;
+            const rowGap = 28;
+            const normalStartY = 390;
+            const contentStep = rowHeight + rowGap;
+            const rowBlockHeight = items.length * contentStep;
+            const availableRowsHeight = 5 * contentStep;
+            const shouldCenterRows = options.centerRows === true && items.length < 5 && !options.showReview;
+            const startY = shouldCenterRows
+                ? normalStartY + Math.max(0, (availableRowsHeight - rowBlockHeight) / 2)
+                : normalStartY;
+            const pasteSize = 340;
+            const writeSize = 260;
+            const stickerSize = writeSize;
+            const phraseCells = 2;
+            const phraseW = writeSize * phraseCells;
+            const extraBoxGap = 45;
+            const leftX = 70;
+            const pasteX = 170;
+            const writeX = 640;
+            const stickerX = 980;
+            const phraseX = 1285;
+            const extraBoxX = phraseX + phraseW + extraBoxGap;
+
+            items.forEach((item, idx) => {
+                const rowY = startY + idx * (rowHeight + rowGap);
+                const boxMidY = rowY + rowHeight / 2 + 15;
+                const pasteY = rowY + (rowHeight - pasteSize) / 2 + 20;
+                const writeY = rowY + (rowHeight - writeSize) / 2 + 20;
+                const stickerY = rowY + (rowHeight - stickerSize) / 2 + 20;
+                const displayName = item.name && item.name.length > 4 ? item.name.substring(0, 3) + '…' : item.name;
+                const targetChar = promptOptions.showTargetChar ? (displayName || '字') : '';
+                const ghost = (!isHigh && promptOptions.showGhostChar && item.name && item.name.length === 1 && !String(item.name).includes('+')) ? item.name : null;
+
+                oCtx.fillStyle = '#f8fafc';
+                oCtx.strokeStyle = '#e2e8f0';
+                oCtx.lineWidth = 3;
+                oCtx.fillRect(40, rowY + 20, 2400, rowHeight - 10);
+                oCtx.strokeRect(40, rowY + 20, 2400, rowHeight - 10);
+
+                if (promptOptions.showTargetChar) {
+                    oCtx.fillStyle = '#1e293b';
+                    oCtx.font = `bold 92px ${FONT_FAMILY}`;
                     oCtx.textAlign = 'center';
-                    oCtx.fillText('底貼', curX + A_W/2, aY - 30);
-                    curX += A_W + 40;
-
+                    oCtx.textBaseline = 'middle';
+                    oCtx.fillText(targetChar, leftX + 50, boxMidY + 15);
                     oCtx.fillStyle = '#94a3b8';
-                    oCtx.font = `bold 70px sans-serif`;
-                    oCtx.fillText('+', curX + 30, midY);
-                    curX += 80;
-
-                    const bY = currentY + (rowHeight - B_H) / 2;
-                    oCtx.strokeStyle = '#bae6fd';
-                    oCtx.lineWidth = 6;
-                    oCtx.strokeRect(curX, bY, B_W, B_H);
-                    compsB.forEach(comp => {
-                        const cx = curX + B_W/2 + (comp.center ? 0 : comp.x);
-                        const cy = bY  + B_H/2 + (comp.center ? 0 : comp.y);
-                        drawComponent(oCtx, comp, cx, cy);
-                    });
-                    oCtx.fillStyle = '#64748b';
-                    oCtx.font = `35px ${FONT_FAMILY}`;
-                    oCtx.fillText('透明貼', curX + B_W/2, bY - 30);
-                    curX += B_W + 40;
-
-                    oCtx.fillStyle = '#94a3b8';
-                    oCtx.font = `bold 70px sans-serif`;
-                    oCtx.fillText('=', curX + 30, midY);
-                    curX += 80;
-
-                    // 貼一貼（or 部件提示）
-                    const pasteY = currentY + (rowHeight - pasteSize) / 2;
-                    if (partRevealMode === 'all') {
-                        drawPasteBox(oCtx, curX, pasteY, pasteSize);
-                        oCtx.fillStyle = '#64748b';
-                        oCtx.font = `35px ${FONT_FAMILY}`;
-                        oCtx.textAlign = 'center';
-                        oCtx.fillText('貼一貼', curX + pasteSize/2, pasteY - 30);
-                    } else {
-                        // 非全部提供模式：顯示已給部件（綠框）與需找部件（？橘色虛線）
-                        drawComponentHints(oCtx, item, curX, pasteY, pasteSize, pasteSize);
-                    }
-                    curX += pasteSize + 50;
-
-                    // 寫一寫（含淡字）
-                    const writeY = currentY + (rowHeight - writeSize) / 2;
-                    const ghost = (name && name.length === 1 && !name.includes('+')) ? name : null;
-                    drawWriteBox(oCtx, curX, writeY, writeSize, ghost, '寫一寫');
-
-                } else {
-                    // ==== 高組：[貼一貼] [寫①] [寫②] [造詞格1] [造詞格2] ====
-                    const pasteY = currentY + (rowHeight - pasteSize) / 2;
-                    drawPasteBox(oCtx, curX, pasteY, pasteSize);
-                    oCtx.fillStyle = '#64748b';
-                    oCtx.font = `35px ${FONT_FAMILY}`;
-                    oCtx.textAlign = 'center';
-                    oCtx.fillText('貼一貼', curX + pasteSize/2, pasteY - 30);
-                    curX += pasteSize + 50;
-
-                    // 寫一（含淡字）
-                    const writeY = currentY + (rowHeight - writeSize) / 2;
-                    const ghost = (name && name.length === 1 && !name.includes('+')) ? name : null;
-                    drawWriteBox(oCtx, curX, writeY, writeSize, ghost, '寫一寫①');
-                    curX += writeSize + 35;
-
-                    // 寫二（不含淡字提示）
-                    drawWriteBox(oCtx, curX, writeY, writeSize, null, '寫一寫②');
-                    curX += writeSize + 55;
-
-                    // 造詞格：橫式長方格，寬 = writeSize×2，高 = writeSize
-                    const wordBoxW = writeSize * 2;
-                    const wordBoxH = writeSize;
-                    const wordBoxY = currentY + (rowHeight - wordBoxH) / 2;
-
-                    // 標題
-                    oCtx.fillStyle = '#818cf8';
-                    oCtx.font = `bold 38px ${FONT_FAMILY}`;
-                    oCtx.textAlign = 'center';
-                    oCtx.fillText('✏️ 我會造詞', curX + wordBoxW/2, wordBoxY - 45);
-
-                    // 單一橫式造詞格
-                    drawWordBox(oCtx, curX, wordBoxY, wordBoxW, wordBoxH, null);
+                    oCtx.font = `30px ${FONT_FAMILY}`;
+                    oCtx.fillText('目標字', leftX + 50, boxMidY - 72);
                 }
 
-                currentY += rowHeight + 60;
+                drawPasteBox(oCtx, pasteX, pasteY, pasteSize);
+                oCtx.fillStyle = '#0f766e';
+                oCtx.font = `bold 36px ${FONT_FAMILY}`;
+                oCtx.fillText('① 貼部件', pasteX + pasteSize/2, pasteY - 36);
+
+                drawWriteBox(oCtx, writeX, writeY, writeSize, ghost, '');
+
+
+                drawPasteBox(oCtx, stickerX, stickerY, stickerSize);
+
+                if (worksheetWordMode === 'sticker') {
+                    drawStickerPhraseBox(oCtx, phraseX, stickerY, phraseW, stickerSize);
+                } else if (worksheetWordMode === 'choice') {
+                    const choiceMap = parseWorksheetChoiceMap();
+                    drawChoicePhraseBox(oCtx, phraseX, stickerY, phraseW, stickerSize, choiceMap[item.name] || choiceMap.__default || []);
+                } else {
+                    drawPhraseBox(oCtx, phraseX, stickerY, phraseW, stickerSize, '', phraseCells);
+                }
+
+                drawPasteBox(oCtx, extraBoxX, pasteY, pasteSize);
+
+                oCtx.strokeStyle = '#e2e8f0';
+                oCtx.lineWidth = 2;
+                oCtx.beginPath();
+                oCtx.moveTo(80, rowY + rowHeight + 25);
+                oCtx.lineTo(2400, rowY + rowHeight + 25);
+                oCtx.stroke();
             });
+
+            if (options.showReview) {
+                const reviewTop = startY + items.length * (rowHeight + rowGap) + 45;
+                const reviewBottom = 3370;
+                const reviewH = reviewBottom - reviewTop;
+                if (reviewH >= 260) {
+                    oCtx.save();
+                    oCtx.fillStyle = '#ecfdf5';
+                    oCtx.strokeStyle = '#86efac';
+                    oCtx.lineWidth = 4;
+                    oCtx.fillRect(90, reviewTop, 2300, reviewH);
+                    oCtx.strokeRect(90, reviewTop, 2300, reviewH);
+
+                    oCtx.fillStyle = '#047857';
+                    oCtx.font = `bold 46px ${FONT_FAMILY}`;
+                    oCtx.textAlign = 'left';
+                    oCtx.textBaseline = 'top';
+                    oCtx.fillText('🌟 複習挑戰區', 145, reviewTop + 28);
+
+                    const prompts = [
+                        '我最容易記得的字是：',
+                        '我還要再練習的字是：',
+                        '老師念一個字，我自己寫：'
+                    ];
+                    const usableTop = reviewTop + 105;
+                    const promptGap = Math.max(150, Math.min(220, (reviewH - 135) / prompts.length));
+                    prompts.forEach((prompt, i) => {
+                        const y = usableTop + i * promptGap;
+                        if (y + 70 > reviewBottom) return;
+                        oCtx.fillStyle = '#334155';
+                        oCtx.font = `36px ${FONT_FAMILY}`;
+                        oCtx.fillText(prompt, 160, y);
+                        oCtx.strokeStyle = '#94a3b8';
+                        oCtx.lineWidth = 3;
+                        oCtx.beginPath();
+                        oCtx.moveTo(760, y + 45);
+                        oCtx.lineTo(2220, y + 45);
+                        oCtx.stroke();
+                    });
+                    oCtx.restore();
+                }
+            }
+        }
+
+        function getWorksheetPageGroups(items) {
+            const mode = document.getElementById('worksheetPaginationMode')?.value || 'balanced_review';
+            if (mode === 'standard') {
+                const groups = [];
+                for (let i = 0; i < items.length; i += 5) groups.push(items.slice(i, i + 5));
+                return { mode, groups };
+            }
+            const pageCount = Math.max(1, Math.ceil(items.length / 5));
+            const base = Math.floor(items.length / pageCount);
+            const remainder = items.length % pageCount;
+            const groups = [];
+            let cursor = 0;
+            for (let p = 0; p < pageCount; p++) {
+                const count = base + (p < remainder ? 1 : 0);
+                groups.push(items.slice(cursor, cursor + count));
+                cursor += count;
+            }
+            return { mode, groups };
+        }
+
+        function updateWorksheetPaginationHint() {
+            const modeEl = document.getElementById('worksheetPaginationMode');
+            const hint = document.getElementById('worksheetPaginationHint');
+            if (!modeEl || !hint) return;
+            if (modeEl.value === 'standard') hint.textContent = '維持原本排法：每頁最多 5 個字，例如 7 個字會排成 5＋2。';
+            else if (modeEl.value === 'balanced') hint.textContent = '平均分配各頁字數，例如 7 個字排成 4＋3、11 個字排成 4＋4＋3；字數較少的頁面會垂直置中。';
+            else hint.textContent = '平均分配各頁字數，例如 7 個字排成 4＋3；最後一頁有空間時自動加入複習挑戰區。';
+        }
+
+        function generateWorksheetCanvases() {
+            const items = getWorksheetItems();
+            if (!items.length) return [];
+            const plan = getWorksheetPageGroups(items);
+            const totalPages = plan.groups.length;
+            const pages = [];
+            plan.groups.forEach((group, p) => {
+                const c = document.createElement('canvas');
+                c.width = 2480;
+                c.height = 3508;
+                const ctx = c.getContext('2d');
+                const isLastPage = p === totalPages - 1;
+                const showReview = plan.mode === 'balanced_review' && isLastPage && group.length < 5;
+                renderWorksheetPage(ctx, group, p + 1, totalPages, {
+                    showReview,
+                    centerRows: plan.mode === 'balanced'
+                });
+                pages.push(c);
+            });
+            return pages;
+        }
+
+        // 學習單渲染引擎（回傳第一頁，主要供舊流程相容使用）
+        function renderWorksheet(oCtx, offCanvas) {
+            const items = getWorksheetItems();
+            if (!items.length) return null;
+            const plan = getWorksheetPageGroups(items);
+            const firstGroup = plan.groups[0] || [];
+            renderWorksheetPage(oCtx, firstGroup, 1, plan.groups.length, { showReview: plan.mode === 'balanced_review' && plan.groups.length === 1 && firstGroup.length < 5, centerRows: plan.mode === 'balanced' });
             return offCanvas;
         }
 
@@ -1837,13 +3287,79 @@
             doc.close();
         }
 
+
+        function buildMultiPagePrintIframe(dataUrls, nameLabel) {
+            let iframe = document.getElementById('printIframe');
+            if (!iframe) {
+                iframe = document.createElement('iframe');
+                iframe.id = 'printIframe';
+                iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:0;height:0;border:none;visibility:hidden;';
+                document.body.appendChild(iframe);
+            }
+            const doc = iframe.contentWindow.document;
+            doc.open();
+            doc.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>列印 ${nameLabel}</title><style>
+                @page{size:210mm 297mm;margin:0} html,body{margin:0;padding:0;background:#fff}
+                .page{width:210mm;height:297mm;page-break-after:always;position:relative;overflow:hidden}
+                .page:last-child{page-break-after:auto}.page img{position:absolute;inset:0;width:210mm;height:297mm;display:block;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+            </style></head><body>${dataUrls.map(u=>`<div class="page"><img src="${u}"></div>`).join('')}<script>window.addEventListener('load',()=>setTimeout(()=>window.print(),600));<\/script></body></html>`);
+            doc.close();
+        }
+
         // ==========================================
         // 執行輸出：直接列印 (Print) 或 下載圖檔 (Download)
         // ==========================================
         window.executeOutput = function(type, action) {
+            if (type === 'A') {
+                const pages = generateBaseCanvases();
+                if (!pages.length) { alert('請確認目前畫面或清單中有白色底貼內容，或已輸入補空白語詞！'); return; }
+                const urls = pages.map(c => c.toDataURL('image/png'));
+                if (action === 'download') {
+                    urls.forEach((u, i) => {
+                        const link = document.createElement('a');
+                        link.download = `LD-8119_白色底貼_第${i+1}頁_${Date.now()}.png`;
+                        link.href = u; link.click();
+                    });
+                } else {
+                    const students = getStudentCount();
+                    const studentLine = students > 1 ? `\n學生人數：${students} 位（數量已自動 ×${students}）` : '';
+                    if (!confirm(`即將列印：LD-8119 白色底貼\n\n共 ${urls.length} 頁。${studentLine}\n超過 70 格會自動接到下一張。\n多人分行模式下，每位學生最後一行未用格會先補語詞，最後一頁剩餘格也會補滿。\n\n請確認：紙張 A4、縮放 100%（實際大小）、邊距 0。`)) return;
+                    buildMultiPagePrintIframe(urls, 'LD-8119白色底貼');
+                }
+                return;
+            }
+            if (type === 'B') {
+                const pages = generateTransparentCanvases();
+                if (!pages.length) { alert('請確認目前畫面或清單中有透明部件內容，或已選擇透明紙補空白素材！'); return; }
+                const urls = pages.map(c => c.toDataURL('image/png'));
+                if (action === 'download') {
+                    urls.forEach((u, i) => { const link=document.createElement('a'); link.download=`透明貼紙_A4_第${i+1}頁_${Date.now()}.png`; link.href=u; link.click(); });
+                } else {
+                    if (!confirm(`即將列印：A4未切割透明貼紙\n\n共 ${urls.length} 頁。\n每個裁切區固定為 25 × 25 mm，完整淡色格線對齊。建議先直切成 2.5 cm 寬長條，再沿橫線半切。\n多人分行模式下，每位學生最後一行未用格會補 emoji／自訂素材，下一位學生從下一行開始；最後一頁剩餘格也會補滿。若設定「隨機學生數」，只有指定人數的透明部件會打散；其餘學生維持正常順序，白底與學習單順序都不變。\n\n請確認：紙張 A4、縮放 100%（實際大小）、邊距 0。`)) return;
+                    buildMultiPagePrintIframe(urls, 'A4透明貼紙');
+                }
+                return;
+            }
+            if (type === 'C') {
+                const pages = generateWorksheetCanvases();
+                if (!pages.length) { alert('請確認目前畫面或清單中有學習單內容！'); return; }
+                const urls = pages.map(c => c.toDataURL('image/png'));
+                if (action === 'download') {
+                    urls.forEach((u, i) => { const link=document.createElement('a'); link.download=`學習單_A4_第${i+1}頁_${Date.now()}.png`; link.href=u; link.click(); });
+                } else {
+                    if (!confirm(`即將列印：學習單練習紙
+
+共 ${urls.length} 頁。
+新版版型：貼部件 → 兩次書寫 → 語詞三層次，並支援智慧均衡分頁與複習挑戰區。
+
+請確認：紙張 A4、縮放 100%（實際大小）、邊距 0。`)) return;
+                    buildMultiPagePrintIframe(urls, '學習單練習紙');
+                }
+                return;
+            }
             const offCanvas = generateCanvas(type);
             if (!offCanvas) {
-                alert(`請確認目前畫面或清單中，有屬於【${type==='A'?'大格底字':(type==='B'?'小格透明':'學習單')}】的內容！`);
+                alert(`請確認目前畫面或清單中，有屬於【${type==='A'?'大格底字':'學習單'}】的內容！`);
                 return;
             }
 
@@ -1859,7 +3375,7 @@
 
             } else if (action === 'print') {
                 // ✅ 修法二：列印前確認對話框，提醒縮放比例
-                const typeLabel = type === 'A' ? '🌸 底字大格貼紙' : (type === 'B' ? '💦 透明小格貼紙' : '📝 學習單');
+                const typeLabel = type === 'A' ? '🌸 底字大格貼紙' : (type === 'B' ? '💦 A4透明貼紙' : '📝 學習單');
                 const students = getStudentCount();
                 const studentLine = students > 1 ? `  👥  學生人數 = ${students} 位（數量已自動 ×${students}）\n\n` : '';
                 const confirmed = confirm(
@@ -1888,11 +3404,142 @@
             buildPrintIframe(dataUrl, nameLabel);
         };
 
-        // 初始執行：預設同尺寸疊貼模式
-        setPrintMode('overlay');
-        updatePartRevealModeUI();
-        updateTemplateDropdown('default_老');
-        loadTemplate('default_老');
+        const fillerWordsEl = document.getElementById('fillerWords');
+        const fillRemainingAEl = document.getElementById('fillRemainingA');
+        if (fillerWordsEl) fillerWordsEl.addEventListener('input', updateFillerStatus);
+        if (fillRemainingAEl) fillRemainingAEl.addEventListener('change', updateFillerStatus);
+
+
+        const transparentFillerOptionEls = Array.from(document.querySelectorAll('.transparent-filler-option'));
+        const transparentCustomItemsEl = document.getElementById('transparentCustomItems');
+        const fillRemainingBEl = document.getElementById('fillRemainingB');
+        transparentFillerOptionEls.forEach(el => el.addEventListener('change', updateTransparentFillerUI));
+        if (transparentCustomItemsEl) transparentCustomItemsEl.addEventListener('input', updateTransparentFillerUI);
+        if (fillRemainingBEl) fillRemainingBEl.addEventListener('change', updateTransparentFillerUI);
+        document.getElementById('btnTransparentFillerQuickCute')?.addEventListener('click', () => {
+            setTransparentFillerModes(['animalEmoji', 'animalEmojiRewards', 'cuteEmoji']);
+            updateTransparentFillerUI();
+        });
+        document.getElementById('btnTransparentFillerClear')?.addEventListener('click', () => {
+            setTransparentFillerModes([]);
+            updateTransparentFillerUI();
+        });
+        const forceCenterBEl = document.getElementById('forceCenter_B');
+        if (forceCenterBEl) forceCenterBEl.addEventListener('change', () => { scheduleWorkspaceSave(); updateTransparentFillerUI(); });
+        document.getElementById('transparentShuffleStudentCount')?.addEventListener('input', () => {
+            getTransparentShuffleStudentCount();
+            updateTransparentShuffleUI();
+            renderQueueUI();
+            scheduleWorkspaceSave();
+        });
+        document.getElementById('btnShuffleTransparentParts')?.addEventListener('click', () => {
+            const count = getTransparentShuffleStudentCount();
+            if (count <= 0) return alert('請先輸入要使用隨機順序的學生人數，例如 4 位學生要 2 位隨機，就輸入 2。');
+            transparentShuffleEnabled = true;
+            transparentShuffleSeed = Math.floor(Math.random() * 2147483646) + 1;
+            updateTransparentShuffleUI();
+            renderQueueUI();
+            scheduleWorkspaceSave();
+        });
+        document.getElementById('btnResetTransparentOrder')?.addEventListener('click', () => {
+            transparentShuffleEnabled = false;
+            transparentShuffleStudentCount = 0;
+            const el = document.getElementById('transparentShuffleStudentCount');
+            if (el) el.value = 0;
+            updateTransparentShuffleUI();
+            renderQueueUI();
+            scheduleWorkspaceSave();
+        });
+        document.getElementById('studentCount')?.addEventListener('input', (e) => {
+            const val = Math.max(1, Math.min(20, parseInt(e.target.value) || 1));
+            e.target.value = val;
+            const top = document.getElementById('topStudentCount');
+            if (top) top.value = val;
+            renderQueueUI();
+            updateTransparentShuffleUI();
+            scheduleWorkspaceSave();
+        });
+        document.getElementById('topStudentCount')?.addEventListener('input', (e) => {
+            setStudentCountEverywhere(e.target.value);
+        });
+        document.getElementById('btnTopStudentsMinus')?.addEventListener('click', () => {
+            setStudentCountEverywhere(getStudentCount() - 1);
+        });
+        document.getElementById('btnTopStudentsPlus')?.addEventListener('click', () => {
+            setStudentCountEverywhere(getStudentCount() + 1);
+        });
+        updateTransparentFillerUI();
+        updateTransparentShuffleUI();
+
+
+        const worksheetShowTargetCharEl = document.getElementById('worksheetShowTargetChar');
+        const worksheetShowGhostCharEl = document.getElementById('worksheetShowGhostChar');
+        if (worksheetShowTargetCharEl) worksheetShowTargetCharEl.addEventListener('change', scheduleWorkspaceSave);
+        if (worksheetShowGhostCharEl) worksheetShowGhostCharEl.addEventListener('change', scheduleWorkspaceSave);
+        const worksheetChoiceMapEl = document.getElementById('worksheetChoiceMap');
+        if (worksheetChoiceMapEl) worksheetChoiceMapEl.addEventListener('input', scheduleWorkspaceSave);
+        const worksheetPaginationModeEl = document.getElementById('worksheetPaginationMode');
+        if (worksheetPaginationModeEl) worksheetPaginationModeEl.addEventListener('change', () => { updateWorksheetPaginationHint(); scheduleWorkspaceSave(); });
+        updateWorksheetWordModeUI();
+        updateWorksheetPaginationHint();
+
+        const btnToggleOutputPanel = document.getElementById('btnToggleOutputPanel');
+        const outputPanelBody = document.getElementById('outputPanelBody');
+        const outputCollapsedHint = document.getElementById('outputCollapsedHint');
+        function setOutputPanelOpen(open) {
+            if (!outputPanelBody || !btnToggleOutputPanel) return;
+            outputPanelBody.classList.toggle('hidden', !open);
+            btnToggleOutputPanel.textContent = open ? '⬆ 收合列印區' : '⬇ 展開列印區';
+            if (outputCollapsedHint) outputCollapsedHint.classList.toggle('hidden', open);
+        }
+        btnToggleOutputPanel?.addEventListener('click', () => {
+            setOutputPanelOpen(outputPanelBody?.classList.contains('hidden'));
+        });
+        setOutputPanelOpen(false);
+
+        document.getElementById('btnExportBackup')?.addEventListener('click', exportBackupData);
+        document.getElementById('backupFileInput')?.addEventListener('change', async (e) => {
+            const file = e.target.files && e.target.files[0];
+            if (!file) return;
+            try {
+                if (!confirm('匯入備份會覆蓋目前瀏覽器裡儲存的收藏、課次與暫存畫面，確定要繼續嗎？')) {
+                    e.target.value = '';
+                    return;
+                }
+                await importBackupFile(file);
+                alert('✅ 已成功匯入備份。');
+            } catch (error) {
+                console.error(error);
+                alert(`❌ 匯入失敗：${error.message}`);
+                setAutosaveStatus('⚠️ 匯入備份失敗', 'red');
+            } finally {
+                e.target.value = '';
+            }
+        });
+        document.getElementById('btnClearWorkspace')?.addEventListener('click', () => {
+            if (!confirm(`要清除「自動保存的目前畫面暫存」嗎？
+已儲存的生字範本與課次收藏不會刪除。`)) return;
+            localStorage.removeItem(WORKSPACE_STORAGE_KEY);
+            setAutosaveStatus('🧹 已清除畫面暫存', 'slate');
+            alert('✅ 已清除目前畫面暫存。下次開啟時不會自動還原這個畫面。');
+        });
+        window.addEventListener('beforeunload', saveWorkspaceNow);
+
+        // 初始執行
+        (async function initApp() {
+            ensureUncategorizedTemplates();
+            updateTemplateDropdown('default_老');
+            renderLessonLibrary();
+            const restored = await restoreWorkspaceState();
+            if (!restored) {
+                loadTemplate('default_老');
+                renderQueueUI();
+                updateFillerStatus();
+                updateTransparentFillerUI();
+                updateRowModeBadge();
+                setAutosaveStatus('💾 自動保存已啟用', 'emerald');
+            }
+        })();
     </script>
 </body>
 </html>
