@@ -8,7 +8,25 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap');
         body { font-family: 'Noto Sans TC', sans-serif; }
-        #canvasWrapper { max-height: calc(100vh - 4rem); }
+        /* Keep the output controls reachable at normal browser zoom. */
+        body { height: 100vh; height: 100dvh; }
+        #controlPanel { min-height: 0; min-width: 0; }
+        #controlHeader { flex-shrink: 0; }
+        #editorPanel { min-height: 0; }
+        #outputPanel { display: flex; flex-direction: column; flex-shrink: 0;
+            min-height: 0; max-height: 60vh; max-height: 60dvh; }
+        #outputPanel > :not(#outputPanelBody) { flex-shrink: 0; }
+        #outputPanelBody { min-height: 0; overflow-y: auto;
+            overscroll-behavior: contain; scrollbar-gutter: stable; }
+        #canvasWrapper { min-width: 0; min-height: 0; max-height: 100vh; max-height: 100dvh; }
+        @media (max-width: 767px) {
+            body { height: auto; min-height: 100dvh; overflow: auto; }
+            #controlPanel { height: auto; }
+            #editorPanel { overflow: visible; }
+            #outputPanel { max-height: none; }
+            #outputPanelBody { overflow: visible; }
+            #canvasWrapper { max-height: none; }
+        }
         canvas { max-width: 100%; height: auto; object-fit: contain; }
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; }
@@ -19,8 +37,8 @@
 <body class="bg-slate-100 h-screen overflow-hidden flex flex-col md:flex-row">
 
     <!-- 左側：控制面板 -->
-    <div class="w-full md:w-[62%] lg:w-[60%] bg-white shadow-xl flex flex-col h-full z-10">
-        <div class="p-4 bg-indigo-700 text-white shadow-md z-20 flex justify-between items-center">
+    <div id="controlPanel" class="w-full md:w-[62%] lg:w-[60%] bg-white shadow-xl flex flex-col h-full z-10">
+        <div id="controlHeader" class="p-4 bg-indigo-700 text-white shadow-md z-20 flex justify-between items-center">
             <div>
                 <h1 class="text-xl font-bold tracking-wider">國字部件標籤產生器</h1>
                 <p class="text-xs text-indigo-200 mt-1">內建網頁直印引擎 (100% 零縮放)</p>
@@ -28,7 +46,7 @@
         </div>
 
         <!-- 滾動控制區 -->
-        <div class="p-4 flex-1 overflow-y-auto space-y-4">
+        <div id="editorPanel" class="p-4 flex-1 overflow-y-auto space-y-4">
             
             <!-- ⭐ 範本管理區 -->
             <div class="bg-amber-50 p-3 rounded-lg border border-amber-200 shadow-sm">
@@ -364,16 +382,16 @@
         </div>
 
         <!-- 列印與下載輸出區 -->
-        <div class="p-3 bg-slate-100 border-t border-slate-300 z-20 shadow-[0_-4px_10px_-1px_rgba(0,0,0,0.1)]">
+        <div id="outputPanel" class="p-3 bg-slate-100 border-t border-slate-300 z-20 shadow-[0_-4px_10px_-1px_rgba(0,0,0,0.1)]">
             <div class="flex items-center justify-between gap-2 px-1">
                 <div class="flex items-center gap-2 min-w-0">
                     <h3 class="text-sm font-bold text-slate-800 whitespace-nowrap">輸出操作區</h3>
                     <span id="outputStudentBadge" class="text-xs bg-violet-100 text-violet-800 font-bold px-2 py-0.5 rounded-full border border-violet-200 whitespace-nowrap">👤 1 位學生</span>
                 </div>
-                <button type="button" id="btnToggleOutputPanel" class="bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 text-xs font-bold px-3 py-1.5 rounded shadow-sm whitespace-nowrap">⬇ 展開列印區</button>
+                <button type="button" id="btnToggleOutputPanel" aria-controls="outputPanelBody" aria-expanded="false" class="bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 text-xs font-bold px-3 py-1.5 rounded shadow-sm whitespace-nowrap">⬇ 展開列印區</button>
             </div>
             <p id="outputCollapsedHint" class="text-[10px] text-slate-500 mt-1 px-1">排版時可收合此區，列印或存圖前再展開即可。</p>
-            <div id="outputPanelBody" class="hidden mt-2">
+            <div id="outputPanelBody" role="region" aria-label="列印與下載選項" tabindex="0" class="hidden mt-2">
             
             <!-- ✅ 修法新增：列印提示橫幅 -->
             <div class="mb-2 bg-yellow-50 border border-yellow-300 rounded-lg px-3 py-2 text-[11px] text-yellow-800 font-bold flex items-start gap-2">
@@ -3489,6 +3507,7 @@
         function setOutputPanelOpen(open) {
             if (!outputPanelBody || !btnToggleOutputPanel) return;
             outputPanelBody.classList.toggle('hidden', !open);
+            btnToggleOutputPanel.setAttribute('aria-expanded', String(open));
             btnToggleOutputPanel.textContent = open ? '⬆ 收合列印區' : '⬇ 展開列印區';
             if (outputCollapsedHint) outputCollapsedHint.classList.toggle('hidden', open);
         }
