@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HanziBuilder - 文章填空學習單</title>
+    <title>HanziBuilder - 生字情境學習單</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&family=LXGW+WenKai+TC&display=swap">
     <style>
@@ -32,38 +32,40 @@
     <div id="controlPanel" class="w-full md:w-[46%] lg:w-[42%] bg-white shadow-xl flex flex-col h-full z-10">
         <div class="p-4 bg-indigo-700 text-white shadow-md z-20 flex justify-between items-center gap-2">
             <div>
-                <h1 class="text-xl font-bold tracking-wider">文章填空學習單</h1>
-                <p class="text-xs text-indigo-200 mt-1">用【】框住要挖空的字，輸出 A4 PNG／直接列印</p>
+                <h1 class="text-xl font-bold tracking-wider">生字情境學習單</h1>
+                <p class="text-xs text-indigo-200 mt-1">看部件寫生字 → 讀句子填生字</p>
             </div>
             <a href="./index.html" class="text-xs font-bold bg-indigo-600 hover:bg-indigo-500 border border-indigo-400 px-3 py-2 rounded shadow whitespace-nowrap">← 部件標籤產生器</a>
         </div>
 
         <div id="editorPanel" class="p-4 flex-1 overflow-y-auto space-y-4">
 
-            <!-- 1. 標題與說明 -->
-            <div class="bg-amber-50 p-3 rounded-lg border border-amber-200 shadow-sm space-y-2">
-                <label class="block text-sm font-bold text-amber-900">📝 1. 學習單標題</label>
-                <input id="titleInput" type="text" class="w-full p-2 border border-amber-300 rounded-md bg-white font-bold focus:ring-amber-500" value="文章填空學習單">
-                <label class="block text-xs font-bold text-amber-800">題目說明（留白則自動產生）</label>
-                <input id="instructionInput" type="text" class="w-full p-2 border border-amber-300 rounded-md bg-white text-sm" placeholder="請閱讀文章，從字詞庫中選出適當的字，填入□中。">
+            <!-- 1. 課次 -->
+            <div class="bg-violet-50 p-3 rounded-lg border border-violet-200 shadow-sm">
+                <label for="lessonSelect" class="block text-sm font-bold text-violet-900 mb-2">📚 1. 選擇課次生字</label>
+                <select id="lessonSelect" class="w-full p-2 border border-violet-300 rounded-md bg-white font-bold focus:ring-violet-500"></select>
+                <div id="manualBox" class="mt-2 hidden">
+                    <label for="manualChars" class="block text-xs font-bold text-violet-800 mb-1">手動輸入生字（每行一字，可加部件：<span class="kai">困=囗+木</span>）</label>
+                    <textarea id="manualChars" rows="4" class="kai w-full p-2 border border-violet-300 rounded-md bg-white text-lg" placeholder="困=囗+木&#10;震=雨+辰&#10;傲"></textarea>
+                </div>
+                <div id="charChips" class="flex flex-wrap gap-2 mt-3"></div>
+                <div class="flex items-center justify-between gap-2 mt-3">
+                    <p id="sourceNote" class="text-[10px] text-violet-700 leading-relaxed"></p>
+                    <label class="shrink-0 bg-white hover:bg-violet-100 text-violet-800 border border-violet-300 text-xs font-bold py-1.5 px-3 rounded shadow-sm cursor-pointer">⬆ 匯入備份檔<input type="file" id="backupFileInput" accept="application/json,.json" class="hidden"></label>
+                </div>
             </div>
 
-            <!-- 2. 文章 -->
-            <div class="bg-violet-50 p-3 rounded-lg border border-violet-200 shadow-sm">
+            <!-- 2. 句子 -->
+            <div class="bg-amber-50 p-3 rounded-lg border border-amber-200 shadow-sm">
                 <div class="flex items-center justify-between gap-2 mb-2">
-                    <label class="block text-sm font-bold text-violet-900">📖 2. 輸入文章</label>
-                    <span id="blankCount" class="text-[11px] font-bold text-violet-700 bg-white border border-violet-200 px-2 py-0.5 rounded-full">0 個空格</span>
+                    <label for="passageInput" class="block text-sm font-bold text-amber-900">📖 2. 情境句子（約 50 字）</label>
+                    <span id="passageCount" class="text-[11px] font-bold text-amber-800 bg-white border border-amber-200 px-2 py-0.5 rounded-full">0 字</span>
                 </div>
-                <textarea id="articleInput" rows="10" class="kai w-full p-3 border border-violet-300 rounded-md bg-white text-lg leading-relaxed focus:ring-violet-500" placeholder="例如：小明和【媽】【媽】一起去公【園】散步。"></textarea>
-                <div class="grid grid-cols-3 gap-2 mt-2">
-                    <button type="button" id="btnWrap" class="bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold py-2 rounded shadow transition-colors">【】框選挖空</button>
-                    <button type="button" id="btnUnwrapAll" class="bg-white hover:bg-violet-100 text-violet-800 border border-violet-300 text-xs font-bold py-2 rounded shadow-sm">🧹 清除所有【】</button>
-                    <button type="button" id="btnSample" class="bg-white hover:bg-violet-100 text-violet-800 border border-violet-300 text-xs font-bold py-2 rounded shadow-sm">📄 載入範例</button>
-                </div>
-                <div class="text-[11px] text-violet-700 leading-relaxed mt-2 space-y-1">
-                    <p>・反白文字後按「【】框選挖空」，或直接輸入全形【】。一個【】內可放一個字或一個語詞，例如【蝴蝶】。</p>
-                    <p>・自訂部件提示：<span class="kai font-bold">【媽|女馬】</span>、<span class="kai font-bold">【園|⿴囗袁】</span>；語詞用逗號分隔每個字：<span class="kai font-bold">【明天|日月,⿱一大】</span>。</p>
-                    <p>・沒有自訂時，會先找你在部件標籤產生器儲存的同名範本，再找內建常用字部件表。</p>
+                <textarea id="passageInput" rows="6" class="kai w-full p-3 border border-amber-300 rounded-md bg-white text-lg leading-relaxed focus:ring-amber-500" placeholder="寫一段包含本課生字的句子，生字會自動變成填空格。"></textarea>
+                <div id="coverage" class="flex flex-wrap gap-1.5 mt-2"></div>
+                <div class="text-[11px] text-amber-800 leading-relaxed mt-2 space-y-1">
+                    <p>・句子裡出現的本課生字會<b>自動挖空</b>，不用另外標記。每一課的句子會分開保存。</p>
+                    <p>・想多挖其他字，用全形【】框起來，例如【勇】【敢】。不想挖空某個生字時，在它前面加 \，例如 \困。</p>
                 </div>
             </div>
 
@@ -71,17 +73,25 @@
             <div class="bg-sky-50 p-3 rounded-lg border border-sky-200 shadow-sm">
                 <label class="block text-sm font-bold text-sky-900 mb-2">⚙️ 3. 版面選項</label>
                 <div class="grid grid-cols-2 gap-2 text-sm">
-                    <label class="flex items-center gap-2 bg-white border border-sky-200 rounded px-2 py-2 cursor-pointer"><input type="checkbox" id="optBank" checked class="w-4 h-4 accent-indigo-600"> 顯示字詞庫</label>
-                    <label class="flex items-center gap-2 bg-white border border-sky-200 rounded px-2 py-2 cursor-pointer"><input type="checkbox" id="optHints" class="w-4 h-4 accent-indigo-600"> 顯示部件提示（淡色）</label>
-                    <label class="flex items-center gap-2 bg-white border border-sky-200 rounded px-2 py-2 cursor-pointer"><input type="checkbox" id="optPractice" checked class="w-4 h-4 accent-indigo-600"> 下方加仿寫練習格</label>
+                    <label class="flex items-center gap-2 bg-white border border-sky-200 rounded px-2 py-2 cursor-pointer"><input type="checkbox" id="optWriteHint" checked class="w-4 h-4 accent-indigo-600"> 寫生字格有淡字</label>
+                    <label class="flex items-center gap-2 bg-white border border-sky-200 rounded px-2 py-2 cursor-pointer"><input type="checkbox" id="optColor" checked class="w-4 h-4 accent-indigo-600"> 部件彩色</label>
+                    <label class="flex items-center gap-2 bg-white border border-sky-200 rounded px-2 py-2 cursor-pointer"><input type="checkbox" id="optBank" checked class="w-4 h-4 accent-indigo-600"> 句子上方顯示字詞庫</label>
+                    <label class="flex items-center gap-2 bg-white border border-sky-200 rounded px-2 py-2 cursor-pointer"><input type="checkbox" id="optHints" class="w-4 h-4 accent-indigo-600"> 填空格淡色部件</label>
+                    <label class="flex items-center gap-2 bg-white border border-sky-200 rounded px-2 py-2 cursor-pointer"><input type="checkbox" id="optPractice" class="w-4 h-4 accent-indigo-600"> 最後加仿寫練習格</label>
                     <label class="flex items-center gap-2 bg-white border border-sky-200 rounded px-2 py-2 cursor-pointer"><input type="checkbox" id="optAnswer" class="w-4 h-4 accent-rose-600"> <span class="text-rose-700 font-bold">答案版</span></label>
                     <label class="flex items-center gap-2 bg-white border border-sky-200 rounded px-2 py-2 cursor-pointer"><input type="checkbox" id="optIndent" checked class="w-4 h-4 accent-indigo-600"> 段首空兩格</label>
                     <label class="flex items-center gap-2 bg-white border border-sky-200 rounded px-2 py-2 cursor-pointer"><input type="checkbox" id="optNameLine" checked class="w-4 h-4 accent-indigo-600"> 顯示班級姓名欄</label>
                 </div>
                 <div class="grid grid-cols-3 gap-2 mt-3 text-xs">
-                    <label class="block font-bold text-sky-800">文章字級
+                    <label class="block font-bold text-sky-800">每列生字數
+                        <select id="optCols" class="mt-1 w-full p-1.5 border border-sky-300 rounded bg-white font-normal">
+                            <option value="3">3 個（大）</option>
+                            <option value="4" selected>4 個</option>
+                            <option value="5">5 個（小）</option>
+                        </select>
+                    </label>
+                    <label class="block font-bold text-sky-800">句子字級
                         <select id="optFontSize" class="mt-1 w-full p-1.5 border border-sky-300 rounded bg-white font-normal">
-                            <option value="7">小（7 mm）</option>
                             <option value="8.5" selected>中（8.5 mm）</option>
                             <option value="10">大（10 mm）</option>
                             <option value="12">特大（12 mm）</option>
@@ -92,29 +102,20 @@
                             <option value="15">15 mm</option>
                             <option value="18" selected>18 mm</option>
                             <option value="22">22 mm</option>
-                            <option value="26">26 mm</option>
-                        </select>
-                    </label>
-                    <label class="block font-bold text-sky-800">每字仿寫行數
-                        <select id="optRows" class="mt-1 w-full p-1.5 border border-sky-300 rounded bg-white font-normal">
-                            <option value="1" selected>1 行</option>
-                            <option value="2">2 行</option>
-                            <option value="3">3 行</option>
                         </select>
                     </label>
                 </div>
+                <label for="titleInput" class="block text-xs font-bold text-sky-800 mt-3 mb-1">學習單標題（留白則用「課次＋生字情境學習單」）</label>
+                <input id="titleInput" type="text" class="w-full p-2 border border-sky-300 rounded-md bg-white text-sm">
             </div>
 
-            <!-- 4. 字詞庫與部件 -->
+            <!-- 4. 字詞庫順序 -->
             <div class="bg-emerald-50 p-3 rounded-lg border border-emerald-200 shadow-sm">
                 <div class="flex items-center justify-between gap-2 mb-2">
                     <label class="block text-sm font-bold text-emerald-900">🔀 4. 字詞庫順序</label>
                     <button type="button" id="btnShuffle" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-1.5 px-3 rounded shadow transition-colors">🔀 重新打亂</button>
                 </div>
                 <div id="bankPreview" class="kai flex flex-wrap gap-2 text-lg min-h-[2rem]"></div>
-                <label class="block text-sm font-bold text-emerald-900 mt-3 mb-1">🧩 挖空字與部件提示來源</label>
-                <div id="hintStatus" class="flex flex-wrap gap-1.5"></div>
-                <p class="text-[10px] text-emerald-700 mt-2">綠色＝自訂、藍色＝我的範本、紫色＝內建部件表、灰色＝找不到部件（提示格會留白，可用【字|部件】自訂）。</p>
             </div>
 
             <!-- 5. 輸出 -->
@@ -124,7 +125,7 @@
                     <button type="button" id="btnDownload" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold py-3 rounded shadow transition-colors">⬇ 下載 PNG</button>
                     <button type="button" id="btnPrint" class="bg-slate-800 hover:bg-slate-900 text-white text-sm font-bold py-3 rounded shadow transition-colors">🖨️ 直接列印</button>
                 </div>
-                <p class="text-[10px] text-slate-500 mt-2 leading-relaxed">A4 300 DPI（2480 × 3508 px）。內容超過一頁會自動分頁，每頁各存一張 PNG。列印時請選：紙張 A4、縮放 100%（實際大小）、邊距無。文章與設定會自動保存在此瀏覽器。</p>
+                <p class="text-[10px] text-slate-500 mt-2 leading-relaxed">A4 300 DPI（2480 × 3508 px），超過一頁會自動分頁。列印時請選：紙張 A4、縮放 100%（實際大小）、邊距無。</p>
             </div>
         </div>
     </div>
@@ -147,7 +148,7 @@
         const A_W = 30 * PX_PER_MM; // HanziBuilder 範本的底字格寬，用來換算範本座標
         const FONT_FAMILY = '"BiauKai", "DFKai-SB", "TW-Kai", "KaiTi", "LXGW WenKai TC", serif';
         const UI_FONT = '"Noto Sans TC", sans-serif';
-        const MARGIN_X = 16 * PX_PER_MM, MARGIN_TOP = 14 * PX_PER_MM, MARGIN_BOTTOM = 16 * PX_PER_MM;
+        const MARGIN_X = 16 * PX_PER_MM, MARGIN_TOP = 12 * PX_PER_MM, MARGIN_BOTTOM = 13 * PX_PER_MM;
         const CONTENT_W = PAGE_W - MARGIN_X * 2;
 
         const COLOR_TEXT = '#1e293b';
@@ -156,31 +157,37 @@
         const COLOR_GUIDE = '#e2e8f0';
         const COLOR_ANSWER = '#dc2626';
         const COLOR_ACCENT = '#4338ca';
+        const PART_COLORS = ['#FF6699', '#4AAEEA', '#00A86B', '#F5A623', '#9B59B6'];
 
         const DRAFT_KEY = 'clozeWorksheetDraft';
-        const SAMPLE_TEXT = `春天到了，公【園】裡開滿了美麗的【花】朵。
-小明和【媽】【媽】一起去散步，他們看見一隻【蝴蝶】在花叢中飛來飛去。
-小明開心的【說】：「春天真是太【美】了！」
-【媽】【媽】笑著點點頭，牽著小明的手慢慢走回【家】。`;
+        const DEMO_KEY = 'demo:4上第5課';
+        const MANUAL_KEY = 'manual';
+
+        // 示範課次（還沒有自己的課次收藏時使用）
+        const DEMO_LESSON = {
+            name: '示範：4上第5課',
+            chars: '困=囗+木\n佩=亻+几+巾\n捐=扌+口+月\n棄=亠+厶+世+木\n傲=亻+土+方+攵\n竭=立+曷\n震=雨+辰\n舉=與+手',
+            passage: '面對困難時，他從不放棄，總是竭盡全力完成工作。大家都很佩服他，他卻一點也不驕傲。這次地震後，他舉辦義賣活動，把所得全部捐給受災的家庭。'
+        };
 
         // ==========================================
-        // 內建常用字部件表（第一層結構，IDS 格式）
+        // 內建常用字部件表（第一層結構，IDS 格式）：給沒有範本的字當提示
         // ==========================================
         const BUILTIN_IDS_RAW = `
 媽⿰女馬 姐⿰女且 妹⿰女未 好⿰女子 她⿰女也 奶⿰女乃 姑⿰女古 娃⿰女圭 姓⿰女生 妙⿰女少
-們⿰亻門 你⿰亻尔 他⿰亻也 住⿰亻主 什⿰亻十 休⿰亻木 作⿰亻乍 信⿰亻言 位⿰亻立 何⿰亻可 做⿰亻故 伙⿰亻火 停⿰亻亭
+們⿰亻門 你⿰亻尔 他⿰亻也 住⿰亻主 什⿰亻十 休⿰亻木 作⿰亻乍 信⿰亻言 位⿰亻立 何⿰亻可 做⿰亻故 伙⿰亻火 停⿰亻亭 傲⿰亻敖
 地⿰土也 場⿰土昜 城⿰土成 坡⿰土皮 明⿰日月 時⿰日寺 晴⿰日青 映⿰日央 晚⿰日免
 林⿰木木 樹⿰木尌 校⿰木交 機⿰木幾 桃⿰木兆 根⿰木艮 板⿰木反 村⿰木寸 杯⿰木不 相⿰木目 樣⿰木羕 橋⿰木喬
 河⿰氵可 海⿰氵每 湖⿰氵胡 池⿰氵也 洗⿰氵先 清⿰氵青 波⿰氵皮 沙⿰氵少 活⿰氵舌 江⿰氵工 汗⿰氵干
 說⿰言兌 話⿰言舌 語⿰言吾 請⿰言青 讀⿰言賣 謝⿰言射 記⿰言己 詩⿰言寺
 吃⿰口乞 叫⿰口丩 唱⿰口昌 吹⿰口欠 吸⿰口及 鳴⿰口鳥
 跑⿰足包 跳⿰足兆 路⿰足各 跟⿰足艮 跌⿰足失 踢⿰足易
-打⿰扌丁 拍⿰扌白 找⿰扌戈 抱⿰扌包 拉⿰扌立 推⿰扌隹 把⿰扌巴 指⿰扌旨
+打⿰扌丁 拍⿰扌白 找⿰扌戈 抱⿰扌包 拉⿰扌立 推⿰扌隹 把⿰扌巴 指⿰扌旨 捐⿰扌肙
 眼⿰目艮 睛⿰目青 睡⿰目垂 蝴⿰虫胡 蝶⿰虫枼 蛙⿰虫圭 蛇⿰虫它
 紅⿰糸工 給⿰糸合 紙⿰糸氏 線⿰糸泉 鈴⿰金令 錢⿰金戔 飯⿰飠反 餅⿰飠并
 被⿰衤皮 衫⿰衤彡 袖⿰衤由 補⿰衤甫 社⿰礻土 神⿰礻申 福⿰礻畐 視⿰礻見 祝⿰礻兄
 狗⿰犭句 猴⿰犭侯 豬⿰豕者 秋⿰禾火 和⿰禾口 秒⿰禾少 快⿰忄夬 情⿰忄青 怕⿰忄白 慢⿰忄曼 懂⿰忄董
-鴨⿰甲鳥 朋⿰月月 到⿰至刂 新⿰亲斤 動⿰重力 外⿰夕卜 很⿰彳艮 往⿰彳主 冷⿰冫令
+鴨⿰甲鳥 朋⿰月月 到⿰至刂 新⿰亲斤 動⿰重力 外⿰夕卜 很⿰彳艮 往⿰彳主 冷⿰冫令 竭⿰立曷
 腳⿰月卻 放⿰方攵 故⿰古攵 數⿰婁攵 船⿰舟㕣 雞⿰奚隹 孩⿰子亥 孫⿰子系
 陽⿰阝昜 院⿰阝完 都⿰者阝 部⿰咅阝 郵⿰垂阝
 珠⿰王朱 球⿰王求 玩⿰王元 現⿰王見 理⿰王里
@@ -189,12 +196,12 @@
 草⿱艹早 花⿱艹化 苗⿱艹田 葉⿱艹枼 菜⿱艹采 藍⿱艹監 落⿱艹洛
 笑⿱⺮夭 筆⿱⺮聿 等⿱⺮寺 答⿱⺮合 節⿱⺮即 簡⿱⺮間 籃⿱⺮監 笛⿱⺮由 箱⿱⺮相 筷⿱⺮快
 字⿱宀子 家⿱宀豕 安⿱宀女 室⿱宀至 空⿱穴工 窗⿱穴囱 究⿱穴九
-雲⿱雨云 雪⿱雨彐 雷⿱雨田 星⿱日生 早⿱日十 晨⿱日辰 景⿱日京 暑⿱日者 最⿱曰取
+雲⿱雨云 雪⿱雨彐 雷⿱雨田 震⿱雨辰 星⿱日生 早⿱日十 晨⿱日辰 景⿱日京 暑⿱日者 最⿱曰取
 思⿱田心 想⿱相心 念⿱今心 忘⿱亡心 感⿱咸心 意⿱音心 息⿱自心 您⿱你心 忠⿱中心
 李⿱木子 杏⿱木口 呆⿱口木 男⿱田力 岩⿱山石 尖⿱小大 炎⿱火火 多⿱夕夕 吉⿱士口 架⿱加木
 買⿱罒貝 賣⿱士買 貨⿱化貝 資⿱次貝 袋⿱代衣 裝⿱壯衣 盒⿱合皿 盆⿱分皿 盤⿱般皿
-蛋⿱疋虫 習⿱羽白 皇⿱白王 泉⿱白水 驚⿱敬馬
-國⿴囗或 園⿴囗袁 圓⿴囗員 回⿴囗口 因⿴囗大 圍⿴囗韋
+蛋⿱疋虫 習⿱羽白 皇⿱白王 泉⿱白水 驚⿱敬馬 舉⿱與手
+國⿴囗或 園⿴囗袁 圓⿴囗員 回⿴囗口 因⿴囗大 圍⿴囗韋 困⿴囗木
 問⿵門口 間⿵門日 開⿵門开 閃⿵門人 聞⿵門耳 閱⿵門兌
 這⿺辶言 還⿺辶睘 進⿺辶隹 道⿺辶首 送⿺辶关 過⿺辶咼 遠⿺辶袁 近⿺辶斤 運⿺辶軍 迎⿺辶卬 遊⿺辶斿 速⿺辶束
 建⿺廴聿 起⿺走己 趣⿺走取 趕⿺走旱
@@ -205,70 +212,164 @@
             const chars = Array.from(entry);
             if (chars.length >= 3) BUILTIN_IDS[chars[0]] = chars.slice(1).join('');
         });
-
         const IDC = '⿰⿱⿲⿳⿴⿵⿶⿷⿸⿹⿺⿻';
-        // 部件在左／上時通常較窄的偏旁
-        const NARROW_LEFT = '亻扌氵忄犭礻衤飠彳冫阝口土日目王木女糸金足言虫禾火月子山石米舟馬貝方至甲豕匕';
+        const NARROW_LEFT = '亻扌氵忄犭礻衤飠彳冫阝口土日目王木女糸金足言虫禾火月子山石米舟馬貝方至甲豕匕立';
         const NARROW_TOP = '艹⺮宀穴雨罒士';
 
-        // ==========================================
-        // 讀取 HanziBuilder 的「我的範本」（同網域 localStorage）
-        // ==========================================
-        function loadUserTemplates() {
-            try {
-                const data = JSON.parse(localStorage.getItem('myCustomStickers') || '{}');
-                return (data && typeof data === 'object') ? data : {};
-            } catch (e) { return {}; }
-        }
-        let userTemplates = loadUserTemplates();
-
-        function getTemplateHint(ch) {
-            const comps = userTemplates[ch];
-            if (!Array.isArray(comps)) return null;
-            const texts = comps.filter(c => c && c.type === 'text' && c.char && c.active !== false);
-            if (!texts.length) return null;
-            return { kind: 'template', comps: texts.map(c => ({ char: c.char, size: Number(c.size) || 200, x: Number(c.x) || 0, y: Number(c.y) || 0 })) };
-        }
-
         function parseHintText(text) {
-            const chars = Array.from((text || '').replace(/[+＋\s]/g, ''));
+            const chars = Array.from((text || '').replace(/[+＋、,，\s]/g, ''));
             if (!chars.length) return null;
             if (IDC.includes(chars[0]) && chars.length >= 3) return { kind: 'ids', op: chars[0], parts: chars.slice(1) };
             return { kind: 'list', parts: chars };
         }
 
-        function resolveHint(ch, manual) {
-            if (manual) { const h = parseHintText(manual); if (h) return { ...h, source: 'manual' }; }
-            const tpl = getTemplateHint(ch);
-            if (tpl) return { ...tpl, source: 'template' };
-            if (BUILTIN_IDS[ch]) return { ...parseHintText(BUILTIN_IDS[ch]), source: 'builtin' };
-            return null;
+        // ==========================================
+        // 讀取 HanziBuilder 的範本與課次收藏（同網域 localStorage，或匯入的備份檔）
+        // ==========================================
+        function readJson(key) {
+            try { const v = JSON.parse(localStorage.getItem(key) || 'null'); return v && typeof v === 'object' ? v : null; }
+            catch (e) { return null; }
+        }
+        let library = { templates: {}, lessons: {}, source: 'none' };
+        let importedLibrary = null; // 匯入的備份只放在記憶體，不覆蓋部件標籤產生器的資料
+
+        function loadLibrary() {
+            if (importedLibrary) { library = importedLibrary; return; }
+            library = {
+                templates: readJson('myCustomStickers') || {},
+                lessons: readJson('myLessonCollections') || {},
+                source: 'local'
+            };
+        }
+
+        function templateComps(name) {
+            const stored = library.templates[name];
+            const comps = Array.isArray(stored) ? stored : (stored && Array.isArray(stored.comps) ? stored.comps : []);
+            return comps.filter(c => c && c.active !== false && ((c.type === 'text' && c.char) || (c.type === 'image' && c.imgBase64)));
+        }
+
+        // 範本名稱 → 生字（例如「困」或「困(2)」→「困」）
+        function charOfName(name) {
+            const first = Array.from(String(name).trim())[0] || '';
+            return first;
+        }
+
+        const imageCache = new Map();
+        function loadImage(src) {
+            if (imageCache.has(src)) return imageCache.get(src);
+            const p = new Promise(resolve => {
+                const img = new Image();
+                img.onload = () => resolve(img);
+                img.onerror = () => resolve(null);
+                img.src = src;
+            });
+            imageCache.set(src, p);
+            return p;
+        }
+
+        // 每個生字的資料：{ ch, name, parts:[{type,char,color,img}], tpl:[範本部件(含位置)], ids }
+        async function buildCharInfo(entry) {
+            const info = { ch: entry.ch, name: entry.name || entry.ch, parts: [], tpl: null, ids: null, source: 'none' };
+            const comps = entry.name ? templateComps(entry.name) : [];
+            if (comps.length) {
+                info.source = 'template';
+                info.tpl = [];
+                for (const c of comps) {
+                    const img = c.type === 'image' ? await loadImage(c.imgBase64) : null;
+                    if (c.type === 'image' && !img) continue;
+                    const comp = { type: c.type, char: c.char, color: c.color || COLOR_TEXT, size: Number(c.size) || 200, x: Number(c.x) || 0, y: Number(c.y) || 0, img };
+                    info.tpl.push(comp);
+                    info.parts.push(comp);
+                }
+            }
+            if (!info.parts.length) {
+                const hint = parseHintText(entry.manual || '') || parseHintText(BUILTIN_IDS[entry.ch] || '');
+                if (hint) {
+                    info.source = entry.manual ? 'manual' : 'builtin';
+                    info.ids = hint;
+                    info.parts = hint.parts.map((p, i) => ({ type: 'text', char: p, color: PART_COLORS[i % PART_COLORS.length] }));
+                }
+            }
+            return info;
         }
 
         // ==========================================
-        // 文章解析：【字】或【字詞|部件提示】
+        // 課次清單
         // ==========================================
-        function parseArticle(text) {
+        function lessonOptions() {
+            const opts = [];
+            const names = Object.keys(library.lessons || {});
+            names.forEach(name => {
+                const list = (library.lessons[name] || []).filter(n => library.templates[n]);
+                if (list.length) opts.push({ key: 'lesson:' + name, label: `📚 ${name}（${list.length}字）`, name });
+            });
+            opts.push({ key: DEMO_KEY, label: `🧪 ${DEMO_LESSON.name}` });
+            opts.push({ key: MANUAL_KEY, label: '✍️ 手動輸入生字' });
+            return opts;
+        }
+
+        function parseManualChars(text) {
+            const out = [];
+            (text || '').split(/\n+/).forEach(line => {
+                const t = line.trim();
+                if (!t) return;
+                const [chPart, partsPart = ''] = t.split(/[=＝:：]/);
+                const ch = Array.from(chPart.trim())[0];
+                if (ch && !out.some(o => o.ch === ch)) out.push({ ch, manual: partsPart.trim() });
+            });
+            return out;
+        }
+
+        function entriesForLesson(key) {
+            if (key.startsWith('lesson:')) {
+                const name = key.slice(7);
+                const seen = new Set();
+                return (library.lessons[name] || []).filter(n => library.templates[n]).map(n => ({ ch: charOfName(n), name: n }))
+                    .filter(e => e.ch && !seen.has(e.ch) && seen.add(e.ch));
+            }
+            if (key === DEMO_KEY) return parseManualChars(DEMO_LESSON.chars);
+            return parseManualChars(els.manual.value);
+        }
+
+        function lessonDisplayName(key) {
+            if (key.startsWith('lesson:')) return key.slice(7);
+            if (key === DEMO_KEY) return '4上第5課';
+            return '';
+        }
+
+        // ==========================================
+        // 句子解析：本課生字自動挖空；【】可額外挖空；\字 表示不要挖空
+        // ==========================================
+        function parsePassage(text, charMap) {
             const paragraphs = [];
             const blanks = [];
+            const hintFor = ch => {
+                const info = charMap.get(ch);
+                if (info) return info.tpl ? { kind: 'template', comps: info.tpl } : info.ids;
+                return parseHintText(BUILTIN_IDS[ch] || '');
+            };
+            const addBlank = (tokens, word) => {
+                const blank = { t: 'b', word, chars: Array.from(word).map(ch => ({ ch, hint: hintFor(ch) })) };
+                tokens.push(blank); blanks.push(blank);
+            };
             text.replace(/\r/g, '').split('\n').forEach(line => {
                 if (!line.trim()) { paragraphs.push(null); return; }
                 const tokens = [];
-                const re = /【([^【】\n]*)】/g;
-                let last = 0, m;
-                while ((m = re.exec(line))) {
-                    Array.from(line.slice(last, m.index)).forEach(ch => tokens.push({ t: 'c', ch }));
-                    last = re.lastIndex;
-                    const [wordRaw, hintRaw = ''] = m[1].split(/[|｜]/);
-                    const word = (wordRaw || '').trim();
-                    if (!word) continue;
-                    const hintParts = hintRaw.split(/[,，、]/);
-                    const chars = Array.from(word).map((ch, i) => ({ ch, hint: resolveHint(ch, (hintParts[i] || '').trim()) }));
-                    const blank = { t: 'b', word, chars };
-                    tokens.push(blank);
-                    blanks.push(blank);
+                const chars = Array.from(line);
+                for (let i = 0; i < chars.length; i++) {
+                    const ch = chars[i];
+                    if (ch === '\\' && i + 1 < chars.length) { tokens.push({ t: 'c', ch: chars[++i] }); continue; }
+                    if (ch === '【') {
+                        const end = chars.indexOf('】', i + 1);
+                        if (end > i) {
+                            const word = chars.slice(i + 1, end).join('').trim();
+                            if (word) addBlank(tokens, word);
+                            i = end; continue;
+                        }
+                    }
+                    if (charMap.has(ch)) addBlank(tokens, ch);
+                    else tokens.push({ t: 'c', ch });
                 }
-                Array.from(line.slice(last)).forEach(ch => tokens.push({ t: 'c', ch }));
                 paragraphs.push(tokens);
             });
             while (paragraphs.length && paragraphs[paragraphs.length - 1] === null) paragraphs.pop();
@@ -296,15 +397,13 @@
             }
             return arr;
         }
-        function getBankWords(blanks, seed) {
-            const unique = [...new Set(blanks.map(b => b.word))];
-            if (unique.length < 2) return unique;
-            // 避免打亂後剛好和原文順序一樣
+        function shuffleAwayFromOriginal(list, seed) {
+            if (list.length < 2) return list.slice();
             for (let k = 0; k < 20; k++) {
-                const out = shuffled(unique, seed + k * 7919);
-                if (out.some((w, i) => w !== unique[i])) return out;
+                const out = shuffled(list, seed + k * 7919);
+                if (out.some((w, i) => w !== list[i])) return out;
             }
-            return unique.slice().reverse();
+            return list.slice().reverse();
         }
 
         // ==========================================
@@ -312,7 +411,6 @@
         // ==========================================
         function kaiFont(px) { return `${Math.round(px)}px ${FONT_FAMILY}`; }
 
-        // 在 (x, y, w, h) 範圍內畫一個字，必要時壓扁／拉長，模擬部件比例
         function drawGlyphInRect(ctx, ch, x, y, w, h) {
             ctx.save();
             ctx.translate(x + w / 2, y + h / 2);
@@ -322,6 +420,27 @@
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText(ch, 0, size * 0.03);
+            ctx.restore();
+        }
+
+        // 單一部件畫在方格中央（自動縮放到格內）
+        function drawPartInBox(ctx, part, x, y, size, color) {
+            const inner = size * 0.84;
+            const cx = x + size / 2, cy = y + size / 2;
+            ctx.save();
+            if (part.type === 'image' && part.img) {
+                const r = Math.min(inner / part.img.width, inner / part.img.height);
+                const w = part.img.width * r, h = part.img.height * r;
+                ctx.drawImage(part.img, cx - w / 2, cy - h / 2, w, h);
+            } else {
+                ctx.fillStyle = color;
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                let fs = inner;
+                ctx.font = kaiFont(fs);
+                const mw = ctx.measureText(part.char).width;
+                if (mw > inner) { fs *= inner / mw; ctx.font = kaiFont(fs); }
+                ctx.fillText(part.char, cx, cy + fs * 0.03);
+            }
             ctx.restore();
         }
 
@@ -344,7 +463,7 @@
             }
         }
 
-        // 在方格中畫淡色部件提示
+        // 在填空格中畫淡色部件提示：範本照原位置，否則依結構排列
         function drawHint(ctx, hint, x, y, size) {
             if (!hint) return;
             const pad = size * 0.08;
@@ -357,8 +476,15 @@
                 const cx = x + size / 2, cy = y + size / 2;
                 ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
                 hint.comps.forEach(c => {
-                    ctx.font = kaiFont(c.size * scale);
-                    ctx.fillText(c.char, cx + c.x * scale, cy + c.y * scale);
+                    if (c.type === 'image' && c.img) {
+                        const h = c.size * scale, w = c.img.width / c.img.height * h;
+                        ctx.globalAlpha = 0.28;
+                        ctx.drawImage(c.img, cx + c.x * scale - w / 2, cy + c.y * scale - h / 2, w, h);
+                        ctx.globalAlpha = 1;
+                    } else if (c.char) {
+                        ctx.font = kaiFont(c.size * scale);
+                        ctx.fillText(c.char, cx + c.x * scale, cy + c.y * scale);
+                    }
                 });
             } else if (hint.kind === 'ids' && idsRects(hint.op, hint.parts)) {
                 const rects = idsRects(hint.op, hint.parts);
@@ -366,8 +492,7 @@
                     const [rx, ry, rw, rh] = rects[i];
                     drawGlyphInRect(ctx, p, ix + rx * s, iy + ry * s, rw * s, rh * s);
                 });
-            } else {
-                // 沒有結構資訊：部件平均排成一列（最多兩列）
+            } else if (hint.parts) {
                 const parts = hint.parts;
                 const cols = parts.length <= 3 ? parts.length : Math.ceil(parts.length / 2);
                 const rows = Math.ceil(parts.length / cols);
@@ -392,6 +517,13 @@
             ctx.restore();
         }
 
+        // 田字格（紅框＋虛線十字），與仿寫格同一風格
+        function drawTianGrid(ctx, x, y, size) {
+            drawDashedCross(ctx, x, y, size, '#fca5a5', 3);
+            ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 4;
+            ctx.strokeRect(x, y, size, size);
+        }
+
         function roundRect(ctx, x, y, w, h, r) {
             ctx.beginPath();
             ctx.moveTo(x + r, y);
@@ -402,30 +534,47 @@
             ctx.closePath();
         }
 
+        function sectionHeaderBlock(title, note) {
+            const secFs = 6.2 * PX_PER_MM;
+            return {
+                h: secFs * 2.1, keepWithNext: true,
+                draw(ctx, y) {
+                    const cy = y + secFs * 1.05;
+                    ctx.fillStyle = COLOR_ACCENT;
+                    ctx.fillRect(MARGIN_X, cy - secFs * 0.55, 1.6 * PX_PER_MM, secFs * 1.1);
+                    ctx.fillStyle = COLOR_TEXT; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+                    ctx.font = kaiFont(secFs);
+                    ctx.fillText(title, MARGIN_X + 3.5 * PX_PER_MM, cy);
+                    if (note) {
+                        const tw = ctx.measureText(title).width;
+                        ctx.font = `${Math.round(secFs * 0.6)}px ${UI_FONT}`;
+                        ctx.fillStyle = '#64748b';
+                        ctx.fillText(note, MARGIN_X + 3.5 * PX_PER_MM + tw + secFs * 0.6, cy + secFs * 0.08);
+                    }
+                }
+            };
+        }
+
         // ==========================================
-        // 排版：把內容切成一個個「區塊」，再分頁
+        // 排版：區塊 → 分頁
         // ==========================================
         const NO_LINE_START = '，。、；：！？」』）》〉…—,.;:!?)]';
         const NO_LINE_END = '「『（《〈([';
 
-        function buildBlocks(state, parsed, measureCtx) {
+        function buildBlocks(state, chars, parsed, measureCtx) {
             const blocks = [];
-            const fs = state.fontMm * PX_PER_MM;
-            const box = fs * 1.3;
-            const blankGap = fs * 0.12;
-            const lineH = box * 1.45;
 
             // --- 標題 ---
             const titleSize = 9 * PX_PER_MM;
             const nameSize = 5 * PX_PER_MM;
             const headerH = titleSize * 1.5 + (state.nameLine ? nameSize * 2.2 : 0) + 4 * PX_PER_MM;
             blocks.push({
-                h: headerH, firstPageOnly: true,
+                h: headerH,
                 draw(ctx, y) {
                     ctx.fillStyle = COLOR_TEXT;
                     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
                     ctx.font = kaiFont(titleSize);
-                    ctx.fillText(state.title || '文章填空學習單', PAGE_W / 2, y + titleSize * 0.7);
+                    ctx.fillText(state.title, PAGE_W / 2, y + titleSize * 0.7);
                     let yy = y + titleSize * 1.5;
                     if (state.nameLine) {
                         const fields = [['班級', 22], ['座號', 16], ['姓名', 40]];
@@ -448,189 +597,231 @@
                 }
             });
 
-            // --- 題目說明 ---
-            const insSize = 5.5 * PX_PER_MM;
-            const instruction = state.instruction || (state.showBank
-                ? '請閱讀文章，從字詞庫中選出適當的字，填入□中。'
-                : '請閱讀文章，在□中填入適當的字。');
-            blocks.push({
-                h: insSize * 2, firstPageOnly: true,
-                draw(ctx, y) {
-                    ctx.fillStyle = COLOR_TEXT; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-                    ctx.font = kaiFont(insSize);
-                    ctx.fillText(instruction, MARGIN_X, y + insSize);
-                }
-            });
+            // --- 一、看部件，寫生字 ---
+            if (chars.length) {
+                blocks.push(sectionHeaderBlock('一、看部件，寫生字', '把上面的部件組合起來，寫在下面的格子裡。'));
+                const cols = state.cols;
+                const gap = 4 * PX_PER_MM;
+                const cardW = (CONTENT_W - gap * (cols - 1)) / cols;
+                const pad = 3 * PX_PER_MM;
+                const plusW = 4.5 * PX_PER_MM;
+                // 每張卡片依自己的部件數決定部件格大小；部件列高度固定，讓整排對齊
+                const partSizeFor = n => Math.min(15 * PX_PER_MM, (cardW - pad * 2 - plusW * (Math.max(1, n) - 1)) / Math.max(1, n));
+                const slotH = Math.max(...chars.map(c => partSizeFor(c.parts.length)));
+                const arrowH = 7.5 * PX_PER_MM;
+                const writeSize = Math.min(cardW - pad * 2, 28 * PX_PER_MM);
+                const cardH = pad + slotH + arrowH + writeSize + pad;
+                for (let start = 0; start < chars.length; start += cols) {
+                    const row = chars.slice(start, start + cols);
+                    blocks.push({
+                        h: cardH + gap,
+                        draw(ctx, y) {
+                            row.forEach((info, i) => {
+                                const x = MARGIN_X + i * (cardW + gap);
+                                roundRect(ctx, x, y, cardW, cardH, 3 * PX_PER_MM);
+                                ctx.fillStyle = '#f8fafc'; ctx.fill();
+                                ctx.strokeStyle = '#c7d2fe'; ctx.lineWidth = 4; ctx.stroke();
 
-            // --- 字詞庫 ---
-            if (state.showBank && state.bankWords.length) {
-                const itemFs = fs * 0.95;
-                measureCtx.font = kaiFont(itemFs);
-                const padX = itemFs * 0.55, itemH = itemFs * 1.55, gapX = itemFs * 0.7, gapY = itemFs * 0.5;
-                const innerPad = 5 * PX_PER_MM, labelH = 6 * PX_PER_MM;
-                const innerW = CONTENT_W - innerPad * 2;
-                const placed = [];
-                let x = 0, row = 0;
-                state.bankWords.forEach(w => {
-                    const iw = measureCtx.measureText(w).width + padX * 2;
-                    if (x > 0 && x + iw > innerW) { x = 0; row++; }
-                    placed.push({ w, x, row, iw });
-                    x += iw + gapX;
-                });
-                const rows = row + 1;
-                const bankH = labelH + innerPad + rows * itemH + (rows - 1) * gapY + innerPad;
-                blocks.push({
-                    h: bankH + 5 * PX_PER_MM,
-                    draw(ctx, y) {
-                        const top = y + labelH / 2;
-                        ctx.save();
-                        roundRect(ctx, MARGIN_X, top, CONTENT_W, bankH - labelH / 2, 3 * PX_PER_MM);
-                        ctx.fillStyle = '#f8fafc'; ctx.fill();
-                        ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 4; ctx.setLineDash([18, 12]); ctx.stroke();
-                        ctx.restore();
-                        // 標籤
-                        const lblFs = 4.8 * PX_PER_MM;
-                        ctx.font = kaiFont(lblFs);
-                        const lw = ctx.measureText('字詞庫').width + lblFs * 1.2;
-                        roundRect(ctx, MARGIN_X + 5 * PX_PER_MM, y, lw, labelH, labelH / 2);
-                        ctx.fillStyle = COLOR_ACCENT; ctx.fill();
-                        ctx.fillStyle = '#ffffff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                        ctx.fillText('字詞庫', MARGIN_X + 5 * PX_PER_MM + lw / 2, y + labelH / 2 + 2);
-                        // 項目
-                        ctx.font = kaiFont(itemFs);
-                        placed.forEach(p => {
-                            const ix = MARGIN_X + innerPad + p.x;
-                            const iy = y + labelH + innerPad + p.row * (itemH + gapY);
-                            roundRect(ctx, ix, iy, p.iw, itemH, itemH * 0.25);
-                            ctx.fillStyle = '#ffffff'; ctx.fill();
-                            ctx.strokeStyle = COLOR_BOX; ctx.lineWidth = 3; ctx.stroke();
-                            ctx.fillStyle = COLOR_TEXT; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                            ctx.fillText(p.w, ix + p.iw / 2, iy + itemH / 2 + itemFs * 0.03);
-                        });
-                    }
-                });
+                                // 部件列
+                                const n = info.parts.length;
+                                const partSize = partSizeFor(n);
+                                const rowW = n * partSize + (n - 1) * plusW;
+                                let px = x + (cardW - rowW) / 2;
+                                const py = y + pad + (slotH - partSize) / 2;
+                                const slotBottom = y + pad + slotH;
+                                if (!n) {
+                                    ctx.fillStyle = '#94a3b8'; ctx.font = `${Math.round(3.5 * PX_PER_MM)}px ${UI_FONT}`;
+                                    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                                    ctx.fillText('（尚未設定部件）', x + cardW / 2, y + pad + slotH / 2);
+                                }
+                                info.parts.forEach((part, pi) => {
+                                    roundRect(ctx, px, py, partSize, partSize, partSize * 0.12);
+                                    ctx.fillStyle = '#ffffff'; ctx.fill();
+                                    ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 3; ctx.stroke();
+                                    drawPartInBox(ctx, part, px, py, partSize, state.color ? part.color : COLOR_TEXT);
+                                    px += partSize;
+                                    if (pi < n - 1) {
+                                        ctx.fillStyle = '#64748b'; ctx.font = `${Math.round(plusW * 0.9)}px ${UI_FONT}`;
+                                        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                                        ctx.fillText('+', px + plusW / 2, py + partSize / 2);
+                                        px += plusW;
+                                    }
+                                });
+
+                                // 箭頭
+                                const ax = x + cardW / 2, ay = slotBottom + arrowH / 2;
+                                ctx.strokeStyle = '#60a5fa'; ctx.fillStyle = '#60a5fa'; ctx.lineWidth = 6;
+                                ctx.beginPath(); ctx.moveTo(ax, ay - arrowH * 0.32); ctx.lineTo(ax, ay + arrowH * 0.12); ctx.stroke();
+                                ctx.beginPath(); ctx.moveTo(ax - arrowH * 0.22, ay + arrowH * 0.05); ctx.lineTo(ax + arrowH * 0.22, ay + arrowH * 0.05); ctx.lineTo(ax, ay + arrowH * 0.35); ctx.closePath(); ctx.fill();
+
+                                // 寫生字格
+                                const wx = x + (cardW - writeSize) / 2, wy = slotBottom + arrowH;
+                                ctx.fillStyle = '#ffffff'; ctx.fillRect(wx, wy, writeSize, writeSize);
+                                drawTianGrid(ctx, wx, wy, writeSize);
+                                if (state.answer || state.writeHint) {
+                                    ctx.fillStyle = state.answer ? COLOR_ANSWER : COLOR_HINT;
+                                    ctx.font = kaiFont(writeSize * 0.8);
+                                    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                                    ctx.fillText(info.ch, wx + writeSize / 2, wy + writeSize / 2 + writeSize * 0.03);
+                                }
+                            });
+                        }
+                    });
+                }
             }
 
-            // --- 文章 ---
-            measureCtx.font = kaiFont(fs);
-            const charW = ch => Math.max(measureCtx.measureText(ch).width, /[⺀-￯]/.test(ch) ? fs : 0);
-            const tokW = tok => tok.t === 'b' ? tok.chars.length * box + blankGap * 2 : charW(tok.ch);
+            // --- 二、讀句子，填生字 ---
+            if (parsed.paragraphs.length) {
+                const fs = state.fontMm * PX_PER_MM;
+                const box = fs * 1.3;
+                const blankGap = fs * 0.12;
+                const lineH = box * 1.45;
+                const sectionStart = blocks.length;
+                blocks.push(sectionHeaderBlock('二、讀句子，填生字', state.showBank && state.bankWords.length
+                    ? '從字詞庫選出適當的生字，寫進□裡。' : '想一想，□裡要填哪一個生字？'));
 
-            parsed.paragraphs.forEach((para, pi) => {
-                if (para === null) { blocks.push({ h: lineH * 0.5, draw() {} }); return; }
-                let toks = [];
-                if (state.indent) toks.push({ t: 's', w: fs * 2 });
-                para.forEach(tok => {
-                    if (tok.t === 'b' && tokW(tok) > CONTENT_W) {
-                        tok.chars.forEach(c => toks.push({ t: 'b', word: c.ch, chars: [c] }));
-                    } else toks.push(tok);
-                });
-                toks = toks.map(tok => ({ ...tok, w: tok.t === 's' ? tok.w : tokW(tok) }));
-
-                const lines = [];
-                let cur = [], x = 0;
-                toks.forEach(tok => {
-                    if (cur.length && x + tok.w > CONTENT_W) {
-                        const hang = tok.t === 'c' && NO_LINE_START.includes(tok.ch) && x + tok.w <= CONTENT_W + fs;
-                        if (!hang) {
-                            const carry = [];
-                            const lastTok = cur[cur.length - 1];
-                            if (cur.length > 1 && lastTok.t === 'c' && NO_LINE_END.includes(lastTok.ch)) carry.push(cur.pop());
-                            lines.push(cur);
-                            cur = carry; x = carry.reduce((s, t) => s + t.w, 0);
-                        }
-                    }
-                    cur.push(tok); x += tok.w;
-                });
-                if (cur.length) lines.push(cur);
-
-                lines.forEach((line, li) => {
-                    blocks.push({
-                        h: lineH + (li === lines.length - 1 ? fs * 0.25 : 0),
-                        draw(ctx, y) {
-                            const cy = y + lineH / 2;
-                            let x = MARGIN_X;
-                            ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
-                            line.forEach(tok => {
-                                if (tok.t === 'c') {
-                                    ctx.font = kaiFont(fs); ctx.fillStyle = COLOR_TEXT;
-                                    ctx.fillText(tok.ch, x, cy + fs * 0.03);
-                                } else if (tok.t === 'b') {
-                                    tok.chars.forEach((c, i) => {
-                                        const bx = x + blankGap + i * box, by = cy - box / 2;
-                                        ctx.fillStyle = '#ffffff'; ctx.fillRect(bx, by, box, box);
-                                        if (state.answer) {
-                                            ctx.fillStyle = COLOR_ANSWER;
-                                            ctx.font = kaiFont(box * 0.78); ctx.textAlign = 'center';
-                                            ctx.fillText(c.ch, bx + box / 2, cy + box * 0.03);
-                                            ctx.textAlign = 'left';
-                                        } else if (state.showHints && c.hint) {
-                                            drawHint(ctx, c.hint, bx, by, box);
-                                        } else {
-                                            drawDashedCross(ctx, bx, by, box, COLOR_GUIDE, 3);
-                                        }
-                                        ctx.strokeStyle = COLOR_BOX; ctx.lineWidth = 4;
-                                        ctx.strokeRect(bx, by, box, box);
-                                    });
-                                }
-                                x += tok.w;
-                            });
-                        }
+                if (state.showBank && state.bankWords.length) {
+                    const itemFs = fs * 0.85;
+                    measureCtx.font = kaiFont(itemFs);
+                    const padX = itemFs * 0.5, itemH = itemFs * 1.45, gapX = itemFs * 0.45, gapY = itemFs * 0.4;
+                    const innerPad = 4 * PX_PER_MM, labelH = 6 * PX_PER_MM;
+                    const innerW = CONTENT_W - innerPad * 2;
+                    const placed = [];
+                    let x = 0, row = 0;
+                    state.bankWords.forEach(w => {
+                        const iw = Math.max(measureCtx.measureText(w).width + padX * 2, itemH);
+                        if (x > 0 && x + iw > innerW) { x = 0; row++; }
+                        placed.push({ w, x, row, iw });
+                        x += iw + gapX;
                     });
-                });
-            });
-
-            // --- 仿寫練習 ---
-            if (state.showPractice) {
-                const practiceChars = [...new Set(parsed.blanks.flatMap(b => b.chars.map(c => c.ch)))]
-                    .filter(ch => /\S/.test(ch));
-                if (practiceChars.length) {
-                    const cell = state.cellMm * PX_PER_MM;
-                    const cols = Math.max(1, Math.floor(CONTENT_W / cell));
-                    const gridW = cols * cell;
-                    const left = MARGIN_X + (CONTENT_W - gridW) / 2;
-                    const secFs = 6 * PX_PER_MM;
+                    const rows = row + 1;
+                    const bankH = labelH + innerPad * 0.6 + rows * itemH + (rows - 1) * gapY + innerPad;
                     blocks.push({
-                        h: secFs * 2.6, keepWithNext: true,
+                        h: bankH + 4 * PX_PER_MM, keepWithNext: true,
                         draw(ctx, y) {
-                            const cy = y + secFs * 1.4;
-                            ctx.fillStyle = COLOR_ACCENT;
-                            ctx.fillRect(MARGIN_X, cy - secFs * 0.55, 1.6 * PX_PER_MM, secFs * 1.1);
-                            ctx.fillStyle = COLOR_TEXT; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-                            ctx.font = kaiFont(secFs);
-                            ctx.fillText('仿寫練習', MARGIN_X + 3.5 * PX_PER_MM, cy);
-                            ctx.font = `${Math.round(secFs * 0.6)}px ${UI_FONT}`;
-                            ctx.fillStyle = '#64748b';
-                            ctx.fillText('先描第一格淡字，再在後面的格子裡練習寫。', MARGIN_X + 3.5 * PX_PER_MM + secFs * 4.6, cy + secFs * 0.08);
-                        }
-                    });
-                    practiceChars.forEach(ch => {
-                        for (let r = 0; r < state.rowsPerChar; r++) {
-                            const isLast = r === state.rowsPerChar - 1;
-                            blocks.push({
-                                h: cell + (isLast ? cell * 0.18 : 0),
-                                draw(ctx, y) {
-                                    for (let c = 0; c < cols; c++) {
-                                        const x = left + c * cell;
-                                        drawDashedCross(ctx, x, y, cell, '#fca5a5', 3);
-                                        if (c === 0) {
-                                            ctx.fillStyle = COLOR_HINT;
-                                            ctx.font = kaiFont(cell * 0.8);
-                                            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                                            ctx.fillText(ch, x + cell / 2, y + cell / 2 + cell * 0.03);
-                                        }
-                                    }
-                                    ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 4;
-                                    ctx.strokeRect(left, y, gridW, cell);
-                                    ctx.lineWidth = 3;
-                                    ctx.beginPath();
-                                    for (let c = 1; c < cols; c++) { ctx.moveTo(left + c * cell, y); ctx.lineTo(left + c * cell, y + cell); }
-                                    ctx.stroke();
-                                }
+                            const top = y + labelH / 2;
+                            ctx.save();
+                            roundRect(ctx, MARGIN_X, top, CONTENT_W, bankH - labelH / 2, 3 * PX_PER_MM);
+                            ctx.fillStyle = '#f8fafc'; ctx.fill();
+                            ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 4; ctx.setLineDash([18, 12]); ctx.stroke();
+                            ctx.restore();
+                            const lblFs = 4.8 * PX_PER_MM;
+                            ctx.font = kaiFont(lblFs);
+                            const lw = ctx.measureText('字詞庫').width + lblFs * 1.2;
+                            roundRect(ctx, MARGIN_X + 5 * PX_PER_MM, y, lw, labelH, labelH / 2);
+                            ctx.fillStyle = COLOR_ACCENT; ctx.fill();
+                            ctx.fillStyle = '#ffffff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                            ctx.fillText('字詞庫', MARGIN_X + 5 * PX_PER_MM + lw / 2, y + labelH / 2 + 2);
+                            ctx.font = kaiFont(itemFs);
+                            placed.forEach(p => {
+                                const ix = MARGIN_X + innerPad + p.x;
+                                const iy = y + labelH + innerPad * 0.6 + p.row * (itemH + gapY);
+                                roundRect(ctx, ix, iy, p.iw, itemH, itemH * 0.25);
+                                ctx.fillStyle = '#ffffff'; ctx.fill();
+                                ctx.strokeStyle = COLOR_BOX; ctx.lineWidth = 3; ctx.stroke();
+                                ctx.fillStyle = COLOR_TEXT; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                                ctx.fillText(p.w, ix + p.iw / 2, iy + itemH / 2 + itemFs * 0.03);
                             });
                         }
                     });
                 }
+
+                measureCtx.font = kaiFont(fs);
+                const charW = ch => Math.max(measureCtx.measureText(ch).width, /[⺀-￯]/.test(ch) ? fs : 0);
+                const tokW = tok => tok.t === 'b' ? tok.chars.length * box + blankGap * 2 : charW(tok.ch);
+
+                parsed.paragraphs.forEach(para => {
+                    if (para === null) { blocks.push({ h: lineH * 0.4, draw() {} }); return; }
+                    let toks = [];
+                    if (state.indent) toks.push({ t: 's', w: fs * 2 });
+                    para.forEach(tok => {
+                        if (tok.t === 'b' && tokW(tok) > CONTENT_W) tok.chars.forEach(c => toks.push({ t: 'b', word: c.ch, chars: [c] }));
+                        else toks.push(tok);
+                    });
+                    toks = toks.map(tok => ({ ...tok, w: tok.t === 's' ? tok.w : tokW(tok) }));
+
+                    const lines = [];
+                    let cur = [], x = 0;
+                    toks.forEach(tok => {
+                        if (cur.length && x + tok.w > CONTENT_W) {
+                            const hang = tok.t === 'c' && NO_LINE_START.includes(tok.ch) && x + tok.w <= CONTENT_W + fs;
+                            if (!hang) {
+                                const carry = [];
+                                const lastTok = cur[cur.length - 1];
+                                if (cur.length > 1 && lastTok.t === 'c' && NO_LINE_END.includes(lastTok.ch)) carry.push(cur.pop());
+                                lines.push(cur);
+                                cur = carry; x = carry.reduce((s, t) => s + t.w, 0);
+                            }
+                        }
+                        cur.push(tok); x += tok.w;
+                    });
+                    if (cur.length) lines.push(cur);
+
+                    lines.forEach((line, li) => {
+                        blocks.push({
+                            h: lineH + (li === lines.length - 1 ? fs * 0.2 : 0),
+                            draw(ctx, y) {
+                                const cy = y + lineH / 2;
+                                let x = MARGIN_X;
+                                ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+                                line.forEach(tok => {
+                                    if (tok.t === 'c') {
+                                        ctx.font = kaiFont(fs); ctx.fillStyle = COLOR_TEXT;
+                                        ctx.fillText(tok.ch, x, cy + fs * 0.03);
+                                    } else if (tok.t === 'b') {
+                                        tok.chars.forEach((c, i) => {
+                                            const bx = x + blankGap + i * box, by = cy - box / 2;
+                                            ctx.fillStyle = '#ffffff'; ctx.fillRect(bx, by, box, box);
+                                            if (state.answer) {
+                                                ctx.fillStyle = COLOR_ANSWER;
+                                                ctx.font = kaiFont(box * 0.78); ctx.textAlign = 'center';
+                                                ctx.fillText(c.ch, bx + box / 2, cy + box * 0.03);
+                                                ctx.textAlign = 'left';
+                                            } else if (state.showHints && c.hint) {
+                                                drawHint(ctx, c.hint, bx, by, box);
+                                            } else {
+                                                drawDashedCross(ctx, bx, by, box, COLOR_GUIDE, 3);
+                                            }
+                                            ctx.strokeStyle = COLOR_BOX; ctx.lineWidth = 4;
+                                            ctx.strokeRect(bx, by, box, box);
+                                        });
+                                    }
+                                    x += tok.w;
+                                });
+                            }
+                        });
+                    });
+                });
+
+                // 整段句子區盡量放在同一頁
+                blocks[sectionStart].groupH = blocks.slice(sectionStart).reduce((sum, b) => sum + b.h, 0);
+            }
+
+            // --- 三、仿寫練習 ---
+            if (state.showPractice && chars.length) {
+                const cell = state.cellMm * PX_PER_MM;
+                const cols = Math.max(1, Math.floor(CONTENT_W / cell));
+                const gridW = cols * cell;
+                const left = MARGIN_X + (CONTENT_W - gridW) / 2;
+                blocks.push(sectionHeaderBlock('三、仿寫練習', '先描第一格淡字，再在後面的格子裡練習寫。'));
+                chars.forEach(info => {
+                    blocks.push({
+                        h: cell + cell * 0.18,
+                        draw(ctx, y) {
+                            for (let c = 0; c < cols; c++) drawDashedCross(ctx, left + c * cell, y, cell, '#fca5a5', 3);
+                            ctx.fillStyle = COLOR_HINT;
+                            ctx.font = kaiFont(cell * 0.8);
+                            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                            ctx.fillText(info.ch, left + cell / 2, y + cell / 2 + cell * 0.03);
+                            ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 4;
+                            ctx.strokeRect(left, y, gridW, cell);
+                            ctx.lineWidth = 3;
+                            ctx.beginPath();
+                            for (let c = 1; c < cols; c++) { ctx.moveTo(left + c * cell, y); ctx.lineTo(left + c * cell, y + cell); }
+                            ctx.stroke();
+                        }
+                    });
+                });
             }
             return blocks;
         }
@@ -643,29 +834,23 @@
                 const page = pages[pages.length - 1];
                 let need = b.h;
                 if (b.keepWithNext && blocks[i + 1]) need += blocks[i + 1].h;
-                if (y + need > bottom && page.length) {
-                    pages.push([]);
-                    y = MARGIN_TOP;
-                }
+                if (b.groupH && b.groupH <= bottom - MARGIN_TOP) need = Math.max(need, b.groupH);
+                if (y + need > bottom && page.length) { pages.push([]); y = MARGIN_TOP; }
                 pages[pages.length - 1].push({ block: b, y });
                 y += b.h;
             });
             return pages;
         }
 
-        function renderPages(state) {
-            const parsed = parseArticle(state.text);
-            state.bankWords = getBankWords(parsed.blanks, state.seed);
+        function renderPages(state, chars, parsed) {
             const measure = document.createElement('canvas').getContext('2d');
-            const blocks = buildBlocks(state, parsed, measure);
-            const pages = paginate(blocks);
-            const canvases = pages.map((items, pi) => {
+            const pages = paginate(buildBlocks(state, chars, parsed, measure));
+            return pages.map((items, pi) => {
                 const c = document.createElement('canvas');
                 c.width = PAGE_W; c.height = PAGE_H;
                 const ctx = c.getContext('2d');
                 ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, PAGE_W, PAGE_H);
                 items.forEach(({ block, y }) => { ctx.save(); block.draw(ctx, y); ctx.restore(); });
-                // 頁尾
                 ctx.fillStyle = '#94a3b8';
                 ctx.font = `${Math.round(3.2 * PX_PER_MM)}px ${UI_FONT}`;
                 ctx.textBaseline = 'middle';
@@ -674,7 +859,6 @@
                 if (pages.length > 1) { ctx.textAlign = 'right'; ctx.fillText(`第 ${pi + 1} / ${pages.length} 頁`, PAGE_W - MARGIN_X, fy); }
                 return c;
             });
-            return { canvases, parsed, bankWords: state.bankWords };
         }
 
         // ==========================================
@@ -682,101 +866,131 @@
         // ==========================================
         const $ = id => document.getElementById(id);
         const els = {
-            title: $('titleInput'), instruction: $('instructionInput'), text: $('articleInput'),
-            bank: $('optBank'), hints: $('optHints'), practice: $('optPractice'), answer: $('optAnswer'),
-            indent: $('optIndent'), nameLine: $('optNameLine'),
-            fontSize: $('optFontSize'), cellSize: $('optCellSize'), rows: $('optRows')
+            lesson: $('lessonSelect'), manual: $('manualChars'), passage: $('passageInput'), title: $('titleInput'),
+            writeHint: $('optWriteHint'), color: $('optColor'), bank: $('optBank'), hints: $('optHints'),
+            practice: $('optPractice'), answer: $('optAnswer'), indent: $('optIndent'), nameLine: $('optNameLine'),
+            cols: $('optCols'), fontSize: $('optFontSize'), cellSize: $('optCellSize')
         };
-        let shuffleSeed = (Date.now() % 2147483647) || 1;
+        let draft = { passages: {}, excluded: {}, seed: (Date.now() % 2147483647) || 1 };
         let lastCanvases = [];
-
-        function getState() {
-            return {
-                title: els.title.value.trim(), instruction: els.instruction.value.trim(), text: els.text.value,
-                showBank: els.bank.checked, showHints: els.hints.checked, showPractice: els.practice.checked,
-                answer: els.answer.checked, indent: els.indent.checked, nameLine: els.nameLine.checked,
-                fontMm: parseFloat(els.fontSize.value) || 8.5, cellMm: parseFloat(els.cellSize.value) || 18,
-                rowsPerChar: parseInt(els.rows.value, 10) || 1, seed: shuffleSeed
-            };
-        }
+        let currentKey = '';
 
         function saveDraft() {
             try {
-                const s = getState();
-                localStorage.setItem(DRAFT_KEY, JSON.stringify(s));
+                draft.lesson = els.lesson.value;
+                draft.manual = els.manual.value;
+                draft.title = els.title.value;
+                draft.opts = {};
+                ['writeHint', 'color', 'bank', 'hints', 'practice', 'answer', 'indent', 'nameLine'].forEach(k => draft.opts[k] = els[k].checked);
+                ['cols', 'fontSize', 'cellSize'].forEach(k => draft.opts[k] = els[k].value);
+                localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
             } catch (e) { /* 無法保存時忽略 */ }
         }
 
         function loadDraft() {
-            let s = null;
-            try { s = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null'); } catch (e) { s = null; }
-            if (!s) { els.text.value = SAMPLE_TEXT; return; }
+            const s = readJson(DRAFT_KEY);
+            if (!s || !s.passages) return; // 舊版草稿格式直接略過
+            draft = { ...draft, ...s, passages: s.passages || {}, excluded: s.excluded || {} };
+            if (typeof s.manual === 'string') els.manual.value = s.manual;
             if (typeof s.title === 'string') els.title.value = s.title;
-            if (typeof s.instruction === 'string') els.instruction.value = s.instruction;
-            els.text.value = typeof s.text === 'string' ? s.text : SAMPLE_TEXT;
-            const setChk = (el, v) => { if (typeof v === 'boolean') el.checked = v; };
-            setChk(els.bank, s.showBank); setChk(els.hints, s.showHints); setChk(els.practice, s.showPractice);
-            setChk(els.answer, s.answer); setChk(els.indent, s.indent); setChk(els.nameLine, s.nameLine);
-            const setSel = (el, v) => { if (v != null && [...el.options].some(o => o.value === String(v))) el.value = String(v); };
-            setSel(els.fontSize, s.fontMm); setSel(els.cellSize, s.cellMm); setSel(els.rows, s.rowsPerChar);
-            if (Number.isFinite(s.seed)) shuffleSeed = s.seed;
+            const o = s.opts || {};
+            ['writeHint', 'color', 'bank', 'hints', 'practice', 'answer', 'indent', 'nameLine'].forEach(k => { if (typeof o[k] === 'boolean') els[k].checked = o[k]; });
+            ['cols', 'fontSize', 'cellSize'].forEach(k => { if (o[k] != null && [...els[k].options].some(op => op.value === String(o[k]))) els[k].value = String(o[k]); });
+        }
+
+        function fillLessonSelect(preferred) {
+            const opts = lessonOptions();
+            els.lesson.innerHTML = opts.map(o => `<option value="${escapeHtml(o.key)}">${escapeHtml(o.label)}</option>`).join('');
+            const want = [preferred, draft.lesson, currentKey].find(k => k && opts.some(o => o.key === k));
+            const firstReal = opts.find(o => o.key.startsWith('lesson:') && o.name !== '未分類') || opts[0];
+            els.lesson.value = want || firstReal.key;
+            switchLesson();
+        }
+
+        function defaultPassage(key) {
+            return key === DEMO_KEY ? DEMO_LESSON.passage : '';
+        }
+
+        function switchLesson() {
+            if (currentKey) draft.passages[currentKey] = els.passage.value;
+            currentKey = els.lesson.value;
+            els.passage.value = draft.passages[currentKey] ?? defaultPassage(currentKey);
+            $('manualBox').classList.toggle('hidden', currentKey !== MANUAL_KEY);
+            const src = library.source === 'imported' ? '目前使用匯入的備份檔。' :
+                (Object.keys(library.lessons || {}).length ? '已讀取部件標籤產生器的課次收藏。' : '這個瀏覽器還沒有課次收藏，可以先用示範課次或匯入備份檔試用。');
+            $('sourceNote').textContent = src;
         }
 
         function escapeHtml(s) {
-            return s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+            return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
         }
 
-        function updateSidebar(parsed, bankWords) {
-            $('blankCount').textContent = `${parsed.blanks.length} 個空格`;
-            $('bankPreview').innerHTML = bankWords.length
-                ? bankWords.map(w => `<span class="bg-white border border-emerald-300 rounded px-2 py-0.5">${escapeHtml(w)}</span>`).join('')
-                : '<span class="text-xs text-emerald-600 font-sans">（尚未有挖空字）</span>';
-            const seen = new Map();
-            parsed.blanks.forEach(b => b.chars.forEach(c => { if (!seen.has(c.ch)) seen.set(c.ch, c.hint); }));
-            const style = {
-                manual: 'bg-green-100 border-green-300 text-green-800',
-                template: 'bg-sky-100 border-sky-300 text-sky-800',
-                builtin: 'bg-violet-100 border-violet-300 text-violet-800',
-                none: 'bg-slate-100 border-slate-300 text-slate-500'
+        function getState(lessonName) {
+            return {
+                title: els.title.value.trim() || `${lessonName ? lessonName + ' ' : ''}生字情境學習單`,
+                writeHint: els.writeHint.checked, color: els.color.checked, showBank: els.bank.checked,
+                showHints: els.hints.checked, showPractice: els.practice.checked, answer: els.answer.checked,
+                indent: els.indent.checked, nameLine: els.nameLine.checked,
+                cols: parseInt(els.cols.value, 10) || 4, fontMm: parseFloat(els.fontSize.value) || 8.5,
+                cellMm: parseFloat(els.cellSize.value) || 18, bankWords: []
             };
-            $('hintStatus').innerHTML = [...seen.entries()].map(([ch, hint]) => {
-                const src = hint ? hint.source : 'none';
-                const parts = hint ? (hint.kind === 'template' ? hint.comps.map(c => c.char).join('') : (hint.op || '') + hint.parts.join('')) : '—';
-                return `<span class="kai text-base border rounded px-2 py-0.5 ${style[src]}" title="部件：${escapeHtml(parts)}">${escapeHtml(ch)}<span class="text-xs ml-1 opacity-80">${escapeHtml(parts)}</span></span>`;
-            }).join('') || '<span class="text-xs text-emerald-600">（尚未有挖空字）</span>';
         }
 
-        let fontsReady = false;
+        function renderChips(allChars, excluded) {
+            $('charChips').innerHTML = allChars.length ? allChars.map(info => {
+                const on = !excluded.has(info.ch);
+                const parts = info.parts.map(p => p.type === 'image' ? '🖼' : p.char).join('+') || '無部件';
+                return `<label class="flex items-center gap-1.5 bg-white border ${on ? 'border-violet-300' : 'border-slate-200 opacity-60'} rounded px-2 py-1 cursor-pointer" title="部件：${escapeHtml(parts)}">
+                    <input type="checkbox" data-ch="${escapeHtml(info.ch)}" ${on ? 'checked' : ''} class="w-4 h-4 accent-violet-600">
+                    <span class="kai text-lg font-bold text-violet-800">${escapeHtml(info.ch)}</span>
+                    <span class="kai text-xs text-slate-500">${escapeHtml(parts)}</span></label>`;
+            }).join('') : '<span class="text-xs text-violet-600">（這個課次還沒有生字）</span>';
+        }
+
+        function renderCoverage(chars, passage) {
+            const plain = passage.replace(/\\./g, '');
+            const total = Array.from(passage.replace(/[\s【】\\]/g, '')).length;
+            $('passageCount').textContent = `${total} 字`;
+            $('coverage').innerHTML = chars.map(info => {
+                const used = plain.includes(info.ch);
+                return `<span class="kai text-sm border rounded px-2 py-0.5 ${used ? 'bg-emerald-100 border-emerald-300 text-emerald-800' : 'bg-rose-50 border-rose-300 text-rose-700'}">${used ? '✓' : '✗'} ${escapeHtml(info.ch)}</span>`;
+            }).join('') + (chars.some(info => !plain.includes(info.ch)) ? '<span class="text-[11px] text-rose-700 self-center">✗ 的生字還沒出現在句子裡</span>' : '');
+        }
+
         async function ensureFonts(text) {
             if (!document.fonts || !document.fonts.load) return;
-            const sample = (text || '') + '文章填空學習單班級座號姓名字詞庫仿寫練習請閱讀從中選出適當的入□第頁答案版' + Object.values(BUILTIN_IDS).join('');
+            const sample = (text || '') + '生字情境學習單班級座號姓名一二三看部件寫讀句子填字詞庫仿寫練習第頁答案版尚未設定' + Object.values(BUILTIN_IDS).join('');
             try {
-                await Promise.race([
-                    document.fonts.load(`64px "LXGW WenKai TC"`, sample),
-                    new Promise(r => setTimeout(r, 2500))
-                ]);
+                await Promise.race([document.fonts.load(`64px "LXGW WenKai TC"`, sample), new Promise(r => setTimeout(r, 2500))]);
             } catch (e) { /* 字型載入失敗時使用本機字型 */ }
-            fontsReady = true;
         }
 
-        let renderTimer = null;
-        let renderToken = 0;
-        function scheduleRender(delay = 250) {
-            clearTimeout(renderTimer);
-            renderTimer = setTimeout(render, delay);
-        }
+        let renderTimer = null, renderToken = 0;
+        function scheduleRender(delay = 250) { clearTimeout(renderTimer); renderTimer = setTimeout(render, delay); }
 
         async function render() {
             const token = ++renderToken;
-            const state = getState();
-            await ensureFonts(state.text + state.title + state.instruction);
+            const key = els.lesson.value;
+            const entries = entriesForLesson(key);
+            const allChars = [];
+            for (const e of entries) allChars.push(await buildCharInfo(e));
+            const excluded = new Set(draft.excluded[key] || []);
+            const chars = allChars.filter(c => !excluded.has(c.ch));
+            const passage = els.passage.value;
+            const state = getState(lessonDisplayName(key));
+            await ensureFonts(passage + state.title + allChars.map(c => c.ch + c.parts.map(p => p.char || '').join('')).join(''));
             if (token !== renderToken) return;
-            userTemplates = loadUserTemplates();
-            const { canvases, parsed, bankWords } = renderPages(state);
+
+            const charMap = new Map(chars.map(c => [c.ch, c]));
+            const parsed = parsePassage(passage, charMap);
+            const blankWords = [...new Set(parsed.blanks.map(b => b.word))];
+            state.bankWords = shuffleAwayFromOriginal(blankWords, draft.seed);
+
+            const canvases = renderPages(state, chars, parsed);
             lastCanvases = canvases;
             const box = $('previewPages');
             box.innerHTML = '';
-            canvases.forEach((c, i) => {
+            canvases.forEach(c => {
                 const wrap = document.createElement('div');
                 wrap.className = 'page-preview bg-white shadow-2xl';
                 const img = document.createElement('canvas');
@@ -786,42 +1000,50 @@
                 box.appendChild(wrap);
             });
             $('pageInfo').textContent = `共 ${canvases.length} 頁・A4 300 DPI`;
-            updateSidebar(parsed, bankWords);
+            renderChips(allChars, excluded);
+            renderCoverage(chars, passage);
+            $('bankPreview').innerHTML = state.bankWords.length
+                ? state.bankWords.map(w => `<span class="bg-white border border-emerald-300 rounded px-2 py-0.5">${escapeHtml(w)}</span>`).join('')
+                : '<span class="text-xs text-emerald-600 font-sans">（句子裡還沒有挖空的生字）</span>';
+            draft.passages[key] = passage;
             saveDraft();
         }
 
-        // ---- 文字編輯工具 ----
-        $('btnWrap').addEventListener('click', () => {
-            const ta = els.text;
-            const { selectionStart: s, selectionEnd: e, value } = ta;
-            const sel = value.slice(s, e);
-            let insert;
-            if (!sel) insert = '【】';
-            else if (/^【[^【】]*】$/.test(sel)) insert = sel.slice(1, -1); // 再按一次取消
-            else insert = sel.replace(/[【】]/g, '').split('\n').map(p => p ? `【${p}】` : p).join('\n');
-            ta.setRangeText(insert, s, e, 'end');
-            if (!sel) ta.setSelectionRange(s + 1, s + 1);
-            ta.focus();
-            scheduleRender(0);
-        });
-        $('btnUnwrapAll').addEventListener('click', () => {
-            if (!/[【】]/.test(els.text.value)) return;
-            if (!confirm('確定要移除文章中所有的【】嗎？（自訂部件提示也會一併清除）')) return;
-            els.text.value = els.text.value.replace(/【([^【】\n]*)】/g, (_, inner) => inner.split(/[|｜]/)[0]).replace(/[【】]/g, '');
-            scheduleRender(0);
-        });
-        $('btnSample').addEventListener('click', () => {
-            if (els.text.value.trim() && els.text.value !== SAMPLE_TEXT && !confirm('載入範例會取代目前的文章，確定嗎？')) return;
-            els.text.value = SAMPLE_TEXT;
+        // ---- 事件 ----
+        els.lesson.addEventListener('change', () => { switchLesson(); scheduleRender(0); });
+        $('charChips').addEventListener('change', e => {
+            const ch = e.target.dataset && e.target.dataset.ch;
+            if (!ch) return;
+            const key = els.lesson.value;
+            const set = new Set(draft.excluded[key] || []);
+            if (e.target.checked) set.delete(ch); else set.add(ch);
+            draft.excluded[key] = [...set];
             scheduleRender(0);
         });
         $('btnShuffle').addEventListener('click', () => {
-            shuffleSeed = (shuffleSeed * 48271 + 12345) % 2147483647 || 1;
+            draft.seed = (draft.seed * 48271 + 12345) % 2147483647 || 1;
             scheduleRender(0);
         });
-
-        Object.values(els).forEach(el => {
+        Object.entries(els).forEach(([k, el]) => {
+            if (k === 'lesson') return;
             el.addEventListener(el.tagName === 'TEXTAREA' || el.type === 'text' ? 'input' : 'change', () => scheduleRender());
+        });
+
+        $('backupFileInput').addEventListener('change', async e => {
+            const file = e.target.files && e.target.files[0];
+            e.target.value = '';
+            if (!file) return;
+            try {
+                const data = JSON.parse(await file.text());
+                if (!data || !data.customTemplates) throw new Error('bad');
+                importedLibrary = { templates: data.customTemplates || {}, lessons: data.lessonCollections || {}, source: 'imported' };
+                loadLibrary();
+                const preferred = data.currentLessonName ? 'lesson:' + data.currentLessonName : '';
+                fillLessonSelect(preferred);
+                scheduleRender(0);
+            } catch (err) {
+                $('sourceNote').textContent = '⚠️ 無法讀取這個檔案。請選擇部件標籤產生器「⬇ 匯出備份」產生的 .json 檔。';
+            }
         });
 
         // ---- 輸出 ----
@@ -829,22 +1051,11 @@
             const d = new Date(), p = n => String(n).padStart(2, '0');
             return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}`;
         }
-
-        async function freshCanvases() {
-            clearTimeout(renderTimer);
-            await render();
-            return lastCanvases;
-        }
-
-        function hasContent() {
-            if (!els.text.value.trim()) { alert('請先輸入文章內容！'); return false; }
-            return true;
-        }
+        async function freshCanvases() { clearTimeout(renderTimer); await render(); return lastCanvases; }
 
         $('btnDownload').addEventListener('click', async () => {
-            if (!hasContent()) return;
             const pages = await freshCanvases();
-            const base = (els.title.value.trim() || '文章填空學習單').replace(/[\\/:*?"<>|]/g, '_');
+            const base = getState(lessonDisplayName(els.lesson.value)).title.replace(/[\\/:*?"<>|]/g, '_');
             const suffix = els.answer.checked ? '_答案版' : '';
             pages.forEach((c, i) => {
                 setTimeout(() => {
@@ -857,9 +1068,8 @@
         });
 
         $('btnPrint').addEventListener('click', async () => {
-            if (!hasContent()) return;
             const pages = await freshCanvases();
-            if (!confirm(`即將列印：文章填空學習單\n\n共 ${pages.length} 頁。\n\n請確認：紙張 A4、縮放 100%（實際大小）、邊距 0。`)) return;
+            if (!confirm(`即將列印：生字情境學習單\n\n共 ${pages.length} 頁。\n\n請確認：紙張 A4、縮放 100%（實際大小）、邊距 0。`)) return;
             const urls = pages.map(c => c.toDataURL('image/png'));
             let iframe = document.getElementById('printIframe');
             if (!iframe) {
@@ -870,7 +1080,7 @@
             }
             const doc = iframe.contentWindow.document;
             doc.open();
-            doc.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>列印 文章填空學習單</title><style>
+            doc.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>列印 生字情境學習單</title><style>
                 @page{size:210mm 297mm;margin:0} html,body{margin:0;padding:0;background:#fff}
                 .page{width:210mm;height:297mm;page-break-after:always;position:relative;overflow:hidden}
                 .page:last-child{page-break-after:auto}.page img{position:absolute;inset:0;width:210mm;height:297mm;display:block;-webkit-print-color-adjust:exact;print-color-adjust:exact}
@@ -878,10 +1088,16 @@
             doc.close();
         });
 
-        // 其他分頁（部件標籤產生器）更新範本時，同步提示來源
-        window.addEventListener('storage', e => { if (e.key === 'myCustomStickers') scheduleRender(); });
+        // 部件標籤產生器在另一個分頁更新範本或課次時，自動同步
+        window.addEventListener('storage', e => {
+            if (!importedLibrary && (e.key === 'myCustomStickers' || e.key === 'myLessonCollections')) {
+                loadLibrary(); fillLessonSelect(els.lesson.value); scheduleRender();
+            }
+        });
 
         loadDraft();
+        loadLibrary();
+        fillLessonSelect();
         render();
     </script>
 </body>
